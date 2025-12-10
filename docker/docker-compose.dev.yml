@@ -1,0 +1,23 @@
+version: "3.8"
+
+# Development mode: only backend in Docker, UI runs locally with hot-reload
+# Usage: docker compose -f docker/docker-compose.dev.yml up -d
+#        npm run dev
+
+services:
+  forgetful-service:
+    image: ghcr.io/anthropics/forgetful:latest
+    container_name: forgetful-service-dev
+    ports:
+      - "127.0.0.1:8020:8020"
+    environment:
+      - DATABASE=SQLite
+      - SQLITE_PATH=/app/data/forgetful.db
+    volumes:
+      - ./dev-data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8020/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 60s

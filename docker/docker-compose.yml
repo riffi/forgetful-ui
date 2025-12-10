@@ -1,0 +1,51 @@
+version: "3.8"
+
+name: forgetful-stack
+
+services:
+  # Backend - use ready image
+  forgetful-service:
+    image: ghcr.io/${FORGETFUL_IMAGE:-anthropics/forgetful}:${FORGETFUL_TAG:-latest}
+    container_name: forgetful-service
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_BIND_ADDRESS:-127.0.0.1}:${BACKEND_PORT:-8020}:8020"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - DATABASE=${DATABASE:-SQLite}
+      - SQLITE_PATH=/app/data/forgetful.db
+    volumes:
+      - forgetful_data:/app/data
+    networks:
+      - forgetful
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8020/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+
+  # UI - build from current repo
+  forgetful-ui:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: ghcr.io/${UI_IMAGE:-anthropics/forgetful-ui}:${UI_TAG:-latest}
+    container_name: forgetful-ui
+    restart: unless-stopped
+    ports:
+      - "${UI_BIND_ADDRESS:-127.0.0.1}:${UI_PORT:-3000}:80"
+    depends_on:
+      forgetful-service:
+        condition: service_healthy
+    networks:
+      - forgetful
+
+networks:
+  forgetful:
+    driver: bridge
+
+volumes:
+  forgetful_data:
