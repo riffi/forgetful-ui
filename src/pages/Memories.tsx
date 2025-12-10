@@ -6,62 +6,37 @@ import {
   Badge,
   Text,
   Paper,
-  ActionIcon,
   MultiSelect,
-  Menu,
   Button,
 } from '@mantine/core'
-import { useDebouncedValue } from '@mantine/hooks'
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks'
 import { DataTable, type DataTableSortStatus } from 'mantine-datatable'
 import {
   IconSearch,
   IconPlus,
   IconTrash,
   IconArchive,
-  IconDotsVertical,
-  IconBrain,
-  IconExternalLink,
+  IconPower,
 } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useMemories, useDeleteMemory } from '@/hooks'
+import { CreateMemoryModal } from '@/components/modals'
 import type { Memory, MemoryFilters } from '@/types'
 import classes from './Memories.module.css'
 
 const PAGE_SIZE = 20
 
-function ImportanceBadge({ importance }: { importance: number }) {
-  let color = 'gray'
-  if (importance >= 9) color = 'red'
-  else if (importance >= 7) color = 'yellow'
-
-  return (
-    <Badge size="sm" variant="light" color={color}>
-      {importance}
-    </Badge>
-  )
-}
-
-function TagsList({ tags }: { tags: string[] }) {
-  if (!tags?.length) return <Text c="dimmed" size="xs">-</Text>
-
-  return (
-    <Group gap={4} wrap="nowrap">
-      {tags.slice(0, 2).map((tag) => (
-        <Badge key={tag} size="xs" variant="dot" color="purple">
-          {tag}
-        </Badge>
-      ))}
-      {tags.length > 2 && (
-        <Text size="xs" c="dimmed">
-          +{tags.length - 2}
-        </Text>
-      )}
-    </Group>
-  )
+function getImportanceClass(value: number): string {
+  if (value >= 9) return classes.importanceHigh
+  if (value >= 7) return classes.importanceMedium
+  return ''
 }
 
 export function Memories() {
   const navigate = useNavigate()
+
+  // Create modal state
+  const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
 
   // Filters state
   const [search, setSearch] = useState('')
@@ -210,12 +185,18 @@ export function Memories() {
         {/* Create Button */}
         <button
           className={classes.btnPrimary}
-          onClick={() => navigate('/memories?create=true')}
+          onClick={openCreate}
         >
           <IconPlus size={18} />
           Create Memory
         </button>
       </div>
+
+      {/* Create Memory Modal */}
+      <CreateMemoryModal
+        opened={createOpened}
+        onClose={closeCreate}
+      />
 
       {/* Data Table */}
       <Paper className={classes.tableWrapper}>
@@ -227,17 +208,14 @@ export function Memories() {
               title: 'Title',
               sortable: true,
               render: (memory) => (
-                <Group gap="xs" wrap="nowrap">
-                  <IconBrain size={16} color="var(--accent-memory)" />
-                  <Text size="sm" fw={500} lineClamp={1}>
-                    {memory.title}
-                  </Text>
+                <div className={classes.titleCell}>
+                  {memory.title}
                   {memory.is_obsolete && (
-                    <Badge size="xs" color="gray" variant="outline">
+                    <Badge size="xs" color="gray" variant="outline" ml="xs">
                       obsolete
                     </Badge>
                   )}
-                </Group>
+                </div>
               ),
             },
             {
@@ -245,14 +223,53 @@ export function Memories() {
               title: 'Importance',
               sortable: true,
               width: 100,
-              textAlign: 'center',
-              render: (memory) => <ImportanceBadge importance={memory.importance} />,
+              render: (memory) => (
+                <input
+                  type="number"
+                  className={`${classes.importanceInput} ${getImportanceClass(memory.importance)}`}
+                  value={memory.importance}
+                  min={1}
+                  max={10}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    // TODO: Implement inline importance update
+                    console.log('Update importance:', memory.id, e.target.value)
+                  }}
+                  readOnly
+                />
+              ),
             },
             {
               accessor: 'tags',
               title: 'Tags',
-              width: 200,
-              render: (memory) => <TagsList tags={memory.tags} />,
+              width: 220,
+              render: (memory) => (
+                <div className={classes.tagsCell}>
+                  {memory.tags?.slice(0, 3).map((tag) => (
+                    <span key={tag} className={classes.tag}>
+                      {tag}
+                      <span
+                        className={classes.tagRemove}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          // TODO: Implement tag removal
+                        }}
+                      >
+                        ×
+                      </span>
+                    </span>
+                  ))}
+                  <button
+                    className={classes.addTagBtn}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      // TODO: Implement add tag
+                    }}
+                  >
+                    + Tag
+                  </button>
+                </div>
+              ),
             },
             {
               accessor: 'updated_at',
@@ -260,49 +277,42 @@ export function Memories() {
               sortable: true,
               width: 120,
               render: (memory) => (
-                <Text size="xs" c="dimmed">
-                  {new Date(memory.updated_at).toLocaleDateString()}
-                </Text>
+                <span className={classes.dateCell}>
+                  {new Date(memory.updated_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
               ),
             },
             {
               accessor: 'actions',
-              title: '',
-              width: 60,
+              title: 'Actions',
+              width: 100,
               render: (memory) => (
-                <Menu shadow="md" position="bottom-end">
-                  <Menu.Target>
-                    <ActionIcon
-                      variant="subtle"
-                      color="gray"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <IconDotsVertical size={16} />
-                    </ActionIcon>
-                  </Menu.Target>
-                  <Menu.Dropdown>
-                    <Menu.Item
-                      leftSection={<IconExternalLink size={14} />}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        navigate(`/memories/${memory.id}`)
-                      }}
-                    >
-                      View Details
-                    </Menu.Item>
-                    <Menu.Divider />
-                    <Menu.Item
-                      color="red"
-                      leftSection={<IconTrash size={14} />}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDelete(memory)
-                      }}
-                    >
-                      Mark Obsolete
-                    </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
+                <div className={classes.actionsCell}>
+                  <button
+                    className={classes.actionBtn}
+                    title="Mark Obsolete"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete(memory)
+                    }}
+                  >
+                    <IconPower size={16} />
+                  </button>
+                  <button
+                    className={`${classes.actionBtn} ${classes.actionBtnDelete}`}
+                    title="Delete"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      // TODO: Implement permanent delete
+                    }}
+                  >
+                    <IconTrash size={16} />
+                  </button>
+                </div>
               ),
             },
           ]}

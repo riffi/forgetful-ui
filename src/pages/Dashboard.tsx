@@ -57,16 +57,10 @@ function StatCard({ title, count, icon, iconClass, path, isLoading }: StatCardPr
   )
 }
 
-function ImportanceBadge({ importance }: { importance: number }) {
-  let color = 'gray'
-  if (importance >= 9) color = 'red'
-  else if (importance >= 7) color = 'yellow'
-
-  return (
-    <Badge size="sm" variant="light" color={color}>
-      {importance}
-    </Badge>
-  )
+function getImportanceClass(importance: number): string {
+  if (importance >= 9) return classes.importanceHigh
+  if (importance >= 7) return classes.importanceMedium
+  return classes.importanceLow
 }
 
 interface RecentMemoriesProps {
@@ -119,14 +113,21 @@ function RecentMemories({ memories, isLoading }: RecentMemoriesProps) {
           onClick={() => navigate(`/memories/${memory.id}`)}
         >
           <span className={classes.memoryTitle}>{memory.title}</span>
-          <ImportanceBadge importance={memory.importance} />
+          <span className={`${classes.importanceBadge} ${getImportanceClass(memory.importance)}`}>
+            {memory.importance}
+          </span>
           <div className={classes.tagList}>
             {memory.tags?.slice(0, 2).map((tag) => (
               <span key={tag} className={classes.tag}>{tag}</span>
             ))}
           </div>
+          <span className={classes.projectBadge}>General</span>
           <span className={classes.memoryDate}>
-            {new Date(memory.updated_at).toLocaleDateString()}
+            {new Date(memory.updated_at).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })}
           </span>
         </div>
       ))}

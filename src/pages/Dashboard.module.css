@@ -316,6 +316,31 @@
   box-shadow: 0 0 15px rgba(236, 72, 153, 0.15);
 }
 
+/* Importance Badge */
+.importanceBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  min-width: 28px;
+  text-align: center;
+}
+
+.importanceHigh {
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  color: white;
+}
+
+.importanceMedium {
+  background: rgba(234, 179, 8, 0.2);
+  color: #eab308;
+}
+
+.importanceLow {
+  background: rgba(107, 114, 128, 0.2);
+  color: #6b7280;
+}
+
 /* Tags in memory row */
 .tagList {
   display: flex;
@@ -329,6 +354,16 @@
   border-radius: 4px;
   background: var(--surface-secondary);
   color: var(--text-secondary);
+}
+
+/* Project Badge */
+.projectBadge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-project);
+  white-space: nowrap;
 }
 
 .highImportanceItem {
