@@ -2,22 +2,20 @@ import { useState, useMemo } from 'react'
 import {
   Title,
   Group,
-  TextInput,
   Select,
-  Button,
   Badge,
   Text,
   Paper,
   ActionIcon,
   MultiSelect,
   Menu,
+  Button,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { DataTable, type DataTableSortStatus } from 'mantine-datatable'
 import {
   IconSearch,
   IconPlus,
-  IconFilter,
   IconTrash,
   IconArchive,
   IconDotsVertical,
@@ -153,42 +151,37 @@ export function Memories() {
 
   return (
     <div className={classes.container}>
-      <Group justify="space-between" mb="md">
+      {/* Page Header - all in one row like reference */}
+      <div className={classes.pageHeader}>
         <Title order={1} className={classes.title}>
           Memories
         </Title>
-        <Button
-          leftSection={<IconPlus size={16} />}
-          color="purple"
-          onClick={() => navigate('/memories?create=true')}
-        >
-          Create Memory
-        </Button>
-      </Group>
 
-      {/* Filters */}
-      <Paper className={classes.filters} mb="md">
-        <Group gap="md" wrap="wrap">
-          <TextInput
-            placeholder="Search memories..."
-            leftSection={<IconSearch size={16} />}
+        {/* Search */}
+        <div className={classes.headerSearch}>
+          <IconSearch size={16} color="var(--text-dimmed)" />
+          <input
+            type="text"
+            placeholder="Search title, content, keywords..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ flex: 1, minWidth: 200 }}
           />
+        </div>
+
+        {/* Filter Group */}
+        <div className={classes.filterGroup}>
           <Select
             placeholder="Importance"
-            leftSection={<IconFilter size={16} />}
             data={[
-              { value: '9', label: 'Critical (9-10)' },
-              { value: '7', label: 'High (7+)' },
-              { value: '5', label: 'Medium (5+)' },
-              { value: '1', label: 'All' },
+              { value: '9', label: 'High (9-10)' },
+              { value: '7', label: 'Medium (7-8)' },
+              { value: '1', label: 'Low (<7)' },
             ]}
             value={importanceFilter}
             onChange={setImportanceFilter}
             clearable
-            w={160}
+            size="sm"
+            classNames={{ input: classes.filterInput }}
           />
           <MultiSelect
             placeholder="Tags"
@@ -196,19 +189,33 @@ export function Memories() {
             value={tagsFilter}
             onChange={setTagsFilter}
             maxDropdownHeight={200}
-            w={200}
             searchable
+            size="sm"
+            classNames={{ input: classes.filterInput }}
           />
-          <Button
-            variant={showObsolete ? 'filled' : 'light'}
-            color="gray"
-            onClick={() => setShowObsolete(!showObsolete)}
-            leftSection={<IconArchive size={16} />}
-          >
-            {showObsolete ? 'Hide Obsolete' : 'Show Obsolete'}
-          </Button>
-        </Group>
-      </Paper>
+          <Select
+            placeholder="Status"
+            data={[
+              { value: 'active', label: 'Active' },
+              { value: 'obsolete', label: 'Obsolete' },
+              { value: 'all', label: 'All' },
+            ]}
+            value={showObsolete ? 'obsolete' : 'active'}
+            onChange={(val) => setShowObsolete(val === 'obsolete')}
+            size="sm"
+            classNames={{ input: classes.filterInput }}
+          />
+        </div>
+
+        {/* Create Button */}
+        <button
+          className={classes.btnPrimary}
+          onClick={() => navigate('/memories?create=true')}
+        >
+          <IconPlus size={18} />
+          Create Memory
+        </button>
+      </div>
 
       {/* Data Table */}
       <Paper className={classes.tableWrapper}>

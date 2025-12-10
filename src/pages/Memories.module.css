@@ -1,12 +1,86 @@
 .container {
   max-width: 1400px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .title {
   color: var(--text-primary);
   font-size: 28px;
   font-weight: 600;
+}
+
+/* Page Header */
+.pageHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.pageHeader .title {
+  margin-right: auto;
+}
+
+/* Header Search */
+.headerSearch {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 8px;
+  min-width: 220px;
+  backdrop-filter: blur(8px);
+}
+
+.headerSearch:focus-within {
+  border-color: var(--accent-memory);
+}
+
+.headerSearch input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  width: 100%;
+}
+
+.headerSearch input::placeholder {
+  color: var(--text-dimmed);
+}
+
+/* Filter Group */
+.filterGroup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Filter dropdown inputs */
+.filterInput {
+  background: var(--surface-secondary) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 8px !important;
+  color: var(--text-secondary) !important;
+  font-size: 13px !important;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterInput:hover {
+  background: var(--surface-hover) !important;
+  border-color: var(--border-hover) !important;
+}
+
+.filterInput:focus,
+.filterInput[data-expanded="true"] {
+  border-color: var(--accent-memory) !important;
+  color: var(--text-primary) !important;
 }
 
 .filters {
@@ -17,58 +91,389 @@
   padding: 16px;
 }
 
+/* Table Container */
 .tableWrapper {
   background: var(--surface-primary);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
   overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Override Mantine DataTable CSS Variables */
 .tableWrapper :global(.mantine-datatable) {
-  background: transparent;
+  --mantine-datatable-background-color: transparent;
+  --mantine-datatable-border-color: var(--border-subtle);
+  --mantine-datatable-row-border-color: var(--border-subtle);
+  --mantine-datatable-highlight-on-hover-color: var(--surface-hover);
+  background: transparent !important;
 }
 
+.tableWrapper :global(.mantine-datatable-table) {
+  background: transparent !important;
+}
+
+/* Table Header */
 .tableWrapper :global(.mantine-datatable-header) {
-  background: var(--surface-secondary);
+  background: rgba(30, 41, 59, 0.5) !important;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-.tableWrapper :global(.mantine-datatable-header-cell) {
-  color: var(--text-secondary);
-  font-weight: 500;
-  font-size: 12px;
+.tableWrapper :global(.mantine-datatable-header th) {
+  padding: 14px 16px !important;
+  color: var(--text-secondary) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  border-color: var(--border-subtle) !important;
+  background: transparent !important;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
 }
 
+.tableWrapper :global(.mantine-datatable-header th:hover) {
+  color: var(--text-primary) !important;
+  background: rgba(30, 41, 59, 0.7) !important;
+}
+
+/* Table Rows */
 .tableWrapper :global(.mantine-datatable-row) {
   cursor: pointer;
-  transition: background 150ms ease;
+  transition: background 0.2s;
+  background: transparent !important;
 }
 
-.tableWrapper :global(.mantine-datatable-row:hover) {
-  background: var(--surface-hover);
+.tableWrapper :global(.mantine-datatable-row:hover),
+.tableWrapper :global(.mantine-datatable-table[data-highlight-on-hover] tbody tr:hover) {
+  background: var(--surface-hover) !important;
 }
 
 .tableWrapper :global(.mantine-datatable-row td) {
-  border-color: var(--border-subtle);
+  padding: 14px 16px !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  border-color: var(--border-subtle) !important;
+  font-size: 14px !important;
+  color: var(--text-primary) !important;
+  vertical-align: middle;
+  background: transparent !important;
 }
 
+/* Selected Row */
+.tableWrapper :global(.mantine-datatable-row[data-selected]),
+.tableWrapper :global(.mantine-datatable-row[data-selected] td) {
+  background: rgba(168, 85, 247, 0.1) !important;
+}
+
+/* Checkbox styling */
+.tableWrapper :global(.mantine-datatable-row-selector-cell) {
+  background: transparent !important;
+}
+
+.tableWrapper :global(.mantine-Checkbox-input) {
+  border-color: var(--text-dimmed);
+  background: transparent;
+}
+
+.tableWrapper :global(.mantine-Checkbox-input:checked) {
+  background: var(--accent-memory);
+  border-color: var(--accent-memory);
+}
+
+/* Obsolete Row */
 .obsoleteRow {
   opacity: 0.6;
 }
 
+/* Title Cell */
+.titleCell {
+  font-weight: 500;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Importance Input */
+.importanceInput {
+  width: 50px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  text-align: center;
+}
+
+.importanceInput:focus {
+  outline: none;
+  border-color: var(--accent-memory);
+}
+
+.importanceHigh {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(249, 115, 22, 0.2));
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.importanceMedium {
+  background: rgba(234, 179, 8, 0.15);
+  border-color: rgba(234, 179, 8, 0.4);
+}
+
+/* Tags Cell */
+.tagsCell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 200px;
+}
+
+.tag {
+  background: rgba(168, 85, 247, 0.2);
+  color: var(--accent-memory);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.tagRemove {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.tagRemove:hover {
+  opacity: 1;
+}
+
+.addTagBtn {
+  background: var(--surface-secondary);
+  border: 1px dashed var(--border-hover);
+  color: var(--text-dimmed);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addTagBtn:hover {
+  border-color: var(--accent-memory);
+  color: var(--text-secondary);
+}
+
+/* Project Badge */
+.projectBadge {
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--accent-project);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Date Cell */
+.dateCell {
+  color: var(--text-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* Actions Cell */
+.actionsCell {
+  display: flex;
+  gap: 8px;
+}
+
+.actionBtn {
+  background: none;
+  border: none;
+  color: var(--text-dimmed);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.actionBtn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.actionBtn.delete:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Pagination */
+.tableWrapper :global(.mantine-datatable-pagination) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px !important;
+  border-top: 1px solid var(--border-subtle) !important;
+  background: rgba(30, 41, 59, 0.3) !important;
+  gap: 8px;
+}
+
+.tableWrapper :global(.mantine-datatable-pagination-text) {
+  color: var(--text-secondary) !important;
+  font-size: 13px !important;
+}
+
+.tableWrapper :global(.mantine-datatable-pagination-pages-control) {
+  background: var(--surface-secondary) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 6px !important;
+  color: var(--text-secondary) !important;
+  font-size: 13px !important;
+  transition: all 0.2s;
+}
+
+.tableWrapper :global(.mantine-datatable-pagination-pages-control:hover:not(:disabled)) {
+  background: var(--surface-hover) !important;
+  border-color: var(--border-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+.tableWrapper :global(.mantine-datatable-pagination-pages-control:disabled) {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tableWrapper :global(.mantine-datatable-pagination-pages-control[data-active]) {
+  background: var(--accent-memory) !important;
+  border-color: var(--accent-memory) !important;
+  color: white !important;
+}
+
+.paginationInfo {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Bulk Actions Bar */
 .bulkActions {
   position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 0;
+  left: 260px;
+  right: 0;
   background: var(--surface-primary);
+  border-top: 1px solid var(--border-hover);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 50;
   backdrop-filter: blur(12px);
-  border: 1px solid var(--border-hover);
-  border-radius: 12px;
-  padding: 12px 20px;
-  min-width: 300px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  z-index: 100;
+  transform: translateY(100%);
+  transition: transform 0.3s ease, left 0.3s ease;
+}
+
+.bulkActions.visible {
+  transform: translateY(0);
+}
+
+.selectedCount {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.selectedCount span {
+  color: var(--accent-memory);
+}
+
+.bulkDivider {
+  width: 1px;
+  height: 24px;
+  background: var(--border-subtle);
+}
+
+.bulkBtn {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.bulkBtn:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.bulkBtn.danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+/* Primary Button */
+.btnPrimary {
+  background: var(--accent-memory);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+.btnPrimary:hover {
+  background: #9333ea;
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pageHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pageHeader .title {
+    margin-right: 0;
+  }
+
+  .headerSearch {
+    min-width: 100%;
+  }
+
+  .filterGroup {
+    width: 100%;
+  }
+
+  .bulkActions {
+    left: 0;
+  }
 }

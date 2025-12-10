@@ -2,40 +2,37 @@
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  padding: 6px 16px;
+  padding: 6px 24px;
   background: rgba(234, 179, 8, 0.15);
   border-bottom: 1px solid rgba(234, 179, 8, 0.3);
-  color: #eab308;
-  font-size: 12px;
+  color: #fbbf24;
+  font-size: 13px;
   flex-shrink: 0;
 }
 
 .warningText {
-  color: rgba(255, 255, 255, 0.8);
+  color: #fbbf24;
 }
 
 .warningText strong {
-  color: #eab308;
+  color: #fbbf24;
 }
 
 .closeBtn {
-  position: absolute;
-  right: 12px;
+  margin-left: auto;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 4px;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: #fbbf24;
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 150ms ease;
+  opacity: 0.7;
+  transition: opacity 0.2s;
 }
 
 .closeBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  opacity: 1;
 }
