@@ -1,0 +1,326 @@
+docType: data-spec
+format_version: "0.0.1"
+
+metadata:
+  name: forgetful-ui
+  description_short: "Data model for Forgetful MCP server UI dashboard"
+
+# =============================================================================
+# ENTITIES
+# =============================================================================
+
+entities:
+  memory:
+    label: Memory
+    description: "Atomic knowledge unit following Zettlekasten principles. ONE concept per memory - easily titled, understood at first glance"
+    fields:
+      id:
+        type: integer
+        pk: true
+      title:
+        type: string
+        required: true
+        description: "Concise, scannable title (5-50 words)"
+      content:
+        type: string
+        required: true
+        description: "ONE concept, self-contained (max ~400 words)"
+      context:
+        type: string
+        required: true
+        description: "WHY this matters, HOW it relates to other concepts"
+      keywords:
+        type: json
+        description: "Search terms for semantic discovery (array of strings, max 10)"
+      tags:
+        type: json
+        description: "Categories for grouping memories (array of strings, max 10)"
+      importance:
+        type: integer
+        default: 7
+        description: "1-10 scale. 9-10=foundational, 8-9=critical, 7-8=useful, <6=low priority"
+      is_obsolete:
+        type: boolean
+        default: false
+      obsolete_reason:
+        type: string
+      superseded_by:
+        type: integer
+        description: "ID of memory that supersedes this one"
+      obsoleted_at:
+        type: datetime
+      created_at:
+        type: datetime
+        required: true
+      updated_at:
+        type: datetime
+        required: true
+
+  project:
+    label: Project
+    description: "Organizational container for memories, documents, code artifacts. Enables scoped queries"
+    fields:
+      id:
+        type: integer
+        pk: true
+      name:
+        type: string
+        required: true
+        description: "Short identifier (e.g., 'forgetful', 'speech')"
+      description:
+        type: string
+        required: true
+        description: "Purpose and scope overview"
+      project_type:
+        type: project_type
+        required: true
+      status:
+        type: project_status
+        default: active
+      repo_name:
+        type: string
+        description: "GitHub repository in 'owner/repo' format"
+      notes:
+        type: string
+        description: "Workflow notes, setup instructions"
+      memory_count:
+        type: integer
+        default: 0
+        description: "Computed: number of linked memories"
+      created_at:
+        type: datetime
+        required: true
+      updated_at:
+        type: datetime
+        required: true
+
+  entity:
+    label: Entity
+    description: "Real-world entity: person, organization, team, device. Forms knowledge graph"
+    fields:
+      id:
+        type: integer
+        pk: true
+      name:
+        type: string
+        required: true
+        description: "Searchable identifier"
+      entity_type:
+        type: entity_type
+        required: true
+      custom_type:
+        type: string
+        description: "Required when entity_type is 'Other'"
+      notes:
+        type: string
+        description: "Additional context, bio, description"
+      tags:
+        type: json
+        description: "Tags for categorization (array of strings)"
+      created_at:
+        type: datetime
+        required: true
+      updated_at:
+        type: datetime
+        required: true
+
+  entity_relationship:
+    label: Entity Relationship
+    description: "Directed edge in knowledge graph connecting two entities"
+    fields:
+      id:
+        type: integer
+        pk: true
+      source_entity_id:
+        type: integer
+        required: true
+        description: "Source entity (from)"
+      target_entity_id:
+        type: integer
+        required: true
+        description: "Target entity (to)"
+      relationship_type:
+        type: string
+        required: true
+        description: "Type: 'works_at', 'owns', 'manages', 'part_of', 'reports_to'"
+      strength:
+        type: decimal
+        description: "0.0-1.0 relationship significance"
+      confidence:
+        type: decimal
+        description: "0.0-1.0 certainty about relationship"
+      metadata:
+        type: json
+        description: "Flexible context: source, dates, roles"
+      created_at:
+        type: datetime
+        required: true
+      updated_at:
+        type: datetime
+        required: true
+
+  document:
+    label: Document
+    description: "Long-form content: documentation, reports, meeting notes, analysis"
+    fields:
+      id:
+        type: integer
+        pk: true
+      title:
+        type: string
+        required: true
+      description:
+        type: string
+        required: true
+        description: "Document's purpose and summary"
+      content:
+        type: string
+        required: true
+        description: "Full text content (markdown, text)"
+      document_type:
+        type: string
+        default: "text"
+        description: "Format: 'markdown', 'text', 'report', 'notes'"
+      filename:
+        type: string
+        description: "Original filename if imported"
+      size_bytes:
+        type: integer
+        description: "Auto-calculated from content"
+      tags:
+        type: json
+        description: "Tags for categorization (array of strings)"
+      project_id:
+        type: integer
+      created_at:
+        type: datetime
+        required: true
+      updated_at:
+        type: datetime
+        required: true
+
+  code_artifact:
+    label: Code Artifact
+    description: "Reusable code snippet, pattern, or implementation example"
+    fields:
+      id:
+        type: integer
+        pk: true
+      title:
+        type: string
+        required: true
+        description: "Searchable identifier"
+      description:
+        type: string
+        required: true
+        description: "Purpose and use case"
+      code:
+        type: string
+        required: true
+        description: "Complete code implementation"
+      language:
+        type: string
+        required: true
+        description: "Programming language (lowercase: 'python', 'typescript')"
+      tags:
+        type: json
+        description: "Tags for categorization (array of strings)"
+      project_id:
+        type: integer
+      created_at:
+        type: datetime
+        required: true
+      updated_at:
+        type: datetime
+        required: true
+
+# =============================================================================
+# ENUMS
+# =============================================================================
+
+enums:
+  entity_type:
+    description: "Categories of real-world entities"
+    values:
+      - Organization
+      - Individual
+      - Team
+      - Device
+      - Other
+
+  project_type:
+    description: "Project category for organization"
+    values:
+      - personal
+      - work
+      - learning
+      - development
+      - infrastructure
+      - template
+      - product
+      - marketing
+      - finance
+      - documentation
+      - development-environment
+      - third-party-library
+      - open-source
+
+  project_status:
+    description: "Project lifecycle status"
+    values:
+      - active
+      - archived
+      - completed
+
+# =============================================================================
+# RELATIONS
+# =============================================================================
+
+relations:
+  - entity_a: memory
+    entity_b: project
+    cardinality: many_to_many
+    label: "belongs to"
+    description: "Memory can belong to multiple projects, project has many memories"
+
+  - entity_a: memory
+    entity_b: memory
+    cardinality: many_to_many
+    label: "links to"
+    description: "Memory can link to other related memories (bidirectional knowledge graph)"
+
+  - entity_a: memory
+    entity_b: document
+    cardinality: many_to_many
+    label: "references"
+    description: "Memory can reference multiple documents for detailed context"
+
+  - entity_a: memory
+    entity_b: code_artifact
+    cardinality: many_to_many
+    label: "includes"
+    description: "Memory can link to code examples and implementations"
+
+  - entity_a: entity
+    entity_b: project
+    cardinality: many_to_many
+    label: "associated with"
+    description: "Entity can be associated with multiple projects"
+
+  - entity_a: entity
+    entity_b: entity_relationship
+    cardinality: one_to_many
+    label: "has outgoing"
+    description: "Entity has outgoing relationships to other entities (via source_entity_id)"
+
+  - entity_a: project
+    entity_b: document
+    cardinality: one_to_many
+    label: "contains"
+    description: "Project contains multiple documents (via document.project_id)"
+
+  - entity_a: project
+    entity_b: code_artifact
+    cardinality: one_to_many
+    label: "contains"
+    description: "Project contains multiple code artifacts (via code_artifact.project_id)"

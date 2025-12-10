@@ -1,0 +1,488 @@
+docType: ui-spec
+format_version: "0.0.2"
+
+metadata:
+  name: forgetful-ui
+  description: "Dashboard for Forgetful MCP server. Browse memories, entities, projects, documents, code artifacts. Visualize knowledge graph. Quick inline editing and CRUD operations."
+  theme: "Dark glassmorphism with depth layers, soft glows, and subtle transparency effects"
+  background: "Base slate-950, sidebar slate-900/95, content area with subtle radial gradient (lighter center), graph page pure slate-950"
+  palette:
+    surface-primary: "bg-slate-900/80 backdrop-blur-sm border border-white/5"
+    surface-secondary: "bg-slate-800/60 backdrop-blur-sm border border-white/10"
+    surface-hover: "bg-slate-700/40"
+    accent-memory: "#a855f7 (purple-500) - for memory nodes, badges, active states"
+    accent-entity: "#f59e0b (amber-500) - for entity nodes and badges"
+    accent-document: "#3b82f6 (blue-500) - for document nodes and badges"
+    accent-code-artifact: "#06b6d4 (cyan-500) - for code artifact badges"
+    accent-project: "#22c55e (green-500) - for project badges"
+    text-primary: "white opacity-90"
+    text-secondary: "white opacity-60"
+    text-dimmed: "white opacity-40"
+    border-subtle: "white opacity-5"
+    border-hover: "white opacity-10"
+    interactive-hover: "Background lighten + subtle glow in accent color"
+    glow-selected: "0 0 20px accent-color with opacity 0.4"
+    importance-high: "linear-gradient(135deg, #ef4444, #f97316) for 9-10"
+    importance-medium: "#eab308 for 7-8"
+    importance-low: "#6b7280 for below 7"
+
+# =============================================================================
+# TEMPLATES
+# =============================================================================
+
+templates:
+  main_layout:
+    purpose: "Three-column layout with collapsible sidebar, main content area, and slide-in detail panel"
+    regions:
+      - id: sidebar
+        type: static
+        position: left
+        fullHeight: true
+        width: "240px (collapsed: 64px)"
+        purpose: "Left sidebar (bg-slate-900/95 with border-right border-subtle). Fixed position, full height. Flex column layout with nav items taking available space, collapse toggle at bottom"
+        blocks:
+          - id: logo
+            type: logo
+            purpose: "Forgetful logo: brain/network icon (gradient purple-pink), 'Forgetful' text. Click navigates to dashboard"
+          - id: global_search
+            type: custom
+            purpose: "Search input below logo: search icon, placeholder 'Search memories, entities... (Ctrl+K)', glass surface background. Opens search results overlay on focus"
+          - id: nav
+            type: main_navigation
+            purpose: "Vertical navigation list with icons and labels. Items: Dashboard (grid icon), Memories (brain icon), Entities (cube icon), Projects (folder icon), Documents (file icon), Code Artifacts (code brackets icon), Graph (network icon). Active item: accent background glow, white text. Inactive: text-secondary. Hover: subtle highlight"
+          - id: collapse_toggle
+            purpose: "Bottom of sidebar: 'Collapse' text with chevron icon. Click collapses sidebar to icon-only mode"
+      - id: content
+        type: content
+        position: center
+        purpose: "Main content area (flex-1, overflow-y-auto). Padding 24px. Background subtle radial gradient from center. Contains page-specific content. Scrollable independently"
+      - id: detail_panel
+        type: static
+        position: right
+        fullHeight: true
+        purpose: "Slide-in quick edit panel (380px width, glass surface bg-slate-900/80 with subtle border-left). Hidden by default, appears when item selected from list/graph. Scroll vertical if content overflows"
+        blocks:
+          - id: detail_header
+            purpose: "Header section (padding 20px): Type badge (small rounded pill, colored by type - purple for Memory, amber for Entity, etc.), title below badge (h2, white, inline editable - shows cursor on hover), close X button top-right corner (text-secondary, hover white)"
+          - id: detail_quick_edit
+            purpose: "Section with label 'Quick edit' (text-secondary, small caps). Contains form fields with labels in text-dimmed: Importance (horizontal slider 1-10 with value display, track in surface-secondary, thumb in accent-memory), Tags (horizontal row of tag pills with x buttons, input to add new), Associated projects (horizontal row of project pills, + button to add). All fields auto-save on change"
+          - id: detail_content_preview
+            purpose: "Section with label 'Content preview' (text-secondary). Shows content text (text-primary, max 4 lines) with 'Show more' link below (text-secondary underline on hover) if content truncated"
+          - id: detail_related_items
+            purpose: "Section with label 'Related Items' (text-secondary). List of linked items, each row: colored dot (by type), item title (text-primary, clickable), 'Unlink' text button on right (text-dimmed, hover text-secondary). Shows up to 5 items with 'Show all N' link if more"
+          - id: detail_footer
+            purpose: "Footer section (border-top border-subtle, padding 16px): Left side shows 'ID: N' and 'Created: date' in text-dimmed small text. Right side has action buttons row"
+          - id: detail_actions
+            purpose: "Action buttons (right-aligned): 'Delete' button (text-dimmed, hover red), 'View in Graph' button (ghost style, border-subtle), 'Edit Full' primary button (accent background with glow)"
+
+default_template: main_layout
+
+# =============================================================================
+# NAVIGATION
+# =============================================================================
+
+navigation:
+  items:
+    - id: dashboard
+      label: Dashboard
+      target: dashboard
+    - id: memories
+      label: Memories
+      target: memories
+    - id: entities
+      label: Entities
+      target: entities
+    - id: projects
+      label: Projects
+      target: projects
+    - id: documents
+      label: Documents
+      target: documents
+    - id: code_artifacts
+      label: Code Artifacts
+      target: code_artifacts
+    - id: graph
+      label: Graph
+      target: graph
+
+# =============================================================================
+# SCREEN GROUPS
+# =============================================================================
+
+screen_groups:
+  - id: overview
+    screens: [dashboard, graph]
+  - id: data_management
+    screens: [memories, memory_detail, entities, entity_detail, projects, project_detail, documents, document_detail, code_artifacts, code_artifact_detail]
+  - id: overlays
+    screens: [search_results, item_editor]
+
+# =============================================================================
+# SCREENS
+# =============================================================================
+
+screens:
+  # ---------------------------------------------------------------------------
+  # DASHBOARD
+  # ---------------------------------------------------------------------------
+  dashboard:
+    title: Dashboard
+    purpose: "Overview of all data with quick stats and recent items"
+    blocks:
+      - id: stats_row
+        columns: 12
+        purpose: "Row of stat cards showing counts: Memories, Entities, Projects, Documents, Code Artifacts. Each card clickable - navigates to respective list"
+        blocks:
+          - id: stat_memories
+            columns: 2
+            purpose: "Stat card: memory icon, count, label 'Memories'. Click -> memories list"
+          - id: stat_entities
+            columns: 2
+            purpose: "Stat card: entity icon, count, label 'Entities'. Click -> entities list"
+          - id: stat_projects
+            columns: 2
+            purpose: "Stat card: project icon, count, label 'Projects'. Click -> projects list"
+          - id: stat_documents
+            columns: 2
+            purpose: "Stat card: document icon, count, label 'Documents'. Click -> documents list"
+          - id: stat_code_artifacts
+            columns: 2
+            purpose: "Stat card: code icon, count, label 'Code Artifacts'. Click -> code artifacts list"
+          - id: stat_graph
+            columns: 2
+            purpose: "Stat card: graph icon, total relations count, label 'Relations'. Click -> graph view"
+      - id: recent_memories
+        columns: 8
+        purpose: "Recent memories list (last 10). Each row: title, importance badge (color-coded), tags, project badge, updated_at. Row click -> memory detail. Header has 'View All' link"
+      - id: quick_actions
+        columns: 4
+        purpose: "Quick actions panel"
+        blocks:
+          - id: global_search
+            purpose: "Search input with dropdown: searches across all entity types. Results grouped by type. Enter or click -> respective detail"
+          - id: create_buttons
+            purpose: "Quick create buttons grid (2x3): New Memory, New Entity, New Project, New Document, New Code Artifact, View Graph. Each opens respective create modal or navigates"
+          - id: high_importance
+            purpose: "High importance memories (importance >= 9). Shows count badge. Click expands to show list of top 5 titles. Click title -> memory detail"
+
+  # ---------------------------------------------------------------------------
+  # MEMORIES
+  # ---------------------------------------------------------------------------
+  memories:
+    title: Memories
+    purpose: "List all memories with search, filters, and inline quick actions"
+    blocks:
+      - id: header
+        columns: 12
+        purpose: "Page header with title 'Memories', search input (searches title, content, keywords), filter dropdowns (importance, tags, project, obsolete status), 'Create Memory' button"
+      - id: memories_table
+        columns: 12
+        purpose: "Data table with columns: checkbox, title, importance (editable inline - number input), tags (editable inline - tag input), project (badge), updated_at, actions (delete, mark obsolete). Row click -> opens quick edit drawer. Double-click title -> full detail page. Sortable columns. Pagination footer. Multi-select for bulk actions"
+      - id: bulk_actions_bar
+        columns: 12
+        purpose: "Sticky bottom bar (appears when items selected): selected count, bulk actions: Delete, Mark Obsolete, Add to Project, Remove from Project"
+
+  memory_detail:
+    title: Memory Detail
+    purpose: "Full page for complex memory editing. Use when drawer is insufficient: long content, managing many links, viewing full context. Accessible via double-click or 'Open Full Page' from drawer"
+    blocks:
+      - id: breadcrumb
+        columns: 12
+        purpose: "Breadcrumb: Memories > [Memory Title]"
+      - id: header
+        columns: 12
+        purpose: "Header row: title (h1, editable inline on click), importance badge (editable), obsolete badge if applicable, actions: Save, Delete, Mark Obsolete"
+      - id: main_content
+        columns: 8
+        purpose: "Main content area"
+        blocks:
+          - id: content_field
+            purpose: "Content field: label, markdown-rendered content. Edit button switches to textarea. Auto-save on blur"
+          - id: context_field
+            purpose: "Context field: label, text content. Edit button switches to textarea"
+          - id: keywords_field
+            purpose: "Keywords: horizontal tag list, editable. Click tag to search, x to remove, input to add"
+          - id: tags_field
+            purpose: "Tags: horizontal colored tag list, editable. Same interaction as keywords"
+      - id: sidebar
+        columns: 4
+        purpose: "Sidebar with metadata and relations"
+        blocks:
+          - id: metadata_card
+            purpose: "Metadata card: created_at, updated_at, ID. Read-only"
+          - id: projects_card
+            purpose: "Linked projects list. Each item clickable -> project detail. Add/remove buttons"
+          - id: linked_memories_card
+            purpose: "Linked memories list. Each item: title, importance. Click -> memory detail. Add link button opens search modal"
+          - id: documents_card
+            purpose: "Linked documents list. Click -> document detail. Add link button"
+          - id: code_artifacts_card
+            purpose: "Linked code artifacts. Click -> artifact detail. Add link button"
+
+  # ---------------------------------------------------------------------------
+  # ENTITIES
+  # ---------------------------------------------------------------------------
+  entities:
+    title: Entities
+    purpose: "List all entities (people, organizations, teams, devices) with filters"
+    blocks:
+      - id: header
+        columns: 12
+        purpose: "Page header: title 'Entities', search input, filter by entity_type dropdown, filter by tags, 'Create Entity' button"
+      - id: entities_table
+        columns: 12
+        purpose: "Data table: checkbox, name, entity_type (badge, filterable), custom_type (if Other), tags (inline editable), projects count, updated_at, actions (delete). Row click -> opens quick edit drawer. Double-click -> full detail page"
+      - id: bulk_actions_bar
+        columns: 12
+        purpose: "Bulk actions when selected: Delete, Add to Project"
+
+  entity_detail:
+    title: Entity Detail
+    purpose: "Full page for complex entity editing. Shows full relationship graph, all incoming/outgoing connections. Use for relationship management"
+    blocks:
+      - id: breadcrumb
+        columns: 12
+        purpose: "Breadcrumb: Entities > [Entity Name]"
+      - id: header
+        columns: 12
+        purpose: "Header: name (h1, editable), entity_type badge (editable dropdown), actions: Save, Delete"
+      - id: main_content
+        columns: 8
+        purpose: "Main content"
+        blocks:
+          - id: notes_field
+            purpose: "Notes textarea, markdown rendered. Edit mode on click"
+          - id: tags_field
+            purpose: "Tags list, inline editable"
+          - id: relationships_section
+            purpose: "Relationships section"
+            blocks:
+              - id: outgoing_relationships
+                purpose: "Outgoing relationships table: target entity (link), relationship_type, strength (progress bar), confidence, actions (edit, delete). 'Add Relationship' button"
+              - id: incoming_relationships
+                purpose: "Incoming relationships table: source entity (link), relationship_type, strength, confidence. Read-only (edit from source)"
+      - id: sidebar
+        columns: 4
+        purpose: "Sidebar"
+        blocks:
+          - id: metadata_card
+            purpose: "Metadata: ID, created_at, updated_at"
+          - id: projects_card
+            purpose: "Linked projects. Add/remove"
+          - id: mini_graph
+            purpose: "Mini graph visualization showing this entity and direct relationships. Click expands to full graph filtered by this entity"
+
+  # ---------------------------------------------------------------------------
+  # PROJECTS
+  # ---------------------------------------------------------------------------
+  projects:
+    title: Projects
+    purpose: "List all projects with status filters"
+    blocks:
+      - id: header
+        columns: 12
+        purpose: "Page header: title 'Projects', search, filter by status (active/archived/completed), filter by project_type, 'Create Project' button"
+      - id: projects_grid
+        columns: 12
+        purpose: "Card grid (3 columns). Each card: name, project_type badge, status badge (editable on click), description (truncated), memory_count, repo_name link (if set). Card click -> opens quick edit drawer. 'Open' button -> full detail page. Hover shows quick actions (archive, delete)"
+
+  project_detail:
+    title: Project Detail
+    purpose: "Full page for project management. Shows all linked content (memories, documents, artifacts, entities) in tabs. Use for bulk linking/unlinking operations"
+    blocks:
+      - id: breadcrumb
+        columns: 12
+        purpose: "Breadcrumb: Projects > [Project Name]"
+      - id: header
+        columns: 12
+        purpose: "Header: name (h1, editable), project_type badge (editable), status badge (editable dropdown), repo link button (if set), actions: Save, Delete, Archive"
+      - id: main_content
+        columns: 8
+        purpose: "Main content"
+        blocks:
+          - id: description_field
+            purpose: "Description field, markdown rendered, editable"
+          - id: notes_field
+            purpose: "Notes field, markdown rendered, editable"
+          - id: tabs_section
+            purpose: "Tabs for linked content: Memories | Documents | Code Artifacts | Entities"
+            blocks:
+              - id: tab_memories
+                purpose: "Tab content: memories table (simplified). Link/unlink actions"
+              - id: tab_documents
+                purpose: "Tab content: documents table. Link/unlink actions"
+              - id: tab_code_artifacts
+                purpose: "Tab content: code artifacts table. Link/unlink actions"
+              - id: tab_entities
+                purpose: "Tab content: entities table. Link/unlink actions"
+      - id: sidebar
+        columns: 4
+        purpose: "Sidebar"
+        blocks:
+          - id: metadata_card
+            purpose: "Metadata: ID, created_at, updated_at, memory_count"
+          - id: repo_card
+            purpose: "Repository info if repo_name set. Link to GitHub"
+          - id: stats_card
+            purpose: "Quick stats: memories count, documents count, code artifacts count, entities count"
+
+  # ---------------------------------------------------------------------------
+  # DOCUMENTS
+  # ---------------------------------------------------------------------------
+  documents:
+    title: Documents
+    purpose: "List all documents with type filters"
+    blocks:
+      - id: header
+        columns: 12
+        purpose: "Page header: title 'Documents', search, filter by document_type, filter by project, filter by tags, 'Create Document' button"
+      - id: documents_table
+        columns: 12
+        purpose: "Data table: checkbox, title, document_type badge, description (truncated), size_bytes (formatted), project (badge), tags, updated_at, actions (delete). Row click -> opens quick edit drawer. Double-click -> full detail page with content editor"
+
+  document_detail:
+    title: Document Detail
+    purpose: "Full page document editor. Full-height content editor with markdown preview, side-by-side editing mode. Use for long documents"
+    blocks:
+      - id: breadcrumb
+        columns: 12
+        purpose: "Breadcrumb: Documents > [Document Title]"
+      - id: header
+        columns: 12
+        purpose: "Header: title (h1, editable), document_type badge (editable), actions: Save, Delete, Download"
+      - id: main_content
+        columns: 8
+        purpose: "Main content"
+        blocks:
+          - id: description_field
+            purpose: "Description textarea, editable"
+          - id: content_field
+            purpose: "Content area: markdown rendered view with toggle to edit mode (code editor with syntax highlighting)"
+          - id: tags_field
+            purpose: "Tags, inline editable"
+      - id: sidebar
+        columns: 4
+        purpose: "Sidebar"
+        blocks:
+          - id: metadata_card
+            purpose: "Metadata: ID, filename, size_bytes, created_at, updated_at"
+          - id: project_card
+            purpose: "Linked project (single). Change project dropdown"
+          - id: linked_memories_card
+            purpose: "Memories that reference this document. Each clickable"
+
+  # ---------------------------------------------------------------------------
+  # CODE ARTIFACTS
+  # ---------------------------------------------------------------------------
+  code_artifacts:
+    title: Code Artifacts
+    purpose: "List all code artifacts with language filters"
+    blocks:
+      - id: header
+        columns: 12
+        purpose: "Page header: title 'Code Artifacts', search, filter by language dropdown, filter by project, filter by tags, 'Create Code Artifact' button"
+      - id: artifacts_table
+        columns: 12
+        purpose: "Data table: checkbox, title, language badge (colored by language), description (truncated), project (badge), tags, updated_at, actions (copy code, delete). Row click -> opens quick edit drawer with code preview. Double-click -> full detail page with code editor"
+
+  code_artifact_detail:
+    title: Code Artifact Detail
+    purpose: "Full page code editor. Full-height monaco-style editor with syntax highlighting, line numbers, minimap. Use for complex code editing"
+    blocks:
+      - id: breadcrumb
+        columns: 12
+        purpose: "Breadcrumb: Code Artifacts > [Artifact Title]"
+      - id: header
+        columns: 12
+        purpose: "Header: title (h1, editable), language badge (editable dropdown), actions: Save, Delete, Copy Code"
+      - id: main_content
+        columns: 8
+        purpose: "Main content"
+        blocks:
+          - id: description_field
+            purpose: "Description textarea, editable"
+          - id: code_field
+            purpose: "Code editor with syntax highlighting based on language. Line numbers. Copy button. Full-screen toggle"
+          - id: tags_field
+            purpose: "Tags, inline editable"
+      - id: sidebar
+        columns: 4
+        purpose: "Sidebar"
+        blocks:
+          - id: metadata_card
+            purpose: "Metadata: ID, language, created_at, updated_at"
+          - id: project_card
+            purpose: "Linked project. Change project dropdown"
+          - id: linked_memories_card
+            purpose: "Memories that reference this artifact"
+
+  # ---------------------------------------------------------------------------
+  # GRAPH
+  # ---------------------------------------------------------------------------
+  graph:
+    title: Knowledge Graph
+    purpose: "Interactive force-directed graph visualization of all knowledge base items. Full viewport canvas with floating controls. Dark background (slate-950) with subtle radial gradient center"
+    container_max_width: "100%"
+    blocks:
+      - id: toolbar
+        columns: 12
+        purpose: "Floating toolbar (top-center, glass surface pill shape bg-slate-800/60 with border-subtle, horizontal layout, gap-2 padding-8). Icon-only controls with tooltips: zoom-in icon, zoom-out icon, fit-to-view icon | separator | force-layout icon (active), hierarchical-layout icon, radial-layout icon | separator | filter icons for each node type (colored when active): brain (purple), cube (amber), file (blue), code (cyan), folder (green) | separator | search icon (expands to input on click), export icon (dropdown: PNG, SVG), fullscreen toggle icon. Icons are 20px, text-secondary, hover white"
+      - id: graph_canvas
+        columns: 12
+        purpose: "Full-height canvas (calc 100vh - toolbar). Nodes: circles with gradient fill matching type color, white icon silhouette center (brain/cube/file/code/folder), subtle drop shadow. Size varies by importance (24-48px). Selected node: bright glow ring in type color. Connected nodes on selection: subtle glow. Edges: curved lines, thickness 1-4px based on relationship strength, color white with opacity 0.2-0.4. Hover node: tooltip glass pill with title and type badge. Click: select and open detail_panel. Double-click: zoom and center. Drag: rearrange. Pan: click-drag background. Zoom: scroll wheel"
+        blocks:
+          - id: graph_legend
+            purpose: "Floating panel (bottom-left, 16px margin, glass surface bg-slate-800/70, rounded-lg, padding 16px, min-width 180px). Header 'Node Types' (text-secondary, small, margin-bottom 12px). List of type indicators, each row: colored circle (10px, filled with type accent color), label text (text-primary, 14px). Items: Memory (purple), Entities (amber), Documents (blue), Code Artifacts (cyan), Projects (green). Divider line below. Footer section: 'Edge Thickness' label (text-secondary), '= Relationship Strength' (text-dimmed)"
+          - id: graph_minimap
+            purpose: "Floating panel (bottom-right, 16px margin, glass surface bg-slate-800/70, rounded-lg, 160x120px). Contains miniature graph preview (nodes as tiny dots in type colors, edges as thin lines). White rectangle outline shows current viewport. Click anywhere to pan main view to that location. Subtle border"
+      - id: empty_state
+        columns: 12
+        purpose: "Centered overlay when no data: abstract brain/network line illustration (purple-pink gradient strokes), 'Your knowledge graph is empty' heading (text-primary, h2), 'Create memories and entities to see connections' subtext (text-secondary), 'Create First Memory' primary button (accent-memory glow), 'Import Data' ghost button below"
+
+  # ---------------------------------------------------------------------------
+  # SEARCH RESULTS (overlay)
+  # ---------------------------------------------------------------------------
+  search_results:
+    title: Search Results
+    purpose: "Unified search results overlay showing matches across all types. Semantic search with relevance scoring. Results grouped by type with expandable sections"
+    blocks:
+      - id: search_header
+        columns: 12
+        purpose: "Search query display in large text, result count badge, search mode indicator (semantic/keyword toggle), 'Clear' button"
+      - id: search_filters
+        columns: 12
+        purpose: "Filter chips row: type toggles (memories/entities/documents/code_artifacts/projects), date range picker, project scope dropdown"
+      - id: search_results_list
+        columns: 12
+        purpose: "Grouped results sections, each collapsible"
+        blocks:
+          - id: memories_results
+            purpose: "Memories section: header with count, collapsible. Each result: relevance score bar (accent-memory), title with highlighted matches, content preview with highlighted terms, importance badge, tags. Click selects. Shows top 5 by default, 'Show all N results' link"
+          - id: entities_results
+            purpose: "Entities section: same pattern, accent-entity color"
+          - id: documents_results
+            purpose: "Documents section: same pattern, accent-document color"
+          - id: code_artifacts_results
+            purpose: "Code artifacts section: same pattern, accent-code-artifact color"
+          - id: projects_results
+            purpose: "Projects section: same pattern, accent-project color"
+
+  # ---------------------------------------------------------------------------
+  # EDITOR MODAL
+  # ---------------------------------------------------------------------------
+  item_editor:
+    title: Editor
+    purpose: "Modal dialog for creating/editing memories, entities, documents, code artifacts. Form adapts to item type. Includes preview and link suggestions"
+    blocks:
+      - id: editor_modal
+        columns: 12
+        purpose: "Modal dialog 'Create/Edit Item' (centered overlay, 700px wide, glass surface). Header with type selector tabs (Memory/Entity/Document/Code Artifact), item title if editing, close button (X)"
+        blocks:
+          - id: editor_form
+            purpose: "Dynamic form based on selected type. Memory: title input, content textarea (markdown), context textarea, importance slider (1-10 with color preview), keywords input (tag-style), tags input (autocomplete), project multi-select. Entity: name, type dropdown, custom_type (if Other), notes textarea, tags. Document: title, description, content textarea (large with markdown preview toggle), document_type, tags, project select. Code Artifact: title, description, language dropdown with syntax preview, code editor (monaco-style), tags, project select"
+          - id: editor_links
+            purpose: "Link suggestions panel (collapsible): 'Suggested links' based on content similarity, list of candidates with checkbox to accept each, shows similarity score percentage, 'Refresh suggestions' button"
+          - id: editor_preview
+            purpose: "Live preview tab: rendered markdown, tags displayed as chips, importance badge with color, type badge"
+          - id: editor_actions
+            purpose: "Footer (sticky): Cancel button (ghost style), Save button (primary, accent glow), 'Save & Create Another' checkbox for batch creation"
