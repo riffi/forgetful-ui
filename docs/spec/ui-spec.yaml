@@ -56,6 +56,10 @@ templates:
         type: content
         position: center
         purpose: "Main content area (flex-1, overflow-y-auto). Padding 24px. Background subtle radial gradient from center. Contains page-specific content. Scrollable independently"
+        blocks:
+          - id: auth_warning
+            type: custom
+            purpose: "Thin info bar at top of content area (not over sidebar). Appears when server running without authentication. Yellow/amber semi-transparent background (rgba(234, 179, 8, 0.15)), border-bottom in same color. Contains: warning icon (14px), text 'Auth disabled — Server running without authentication', close X button on right. Dismissible (state persists in session). Height ~28px. Does not overlap content - pushes content down via flex layout."
       - id: detail_panel
         type: static
         position: right

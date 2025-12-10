@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Alert, CloseButton, Group, Text } from '@mantine/core'
-import { IconAlertTriangle } from '@tabler/icons-react'
+import { IconAlertTriangle, IconX } from '@tabler/icons-react'
 import { useAuth } from '@/context/AuthContext'
 import classes from './AuthWarning.module.css'
 
@@ -13,23 +12,18 @@ export function AuthWarning() {
   }
 
   return (
-    <Alert
-      className={classes.warning}
-      icon={<IconAlertTriangle size={20} />}
-      color="yellow"
-      variant="filled"
-    >
-      <Group justify="space-between" wrap="nowrap">
-        <Text size="sm">
-          <strong>Authorization disabled.</strong> Server is running without authentication.
-          This may be unsafe in production.
-        </Text>
-        <CloseButton
-          onClick={() => setDismissed(true)}
-          variant="transparent"
-          c="yellow.9"
-        />
-      </Group>
-    </Alert>
+    <div className={classes.warningBar}>
+      <IconAlertTriangle size={14} />
+      <span className={classes.warningText}>
+        <strong>Auth disabled</strong> — Server running without authentication
+      </span>
+      <button
+        className={classes.closeBtn}
+        onClick={() => setDismissed(true)}
+        aria-label="Dismiss"
+      >
+        <IconX size={14} />
+      </button>
+    </div>
   )
 }

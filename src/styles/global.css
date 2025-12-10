@@ -1,4 +1,11 @@
-/* Global styles for Forgetful UI */
+/* Global styles for Forgetful UI - Based on reference design */
+
+/* === Reset & Base === */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 :root {
   font-synthesis: none;
@@ -7,7 +14,9 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -16,25 +25,316 @@ html, body, #root {
 body {
   background: var(--bg-base);
   color: var(--text-primary);
+  overflow: hidden;
 }
 
-/* Glassmorphism surfaces */
+/* === Main Content Background with Gradient === */
+.main-content-bg {
+  background: radial-gradient(
+      ellipse at center,
+      rgba(30, 41, 59, 0.3) 0%,
+      transparent 70%
+    ),
+    var(--bg-base);
+}
+
+/* === Glassmorphism Surfaces === */
 .glass-surface {
   background: var(--surface-primary);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border-subtle);
+  border-radius: 16px;
 }
 
 .glass-surface-secondary {
   background: var(--surface-secondary);
   backdrop-filter: blur(8px);
-  border: 1px solid var(--border-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
+.glass-surface:hover {
+  border-color: var(--border-hover);
+}
+
+/* === Stat Card Icon Backgrounds === */
+.stat-icon-memory {
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.3),
+    rgba(168, 85, 247, 0.1)
+  );
+  box-shadow: var(--glow-memory);
+}
+
+.stat-icon-entity {
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.3),
+    rgba(245, 158, 11, 0.1)
+  );
+  box-shadow: var(--glow-entity);
+}
+
+.stat-icon-project {
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.3),
+    rgba(34, 197, 94, 0.1)
+  );
+  box-shadow: var(--glow-project);
+}
+
+.stat-icon-document {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.3),
+    rgba(59, 130, 246, 0.1)
+  );
+  box-shadow: var(--glow-document);
+}
+
+.stat-icon-code {
+  background: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.3),
+    rgba(6, 182, 212, 0.1)
+  );
+  box-shadow: var(--glow-code);
+}
+
+.stat-icon-graph {
+  background: linear-gradient(
+    135deg,
+    rgba(236, 72, 153, 0.3),
+    rgba(236, 72, 153, 0.1)
+  );
+  box-shadow: var(--glow-graph);
+}
+
+/* === Importance Badges === */
+.importance-high {
+  background: var(--importance-high);
+  color: white;
+}
+
+.importance-medium {
+  background: rgba(234, 179, 8, 0.2);
+  color: var(--importance-medium);
+}
+
+.importance-low {
+  background: rgba(107, 114, 128, 0.2);
+  color: var(--importance-low);
+}
+
+/* === Navigation Active State === */
+.nav-active {
+  background: rgba(168, 85, 247, 0.15);
+  color: white;
+  box-shadow: var(--glow-memory);
+}
+
+/* === Interactive Hover Effects === */
+.hover-lift {
+  transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-hover);
+}
+
+.hover-glow-memory:hover {
+  border-color: var(--accent-memory);
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
+}
+
+.hover-glow-entity:hover {
+  border-color: var(--accent-entity);
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+}
+
+.hover-glow-project:hover {
+  border-color: var(--accent-project);
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.15);
+}
+
+.hover-glow-document:hover {
+  border-color: var(--accent-document);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+}
+
+.hover-glow-code:hover {
+  border-color: var(--accent-code);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+}
+
+.hover-glow-graph:hover {
+  border-color: var(--accent-graph);
+  box-shadow: 0 0 15px rgba(236, 72, 153, 0.15);
+}
+
+/* === Tags === */
+.tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+}
+
+.project-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-project);
+}
+
+/* === Type Badges === */
+.type-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.type-badge-memory {
+  background: rgba(168, 85, 247, 0.2);
+  color: var(--accent-memory);
+}
+
+.type-badge-entity {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--accent-entity);
+}
+
+.type-badge-project {
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--accent-project);
+}
+
+.type-badge-document {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--accent-document);
+}
+
+.type-badge-code {
+  background: rgba(6, 182, 212, 0.2);
+  color: var(--accent-code);
+}
+
+/* === Related Item Dots === */
+.related-dot {
   width: 8px;
   height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.related-dot-memory {
+  background: var(--accent-memory);
+}
+
+.related-dot-entity {
+  background: var(--accent-entity);
+}
+
+.related-dot-project {
+  background: var(--accent-project);
+}
+
+.related-dot-document {
+  background: var(--accent-document);
+}
+
+.related-dot-code {
+  background: var(--accent-code);
+}
+
+/* === Buttons === */
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.btn-ghost:hover {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.btn-primary {
+  background: var(--accent-memory);
+  color: white;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #9333ea;
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.4);
+}
+
+/* === Search Box === */
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 10px 14px;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.search-box:focus-within {
+  border-color: var(--accent-memory);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+}
+
+.search-shortcut {
+  font-size: 11px;
+  color: var(--text-dimmed);
+  background: var(--surface-hover);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* === Logo Gradient === */
+.logo-gradient {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo-icon-gradient {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+/* === High Importance Dot === */
+.hi-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  flex-shrink: 0;
+}
+
+/* === Custom Scrollbar === */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -42,15 +342,205 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  background: var(--surface-hover);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
 
-/* Selection */
+/* === Selection === */
 ::selection {
   background: rgba(168, 85, 247, 0.3);
+}
+
+/* === Mantine Component Overrides === */
+
+/* AppShell - fix height constraints */
+.mantine-AppShell-root {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+}
+
+.mantine-AppShell-main {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  min-height: unset !important;
+  overflow: hidden !important;
+}
+
+.mantine-AppShell-navbar {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  min-height: unset !important;
+}
+
+/* Paper component - glassmorphism by default */
+.mantine-Paper-root {
+  background: var(--surface-primary) !important;
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+}
+
+/* DataTable styling */
+.mantine-datatable {
+  background: transparent !important;
+}
+
+.mantine-datatable-header {
+  background: var(--surface-secondary) !important;
+}
+
+.mantine-datatable-header-cell {
+  color: var(--text-secondary) !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  font-size: 11px !important;
+  letter-spacing: 0.5px !important;
+}
+
+.mantine-datatable-row {
+  border-bottom: 1px solid var(--border-subtle) !important;
+  transition: all 0.2s ease !important;
+}
+
+.mantine-datatable-row:hover {
+  background: var(--surface-hover) !important;
+}
+
+/* Input styling */
+.mantine-TextInput-input,
+.mantine-Textarea-input,
+.mantine-Select-input,
+.mantine-MultiSelect-input {
+  background: var(--surface-secondary) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+.mantine-TextInput-input:focus,
+.mantine-Textarea-input:focus,
+.mantine-Select-input:focus,
+.mantine-MultiSelect-input:focus {
+  border-color: var(--accent-memory) !important;
+}
+
+.mantine-TextInput-input::placeholder,
+.mantine-Textarea-input::placeholder {
+  color: var(--text-dimmed) !important;
+}
+
+/* Modal styling */
+.mantine-Modal-content {
+  background: var(--surface-primary) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+
+.mantine-Modal-header {
+  background: transparent !important;
+}
+
+/* Menu dropdown styling */
+.mantine-Menu-dropdown {
+  background: var(--surface-primary) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+
+.mantine-Menu-item:hover {
+  background: var(--surface-hover) !important;
+}
+
+/* Slider styling */
+.mantine-Slider-track {
+  background: var(--surface-secondary) !important;
+}
+
+.mantine-Slider-thumb {
+  background: var(--accent-memory) !important;
+  border-color: var(--accent-memory) !important;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.4) !important;
+}
+
+/* Badge refinements */
+.mantine-Badge-root {
+  font-weight: 600;
+}
+
+/* Breadcrumb styling */
+.mantine-Breadcrumbs-separator {
+  color: var(--text-dimmed) !important;
+}
+
+/* Tooltip styling */
+.mantine-Tooltip-tooltip {
+  background: var(--surface-primary) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Skeleton styling */
+.mantine-Skeleton-root::before {
+  background: var(--surface-secondary) !important;
+}
+
+.mantine-Skeleton-root::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--surface-hover),
+    transparent
+  ) !important;
+}
+
+/* === Animations === */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease;
+}
+
+/* === Responsive === */
+@media (max-width: 1200px) {
+  .stats-grid-6 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (max-width: 992px) {
+  .main-grid-2-1 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid-6 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
 }

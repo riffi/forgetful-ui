@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { Stack, Text, UnstyledButton, Tooltip } from '@mantine/core'
+import { Tooltip } from '@mantine/core'
 import {
   IconLayoutDashboard,
   IconBrain,
@@ -10,6 +10,7 @@ import {
   IconShare3,
   IconChevronLeft,
   IconChevronRight,
+  IconSearch,
 } from '@tabler/icons-react'
 import classes from './Sidebar.module.css'
 
@@ -36,54 +37,65 @@ export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
       {/* Logo */}
       <div className={classes.logo}>
         <div className={classes.logoIcon}>
-          <IconBrain size={28} stroke={1.5} />
+          <IconBrain size={22} stroke={1.5} />
         </div>
-        {!collapsed && <Text className={classes.logoText}>Forgetful</Text>}
+        {!collapsed && <span className={classes.logoText}>Forgetful</span>}
       </div>
+
+      {/* Quick Search */}
+      {!collapsed && (
+        <div className={classes.searchBox}>
+          <IconSearch size={18} className={classes.searchIcon} />
+          <span className={classes.searchText}>Quick search...</span>
+          <kbd className={classes.searchKbd}>⌘K</kbd>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className={classes.nav}>
-        <Stack gap={4}>
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path
-            const Icon = item.icon
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path
+          const Icon = item.icon
 
-            const button = (
-              <NavLink to={item.path} className={classes.navLinkWrapper} key={item.path}>
-                <UnstyledButton
-                  className={classes.navItem}
-                  data-active={isActive || undefined}
-                >
-                  <Icon size={20} stroke={1.5} />
-                  {!collapsed && <span>{item.label}</span>}
-                </UnstyledButton>
-              </NavLink>
+          const navLink = (
+            <NavLink
+              to={item.path}
+              className={classes.navLinkWrapper}
+              key={item.path}
+            >
+              <div
+                className={classes.navItem}
+                data-active={isActive || undefined}
+              >
+                <Icon size={20} stroke={1.5} />
+                {!collapsed && <span className={classes.navLabel}>{item.label}</span>}
+              </div>
+            </NavLink>
+          )
+
+          if (collapsed) {
+            return (
+              <Tooltip label={item.label} position="right" key={item.path}>
+                {navLink}
+              </Tooltip>
             )
+          }
 
-            if (collapsed) {
-              return (
-                <Tooltip label={item.label} position="right" key={item.path}>
-                  {button}
-                </Tooltip>
-              )
-            }
-
-            return button
-          })}
-        </Stack>
+          return navLink
+        })}
       </nav>
 
       {/* Collapse toggle */}
-      <UnstyledButton className={classes.collapseToggle} onClick={onToggleCollapse}>
+      <button className={classes.collapseToggle} onClick={onToggleCollapse}>
         {collapsed ? (
           <IconChevronRight size={18} stroke={1.5} />
         ) : (
           <>
             <IconChevronLeft size={18} stroke={1.5} />
-            <span>Collapse</span>
+            <span className={classes.collapseText}>Collapse</span>
           </>
         )}
-      </UnstyledButton>
+      </button>
     </div>
   )
 }

@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forgetful Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --accent-memory: #a855f7;
+            --accent-entity: #f59e0b;
+            --accent-document: #3b82f6;
+            --accent-code: #06b6d4;
+            --accent-project: #22c55e;
+            --accent-graph: #ec4899;
+            --text-primary: rgba(255, 255, 255, 0.9);
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --text-dimmed: rgba(255, 255, 255, 0.4);
+            --border-subtle: rgba(255, 255, 255, 0.05);
+            --border-hover: rgba(255, 255, 255, 0.1);
+            --surface-primary: rgba(15, 23, 42, 0.8);
+            --surface-secondary: rgba(30, 41, 59, 0.6);
+            --surface-hover: rgba(51, 65, 85, 0.4);
+            --importance-high: linear-gradient(135deg, #ef4444, #f97316);
+            --importance-medium: #eab308;
+            --importance-low: #6b7280;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #020617;
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 260px;
+            background: rgba(15, 23, 42, 0.95);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+            position: relative;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+
+        .sidebar.collapsed {
+            width: 72px;
+        }
+
+        .sidebar.collapsed .logo-text,
+        .sidebar.collapsed .nav-label,
+        .sidebar.collapsed .search-input,
+        .sidebar.collapsed .collapse-text {
+            display: none;
+        }
+
+        .sidebar.collapsed .logo {
+            justify-content: center;
+            padding: 20px 0;
+        }
+
+        .sidebar.collapsed .search-wrapper {
+            padding: 0 12px;
+        }
+
+        .sidebar.collapsed .search-box {
+            justify-content: center;
+            padding: 12px;
+        }
+
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding: 14px;
+        }
+
+        .sidebar.collapsed .collapse-toggle {
+            justify-content: center;
+        }
+
+        /* Logo */
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px 20px 16px;
+            cursor: pointer;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+        }
+
+        .logo-icon svg {
+            width: 22px;
+            height: 22px;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Global Search */
+        .search-wrapper {
+            padding: 0 16px 16px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 10px 14px;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s ease;
+        }
+
+        .search-box:focus-within {
+            border-color: var(--accent-memory);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        .search-box svg {
+            width: 18px;
+            height: 18px;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .search-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 13px;
+            width: 100%;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-dimmed);
+        }
+
+        .search-shortcut {
+            font-size: 11px;
+            color: var(--text-dimmed);
+            background: var(--surface-hover);
+            padding: 2px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        /* Navigation */
+        .nav {
+            flex: 1;
+            padding: 0 12px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .nav-item:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: rgba(168, 85, 247, 0.15);
+            color: white;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        .nav-item.active svg {
+            color: var(--accent-memory);
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .nav-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Collapse Toggle */
+        .collapse-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .collapse-toggle:hover {
+            color: var(--text-primary);
+            background: var(--surface-hover);
+        }
+
+        .collapse-toggle svg {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.collapsed .collapse-toggle svg {
+            transform: rotate(180deg);
+        }
+
+        .collapse-text {
+            font-size: 13px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: 
+                radial-gradient(ellipse at center, rgba(30, 41, 59, 0.3) 0%, transparent 70%),
+                #020617;
+        }
+
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--surface-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(8px);
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        .stat-card:hover .stat-icon {
+            transform: scale(1.1);
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-icon svg {
+            width: 22px;
+            height: 22px;
+            color: white;
+        }
+
+        .stat-icon.memory {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(168, 85, 247, 0.1));
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        .stat-icon.entity {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.1));
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+        }
+
+        .stat-icon.project {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.1));
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+        }
+
+        .stat-icon.document {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.1));
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+
+        .stat-icon.code {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.3), rgba(6, 182, 212, 0.1));
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+        }
+
+        .stat-icon.graph {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.3), rgba(236, 72, 153, 0.1));
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.2);
+        }
+
+        .stat-count {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        /* Recent Memories */
+        .recent-memories {
+            background: var(--surface-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            backdrop-filter: blur(8px);
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .view-all-link {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .view-all-link:hover {
+            color: var(--accent-memory);
+            text-decoration: underline;
+        }
+
+        .memory-list {
+            max-height: 480px;
+            overflow-y: auto;
+        }
+
+        .memory-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .memory-row:last-child {
+            border-bottom: none;
+        }
+
+        .memory-row:hover {
+            background: var(--surface-hover);
+        }
+
+        .memory-title {
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .importance-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+            min-width: 28px;
+            text-align: center;
+        }
+
+        .importance-high {
+            background: var(--importance-high);
+            color: white;
+        }
+
+        .importance-medium {
+            background: rgba(234, 179, 8, 0.2);
+            color: var(--importance-medium);
+        }
+
+        .importance-low {
+            background: rgba(107, 114, 128, 0.2);
+            color: var(--importance-low);
+        }
+
+        .tag-list {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: var(--surface-secondary);
+            color: var(--text-secondary);
+        }
+
+        .project-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--accent-project);
+        }
+
+        .memory-date {
+            font-size: 12px;
+            color: var(--text-dimmed);
+            white-space: nowrap;
+        }
+
+        /* Quick Actions Panel */
+        .quick-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .action-card {
+            background: var(--surface-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(8px);
+        }
+
+        .action-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .create-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .create-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 14px;
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .create-btn:hover {
+            border-color: var(--border-hover);
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+
+        .create-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .create-btn.memory:hover { border-color: var(--accent-memory); box-shadow: 0 0 15px rgba(168, 85, 247, 0.15); }
+        .create-btn.entity:hover { border-color: var(--accent-entity); box-shadow: 0 0 15px rgba(245, 158, 11, 0.15); }
+        .create-btn.project:hover { border-color: var(--accent-project); box-shadow: 0 0 15px rgba(34, 197, 94, 0.15); }
+        .create-btn.document:hover { border-color: var(--accent-document); box-shadow: 0 0 15px rgba(59, 130, 246, 0.15); }
+        .create-btn.code:hover { border-color: var(--accent-code); box-shadow: 0 0 15px rgba(6, 182, 212, 0.15); }
+        .create-btn.graph:hover { border-color: var(--accent-graph); box-shadow: 0 0 15px rgba(236, 72, 153, 0.15); }
+
+        /* High Importance Section */
+        .high-importance-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .high-importance-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .importance-count {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: var(--importance-high);
+            color: white;
+        }
+
+        .expand-icon {
+            width: 18px;
+            height: 18px;
+            color: var(--text-secondary);
+            transition: transform 0.3s ease;
+        }
+
+        .high-importance-header.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+
+        .high-importance-list {
+            display: none;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .high-importance-list.visible {
+            display: block;
+        }
+
+        .hi-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: color 0.2s ease;
+        }
+
+        .hi-item:hover {
+            color: var(--text-primary);
+        }
+
+        .hi-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ef4444, #f97316);
+        }
+
+        .hi-title {
+            font-size: 13px;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Detail Panel */
+        .detail-panel {
+            width: 380px;
+            background: rgba(15, 23, 42, 0.95);
+            border-left: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            position: fixed;
+            right: 0;
+            top: 0;
+            height: 100vh;
+            z-index: 200;
+            backdrop-filter: blur(12px);
+        }
+
+        .detail-panel.visible {
+            transform: translateX(0);
+        }
+
+        .detail-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            position: relative;
+        }
+
+        .detail-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.2s ease;
+        }
+
+        .detail-close:hover {
+            color: white;
+        }
+
+        .detail-close svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .type-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .type-badge.memory {
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--accent-memory);
+        }
+
+        .detail-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: text;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+        }
+
+        .detail-title:hover {
+            background: var(--surface-hover);
+        }
+
+        .detail-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        /* Slider */
+        .slider-container {
+            margin-bottom: 16px;
+        }
+
+        .slider-label {
+            font-size: 12px;
+            color: var(--text-dimmed);
+            margin-bottom: 8px;
+        }
+
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--surface-secondary);
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-memory);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+        }
+
+        .slider-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 24px;
+        }
+
+        /* Tags Edit */
+        .tags-edit {
+            margin-bottom: 16px;
+        }
+
+        .tags-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .tag-pill {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: var(--surface-secondary);
+            color: var(--text-secondary);
+        }
+
+        .tag-remove {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s ease;
+        }
+
+        .tag-remove:hover {
+            opacity: 1;
+        }
+
+        .tag-input {
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+            color: var(--text-primary);
+            outline: none;
+            width: 100%;
+        }
+
+        .tag-input::placeholder {
+            color: var(--text-dimmed);
+        }
+
+        /* Projects Edit */
+        .projects-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .project-pill {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--accent-project);
+        }
+
+        .add-project-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            background: var(--surface-secondary);
+            border: 1px dashed var(--border-hover);
+            color: var(--text-dimmed);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .add-project-btn:hover {
+            border-color: var(--accent-project);
+            color: var(--accent-project);
+        }
+
+        /* Content Preview */
+        .content-preview-text {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .show-more-link {
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            margin-top: 8px;
+            display: inline-block;
+            transition: color 0.2s ease;
+        }
+
+        .show-more-link:hover {
+            color: var(--text-primary);
+            text-decoration: underline;
+        }
+
+        /* Related Items */
+        .related-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+        }
+
+        .related-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .related-dot.entity { background: var(--accent-entity); }
+        .related-dot.document { background: var(--accent-document); }
+        .related-dot.project { background: var(--accent-project); }
+
+        .related-title {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .related-title:hover {
+            color: var(--accent-memory);
+        }
+
+        .unlink-btn {
+            font-size: 12px;
+            color: var(--text-dimmed);
+            cursor: pointer;
+            background: none;
+            border: none;
+            transition: color 0.2s ease;
+        }
+
+        .unlink-btn:hover {
+            color: var(--text-secondary);
+        }
+
+        /* Detail Footer */
+        .detail-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .detail-meta {
+            font-size: 11px;
+            color: var(--text-dimmed);
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-delete {
+            background: transparent;
+            color: var(--text-dimmed);
+        }
+
+        .btn-delete:hover {
+            color: #ef4444;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            background: var(--accent-memory);
+            color: white;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #9333ea;
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.4);
+        }
+
+        /* Search Overlay */
+        .search-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 300;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 100px;
+            backdrop-filter: blur(4px);
+        }
+
+        .search-overlay.visible {
+            display: flex;
+        }
+
+        .search-modal {
+            width: 560px;
+            max-height: 480px;
+            background: var(--surface-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+            overflow: hidden;
+        }
+
+        .search-modal-input {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .search-modal-input svg {
+            width: 20px;
+            height: 20px;
+            color: var(--text-secondary);
+        }
+
+        .search-modal-input input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+
+        .search-results {
+            max-height: 380px;
+            overflow-y: auto;
+        }
+
+        .search-group {
+            padding: 12px 20px;
+        }
+
+        .search-group-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .search-result-item:hover {
+            background: var(--surface-hover);
+        }
+
+        .search-result-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-result-icon.memory { background: rgba(168, 85, 247, 0.2); color: var(--accent-memory); }
+        .search-result-icon.entity { background: rgba(245, 158, 11, 0.2); color: var(--accent-entity); }
+
+        .search-result-icon svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .search-result-info {
+            flex: 1;
+        }
+
+        .search-result-title {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .search-result-meta {
+            font-size: 12px;
+            color: var(--text-dimmed);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .stats-row {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 992px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                transform: translateX(-100%);
+                z-index: 150;
+            }
+
+            .sidebar.mobile-visible {
+                transform: translateX(0);
+            }
+
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .detail-panel {
+                width: 100%;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--surface-hover);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" ui-spec-block-id="sidebar">
+            <!-- Logo -->
+            <div class="logo" ui-spec-block-id="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a9 9 0 0 1 9 9c0 3.6-2.4 6.7-5.7 8.2-.3.1-.5.4-.5.7v.1c0 .6-.4 1-1 1h-3.6c-.6 0-1-.4-1-1v-.1c0-.3-.2-.6-.5-.7A9 9 0 0 1 3 11a9 9 0 0 1 9-9z"/>
+                        <path d="M12 2v4M8 5l2 3M16 5l-2 3M7 11h2M15 11h2M9 15h6"/>
+                    </svg>
+                </div>
+                <span class="logo-text">Forgetful</span>
+            </div>
+
+            <!-- Global Search -->
+            <div class="search-wrapper" ui-spec-block-id="global_search">
+                <div class="search-box" id="sidebarSearch">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" class="search-input" placeholder="Search memories, entities...">
+                    <span class="search-shortcut">⌘K</span>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="nav" ui-spec-block-id="nav">
+                <div class="nav-item active" data-target="dashboard">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                    <span class="nav-label">Dashboard</span>
+                </div>
+                <div class="nav-item" data-target="memories">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a9 9 0 0 1 9 9c0 3.6-2.4 6.7-5.7 8.2-.3.1-.5.4-.5.7v.1c0 .6-.4 1-1 1h-3.6c-.6 0-1-.4-1-1v-.1c0-.3-.2-.6-.5-.7A9 9 0 0 1 3 11a9 9 0 0 1 9-9z"/>
+                        <path d="M9 15h6"/>
+                    </svg>
+                    <span class="nav-label">Memories</span>
+                </div>
+                <div class="nav-item" data-target="entities">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/>
+                    </svg>
+                    <span class="nav-label">Entities</span>
+                </div>
+                <div class="nav-item" data-target="projects">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="nav-label">Projects</span>
+                </div>
+                <div class="nav-item" data-target="documents">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+                    </svg>
+                    <span class="nav-label">Documents</span>
+                </div>
+                <div class="nav-item" data-target="code_artifacts">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="16 18 22 12 16 6"/>
+                        <polyline points="8 6 2 12 8 18"/>
+                    </svg>
+                    <span class="nav-label">Code Artifacts</span>
+                </div>
+                <div class="nav-item" data-target="graph">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="6" cy="6" r="3"/>
+                        <circle cx="18" cy="6" r="3"/>
+                        <circle cx="6" cy="18" r="3"/>
+                        <circle cx="18" cy="18" r="3"/>
+                        <path d="M6 9v6M18 9v6M9 6h6M9 18h6"/>
+                    </svg>
+                    <span class="nav-label">Graph</span>
+                </div>
+            </nav>
+
+            <!-- Collapse Toggle -->
+            <div class="collapse-toggle" ui-spec-block-id="collapse_toggle" id="collapseToggle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                <span class="collapse-text">Collapse</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" ui-spec-block-id="content">
+            <header class="page-header">
+                <h1 class="page-title">Dashboard</h1>
+            </header>
+
+            <!-- Stats Row -->
+            <section class="stats-row" ui-spec-block-id="stats_row">
+                <div class="stat-card" ui-spec-block-id="stat_memories" data-target="memories">
+                    <div class="stat-icon memory">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a9 9 0 0 1 9 9c0 3.6-2.4 6.7-5.7 8.2-.3.1-.5.4-.5.7v.1c0 .6-.4 1-1 1h-3.6c-.6 0-1-.4-1-1v-.1c0-.3-.2-.6-.5-.7A9 9 0 0 1 3 11a9 9 0 0 1 9-9z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-count">247</div>
+                    <div class="stat-label">Memories</div>
+                </div>
+                <div class="stat-card" ui-spec-block-id="stat_entities" data-target="entities">
+                    <div class="stat-icon entity">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-count">89</div>
+                    <div class="stat-label">Entities</div>
+                </div>
+                <div class="stat-card" ui-spec-block-id="stat_projects" data-target="projects">
+                    <div class="stat-icon project">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-count">12</div>
+                    <div class="stat-label">Projects</div>
+                </div>
+                <div class="stat-card" ui-spec-block-id="stat_documents" data-target="documents">
+                    <div class="stat-icon document">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <path d="M14 2v6h6"/>
+                        </svg>
+                    </div>
+                    <div class="stat-count">34</div>
+                    <div class="stat-label">Documents</div>
+                </div>
+                <div class="stat-card" ui-spec-block-id="stat_code_artifacts" data-target="code_artifacts">
+                    <div class="stat-icon code">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"/>
+                            <polyline points="8 6 2 12 8 18"/>
+                        </svg>
+                    </div>
+                    <div class="stat-count">56</div>
+                    <div class="stat-label">Code Artifacts</div>
+                </div>
+                <div class="stat-card" ui-spec-block-id="stat_graph" data-target="graph">
+                    <div class="stat-icon graph">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="6" cy="6" r="3"/>
+                            <circle cx="18" cy="18" r="3"/>
+                            <path d="M8.5 8.5l7 7"/>
+                        </svg>
+                    </div>
+                    <div class="stat-count">312</div>
+                    <div class="stat-label">Relations</div>
+                </div>
+            </section>
+
+            <!-- Main Grid -->
+            <div class="main-grid">
+                <!-- Recent Memories -->
+                <section class="recent-memories" ui-spec-block-id="recent_memories">
+                    <div class="section-header">
+                        <h2 class="section-title">Recent Memories</h2>
+                        <a class="view-all-link" data-target="memories">View All →</a>
+                    </div>
+                    <div class="memory-list">
+                        <div class="memory-row" data-id="1">
+                            <span class="memory-title">API rate limiting best practices for production systems</span>
+                            <span class="importance-badge importance-high">10</span>
+                            <div class="tag-list">
+                                <span class="tag">api</span>
+                                <span class="tag">security</span>
+                            </div>
+                            <span class="project-badge">Backend</span>
+                            <span class="memory-date">2 hours ago</span>
+                        </div>
+                        <div class="memory-row" data-id="2">
+                            <span class="memory-title">User authentication flow improvements discussion</span>
+                            <span class="importance-badge importance-high">9</span>
+                            <div class="tag-list">
+                                <span class="tag">auth</span>
+                            </div>
+                            <span class="project-badge">Security</span>
+                            <span class="memory-date">5 hours ago</span>
+                        </div>
+                        <div class="memory-row" data-id="3">
+                            <span class="memory-title">Database schema optimization notes</span>
+                            <span class="importance-badge importance-medium">8</span>
+                            <div class="tag-list">
+                                <span class="tag">database</span>
+                                <span class="tag">performance</span>
+                            </div>
+                            <span class="project-badge">Backend</span>
+                            <span class="memory-date">Yesterday</span>
+                        </div>
+                        <div class="memory-row" data-id="4">
+                            <span class="memory-title">Frontend component library evaluation</span>
+                            <span class="importance-badge importance-medium">7</span>
+                            <div class="tag-list">
+                                <span class="tag">frontend</span>
+                                <span class="tag">ui</span>
+                            </div>
+                            <span class="project-badge">UI/UX</span>
+                            <span class="memory-date">2 days ago</span>
+                        </div>
+                        <div class="memory-row" data-id="5">
+                            <span class="memory-title">Meeting notes: Q4 planning session</span>
+                            <span class="importance-badge importance-medium">7</span>
+                            <div class="tag-list">
+                                <span class="tag">meeting</span>
+                            </div>
+                            <span class="project-badge">Planning</span>
+                            <span class="memory-date">3 days ago</span>
+                        </div>
+                        <div class="memory-row" data-id="6">
+                            <span class="memory-title">Code review guidelines update</span>
+                            <span class="importance-badge importance-low">6</span>
+                            <div class="tag-list">
+                                <span class="tag">process</span>
+                            </div>
+                            <span class="project-badge">Team</span>
+                            <span class="memory-date">4 days ago</span>
+                        </div>
+                        <div class="memory-row" data-id="7">
+                            <span class="memory-title">CI/CD pipeline configuration changes</span>
+                            <span class="importance-badge importance-low">5</span>
+                            <div class="tag-list">
+                                <span class="tag">devops</span>
+                            </div>
+                            <span class="project-badge">Infrastructure</span>
+                            <span class="memory-date">5 days ago</span>
+                        </div>
+                        <div class="memory-row" data-id="8">
+                            <span class="memory-title">Third-party integration documentation</span>
+                            <span class="importance-badge importance-low">5</span>
+                            <div class="tag-list">
+                                <span class="tag">docs</span>
+                                <span class="tag">integration</span>
+                            </div>
+                            <span class="project-badge">Backend</span>
+                            <span class="memory-date">1 week ago</span>
+                        </div>
+                        <div class="memory-row" data-id="9">
+                            <span class="memory-title">Team standup summary - Dec 9</span>
+                            <span class="importance-badge importance-low">4</span>
+                            <div class="tag-list">
+                                <span class="tag">standup</span>
+                            </div>
+                            <span class="project-badge">Team</span>
+                            <span class="memory-date">1 week ago</span>
+                        </div>
+                        <div class="memory-row" data-id="10">
+                            <span class="memory-title">Error handling patterns research</span>
+                            <span class="importance-badge importance-low">4</span>
+                            <div class="tag-list">
+                                <span class="tag">research</span>
+                            </div>
+                            <span class="project-badge">Backend</span>
+                            <span class="memory-date">2 weeks ago</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Quick Actions Panel -->
+                <aside class="quick-actions" ui-spec-block-id="quick_actions">
+                    <!-- Search Card -->
+                    <div class="action-card" ui-spec-block-id="global_search">
+                        <h3 class="action-card-title">Quick Search</h3>
+                        <div class="search-box" id="quickSearch">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="M21 21l-4.35-4.35"/>
+                            </svg>
+                            <input type="text" class="search-input" placeholder="Search all types...">
+                        </div>
+                    </div>
+
+                    <!-- Create Buttons -->
+                    <div class="action-card" ui-spec-block-id="create_buttons">
+                        <h3 class="action-card-title">Quick Create</h3>
+                        <div class="create-buttons-grid">
+                            <button class="create-btn memory">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                                Memory
+                            </button>
+                            <button class="create-btn entity">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                                Entity
+                            </button>
+                            <button class="create-btn project">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                                Project
+                            </button>
+                            <button class="create-btn document">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                                Document
+                            </button>
+                            <button class="create-btn code">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                                Code
+                            </button>
+                            <button class="create-btn graph" data-target="graph">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="6" cy="6" r="3"/>
+                                    <circle cx="18" cy="18" r="3"/>
+                                    <path d="M8.5 8.5l7 7"/>
+                                </svg>
+                                Graph
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- High Importance -->
+                    <div class="action-card" ui-spec-block-id="high_importance">
+                        <div class="high-importance-header" id="highImportanceToggle">
+                            <div class="high-importance-title">
+                                <span>High Importance</span>
+                                <span class="importance-count">5</span>
+                            </div>
+                            <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </div>
+                        <div class="high-importance-list" id="highImportanceList">
+                            <div class="hi-item" data-id="1">
+                                <span class="hi-dot"></span>
+                                <span class="hi-title">API rate limiting best practices for production systems</span>
+                            </div>
+                            <div class="hi-item" data-id="2">
+                                <span class="hi-dot"></span>
+                                <span class="hi-title">User authentication flow improvements discussion</span>
+                            </div>
+                            <div class="hi-item" data-id="11">
+                                <span class="hi-dot"></span>
+                                <span class="hi-title">Security audit findings and remediation plan</span>
+                            </div>
+                            <div class="hi-item" data-id="12">
+                                <span class="hi-dot"></span>
+                                <span class="hi-title">Critical bug fix: Payment processing timeout</span>
+                            </div>
+                            <div class="hi-item" data-id="13">
+                                <span class="hi-dot"></span>
+                                <span class="hi-title">Infrastructure scaling requirements for Q1</span>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </main>
+
+        <!-- Detail Panel -->
+        <aside class="detail-panel" ui-spec-block-id="detail_panel" id="detailPanel">
+            <div class="detail-header" ui-spec-block-id="detail_header">
+                <button class="detail-close" id="detailClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+                <span class="type-badge memory">Memory</span>
+                <h2 class="detail-title" contenteditable="true">API rate limiting best practices for production systems</h2>
+            </div>
+
+            <div class="detail-body">
+                <!-- Quick Edit -->
+                <div class="detail-section" ui-spec-block-id="detail_quick_edit">
+                    <h3 class="detail-section-title">Quick Edit</h3>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">Importance</div>
+                        <div class="slider-wrapper">
+                            <input type="range" class="slider" min="1" max="10" value="10" id="importanceSlider">
+                            <span class="slider-value" id="importanceValue">10</span>
+                        </div>
+                    </div>
+
+                    <div class="tags-edit">
+                        <div class="slider-label">Tags</div>
+                        <div class="tags-row">
+                            <span class="tag-pill">
+                                api
+                                <svg class="tag-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                            </span>
+                            <span class="tag-pill">
+                                security
+                                <svg class="tag-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                            </span>
+                        </div>
+                        <input type="text" class="tag-input" placeholder="Add tag...">
+                    </div>
+
+                    <div class="projects-edit">
+                        <div class="slider-label">Associated Projects</div>
+                        <div class="projects-row">
+                            <span class="project-pill">Backend</span>
+                            <button class="add-project-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Preview -->
+                <div class="detail-section" ui-spec-block-id="detail_content_preview">
+                    <h3 class="detail-section-title">Content Preview</h3>
+                    <p class="content-preview-text">
+                        Rate limiting is essential for protecting APIs from abuse and ensuring fair usage across all clients. Key strategies include token bucket algorithms, sliding window counters, and distributed rate limiting using Redis. Consider implementing tiered limits based on user plans and API endpoint sensitivity.
+                    </p>
+                    <a class="show-more-link">Show more</a>
+                </div>
+
+                <!-- Related Items -->
+                <div class="detail-section" ui-spec-block-id="detail_related_items">
+                    <h3 class="detail-section-title">Related Items</h3>
+                    <div class="related-item">
+                        <span class="related-dot entity"></span>
+                        <span class="related-title">Redis Cluster</span>
+                        <button class="unlink-btn">Unlink</button>
+                    </div>
+                    <div class="related-item">
+                        <span class="related-dot document"></span>
+                        <span class="related-title">API Design Guidelines v2</span>
+                        <button class="unlink-btn">Unlink</button>
+                    </div>
+                    <div class="related-item">
+                        <span class="related-dot project"></span>
+                        <span class="related-title">Backend Infrastructure</span>
+                        <button class="unlink-btn">Unlink</button>
+                    </div>
+                    <a class="show-more-link">Show all 7 items</a>
+                </div>
+            </div>
+
+            <div class="detail-footer" ui-spec-block-id="detail_footer">
+                <div class="detail-meta">
+                    ID: 1 • Created: Dec 10, 2024
+                </div>
+                <div class="detail-actions" ui-spec-block-id="detail_actions">
+                    <button class="btn btn-delete">Delete</button>
+                    <button class="btn btn-ghost">View in Graph</button>
+                    <button class="btn btn-primary">Edit Full</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay">
+        <div class="search-modal">
+            <div class="search-modal-input">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                </svg>
+                <input type="text" placeholder="Search memories, entities, projects..." id="searchModalInput">
+            </div>
+            <div class="search-results">
+                <div class="search-group">
+                    <div class="search-group-title">Memories</div>
+                    <div class="search-result-item" data-type="memory" data-id="1">
+                        <div class="search-result-icon memory">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2a9 9 0 0 1 9 9c0 3.6-2.4 6.7-5.7 8.2"/>
+                            </svg>
+                        </div>
+                        <div class="search-result-info">
+                            <div class="search-result-title">API rate limiting best practices</div>
+                            <div class="search-result-meta">Importance: 10 • Backend</div>
+                        </div>
+                    </div>
+                    <div class="search-result-item" data-type="memory" data-id="2">
+                        <div class="search-result-icon memory">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2a9 9 0 0 1 9 9c0 3.6-2.4 6.7-5.7 8.2"/>
+                            </svg>
+                        </div>
+                        <div class="search-result-info">
+                            <div class="search-result-title">User authentication flow improvements</div>
+                            <div class="search-result-meta">Importance: 9 • Security</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="search-group">
+                    <div class="search-group-title">Entities</div>
+                    <div class="search-result-item" data-type="entity" data-id="1">
+                        <div class="search-result-icon entity">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4"/>
+                            </svg>
+                        </div>
+                        <div class="search-result-info">
+                            <div class="search-result-title">Redis Cluster</div>
+                            <div class="search-result-meta">System • 12 connections</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sidebar collapse toggle
+        const sidebar = document.querySelector('.sidebar');
+        const collapseToggle = document.getElementById('collapseToggle');
+        
+        collapseToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+        });
+
+        // Navigation active state
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                navItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        // Stat cards click
+        const statCards = document.querySelectorAll('.stat-card');
+        statCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const target = card.dataset.target;
+                navItems.forEach(i => {
+                    i.classList.remove('active');
+                    if (i.dataset.target === target) {
+                        i.classList.add('active');
+                    }
+                });
+            });
+        });
+
+        // Detail panel
+        const detailPanel = document.getElementById('detailPanel');
+        const detailClose = document.getElementById('detailClose');
+        const memoryRows = document.querySelectorAll('.memory-row');
+        const hiItems = document.querySelectorAll('.hi-item');
+
+        function openDetailPanel() {
+            detailPanel.classList.add('visible');
+        }
+
+        function closeDetailPanel() {
+            detailPanel.classList.remove('visible');
+        }
+
+        memoryRows.forEach(row => {
+            row.addEventListener('click', openDetailPanel);
+        });
+
+        hiItems.forEach(item => {
+            item.addEventListener('click', openDetailPanel);
+        });
+
+        detailClose.addEventListener('click', closeDetailPanel);
+
+        // Importance slider
+        const importanceSlider = document.getElementById('importanceSlider');
+        const importanceValue = document.getElementById('importanceValue');
+
+        importanceSlider.addEventListener('input', (e) => {
+            importanceValue.textContent = e.target.value;
+        });
+
+        // High importance toggle
+        const highImportanceToggle = document.getElementById('highImportanceToggle');
+        const highImportanceList = document.getElementById('highImportanceList');
+
+        highImportanceToggle.addEventListener('click', () => {
+            highImportanceToggle.classList.toggle('expanded');
+            highImportanceList.classList.toggle('visible');
+        });
+
+        // Search overlay
+        const searchOverlay = document.getElementById('searchOverlay');
+        const sidebarSearch = document.getElementById('sidebarSearch');
+        const quickSearch = document.getElementById('quickSearch');
+        const searchModalInput = document.getElementById('searchModalInput');
+
+        function openSearchOverlay() {
+            searchOverlay.classList.add('visible');
+            searchModalInput.focus();
+        }
+
+        function closeSearchOverlay() {
+            searchOverlay.classList.remove('visible');
+        }
+
+        sidebarSearch.addEventListener('click', openSearchOverlay);
+        quickSearch.addEventListener('click', openSearchOverlay);
+
+        searchOverlay.addEventListener('click', (e) => {
+            if (e.target === searchOverlay) {
+                closeSearchOverlay();
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + K for search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                openSearchOverlay();
+            }
+            // Escape to close overlays
+            if (e.key === 'Escape') {
+                closeSearchOverlay();
+                closeDetailPanel();
+            }
+        });
+
+        // Search result items click
+        const searchResultItems = document.querySelectorAll('.search-result-item');
+        searchResultItems.forEach(item => {
+            item.addEventListener('click', () => {
+                closeSearchOverlay();
+                openDetailPanel();
+            });
+        });
+
+        // Tag removal
+        const tagRemoveBtns = document.querySelectorAll('.tag-remove');
+        tagRemoveBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.target.closest('.tag-pill').remove();
+            });
+        });
+
+        // View all links
+        const viewAllLinks = document.querySelectorAll('.view-all-link');
+        viewAllLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                const target = link.dataset.target;
+                navItems.forEach(i => {
+                    i.classList.remove('active');
+                    if (i.dataset.target === target) {
+                        i.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -6,10 +6,10 @@ import { BrowserRouter } from 'react-router-dom'
 
 import { theme, cssVariablesResolver } from '@/styles/theme'
 import { AuthProvider } from '@/context/AuthContext'
-import { AuthWarning } from '@/components/auth'
 import App from './App'
 
 import '@mantine/core/styles.css'
+import 'mantine-datatable/styles.css'
 import './styles/global.css'
 
 const queryClient = new QueryClient({
@@ -28,7 +28,6 @@ createRoot(document.getElementById('root')!).render(
         <BrowserRouter>
           <AuthProvider>
             <App />
-            <AuthWarning />
           </AuthProvider>
         </BrowserRouter>
       </MantineProvider>

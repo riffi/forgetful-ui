@@ -1,13 +1,14 @@
 import { Routes, Route } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
-import { Dashboard } from '@/pages/Dashboard'
+import { Dashboard, Memories, MemoryDetail } from '@/pages'
 
 function App() {
   return (
     <Routes>
       <Route element={<MainLayout />}>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/memories" element={<PlaceholderPage title="Memories" />} />
+        <Route path="/memories" element={<Memories />} />
+        <Route path="/memories/:id" element={<MemoryDetail />} />
         <Route path="/entities" element={<PlaceholderPage title="Entities" />} />
         <Route path="/projects" element={<PlaceholderPage title="Projects" />} />
         <Route path="/documents" element={<PlaceholderPage title="Documents" />} />

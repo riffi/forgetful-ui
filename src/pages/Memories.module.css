@@ -1,0 +1,74 @@
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.title {
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.filters {
+  background: var(--surface-primary);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.tableWrapper {
+  background: var(--surface-primary);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tableWrapper :global(.mantine-datatable) {
+  background: transparent;
+}
+
+.tableWrapper :global(.mantine-datatable-header) {
+  background: var(--surface-secondary);
+}
+
+.tableWrapper :global(.mantine-datatable-header-cell) {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tableWrapper :global(.mantine-datatable-row) {
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.tableWrapper :global(.mantine-datatable-row:hover) {
+  background: var(--surface-hover);
+}
+
+.tableWrapper :global(.mantine-datatable-row td) {
+  border-color: var(--border-subtle);
+}
+
+.obsoleteRow {
+  opacity: 0.6;
+}
+
+.bulkActions {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface-primary);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-hover);
+  border-radius: 12px;
+  padding: 12px 20px;
+  min-width: 300px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}

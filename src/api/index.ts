@@ -1,1 +1,8 @@
 export { apiClient, ApiError, AuthError } from './client'
+export { memoriesApi } from './memories'
+export { projectsApi } from './projects'
+export { entitiesApi } from './entities'
+export { documentsApi } from './documents'
+export { codeArtifactsApi } from './code-artifacts'
+export { graphApi } from './graph'
+export type { GraphNode, GraphEdge, GraphData, GraphFilters } from './graph'

@@ -1,15 +1,28 @@
 .shell {
-  min-height: 100vh;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  min-height: 100vh !important;
+  overflow: hidden !important;
   background: var(--bg-base);
 }
 
 .navbar {
-  background: var(--bg-sidebar);
-  border-right: 1px solid var(--border-subtle);
-  transition: width 200ms ease;
+  background: var(--bg-sidebar) !important;
+  border-right: 1px solid var(--border-subtle) !important;
+  transition: width 300ms ease;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  min-height: unset !important;
+  overflow-y: auto !important;
 }
 
 .main {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  min-height: unset !important;
+  overflow: hidden !important;
   background: var(--bg-base);
   background-image: radial-gradient(
     circle at 50% 0%,
@@ -19,7 +32,7 @@
 }
 
 .content {
-  height: 100%;
-  overflow-y: auto;
+  flex: 1;
+  overflow-y: auto !important;
   padding: 24px;
 }

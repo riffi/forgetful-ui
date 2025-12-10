@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { AppShell } from '@mantine/core'
 import { Sidebar } from './Sidebar'
+import { AuthWarning } from '@/components/auth'
 import classes from './MainLayout.module.css'
 
 export function MainLayout() {
@@ -10,7 +11,7 @@ export function MainLayout() {
   return (
     <AppShell
       navbar={{
-        width: collapsed ? 64 : 240,
+        width: collapsed ? 72 : 260,
         breakpoint: 'sm',
       }}
       padding={0}
@@ -21,6 +22,7 @@ export function MainLayout() {
       </AppShell.Navbar>
 
       <AppShell.Main className={classes.main}>
+        <AuthWarning />
         <div className={classes.content}>
           <Outlet />
         </div>
