@@ -47,6 +47,9 @@ templates:
           - id: global_search
             type: custom
             purpose: "Search input below logo: search icon, placeholder 'Search memories, entities... (Ctrl+K)', glass surface background. Opens search results overlay on focus"
+          - id: project_context
+            type: custom
+            purpose: "Global project context selector. Dropdown with 'All Projects' option (default) and list of projects sorted by recent activity. When project selected: all list screens auto-filter by this project, nav items show counts for selected project, 'Create' actions pre-fill project field, search scoped to project. Clear button to reset. Keyboard shortcut Ctrl+P"
           - id: nav
             type: main_navigation
             purpose: "Vertical navigation list with icons and labels. Items: Dashboard (grid icon), Memories (brain icon), Entities (cube icon), Projects (folder icon), Documents (file icon), Code Artifacts (code brackets icon), Graph (network icon). Active item: accent background glow, white text. Inactive: text-secondary. Hover: subtle highlight"
@@ -60,6 +63,9 @@ templates:
           - id: auth_warning
             type: custom
             purpose: "Thin info bar at top of content area (not over sidebar). Appears when server running without authentication. Yellow/amber semi-transparent background (rgba(234, 179, 8, 0.15)), border-bottom in same color. Contains: warning icon (14px), text 'Auth disabled — Server running without authentication', close X button on right. Dismissible (state persists in session). Height ~28px. Does not overlap content - pushes content down via flex layout."
+          - id: project_context_bar
+            type: custom
+            purpose: "Context indicator bar, visible when project selected. Shows project name, item counts for current view, 'Clear filter' link. Subtle accent-project background"
       - id: detail_panel
         type: static
         position: right
@@ -131,7 +137,7 @@ screens:
   # ---------------------------------------------------------------------------
   dashboard:
     title: Dashboard
-    purpose: "Overview of all data with quick stats and recent items"
+    purpose: "Overview of data with quick stats and recent items. Respects global project context - shows stats and items for selected project only"
     blocks:
       - id: stats_row
         columns: 12
@@ -178,7 +184,7 @@ screens:
     blocks:
       - id: header
         columns: 12
-        purpose: "Page header with title 'Memories', search input (searches title, content, keywords), filter dropdowns (importance, tags, project, obsolete status), 'Create Memory' button"
+        purpose: "Page header with title 'Memories', search input (searches title, content, keywords), filter dropdowns (importance, tags, obsolete status), 'Create Memory' button. Auto-filtered by global project context"
       - id: memories_table
         columns: 12
         purpose: "Data table with columns: checkbox, title, importance (editable inline - number input), tags (editable inline - tag input), project (badge), updated_at, actions (delete, mark obsolete). Row click -> opens quick edit drawer. Double-click title -> full detail page. Sortable columns. Pagination footer. Multi-select for bulk actions"
@@ -232,7 +238,7 @@ screens:
     blocks:
       - id: header
         columns: 12
-        purpose: "Page header: title 'Entities', search input, filter by entity_type dropdown, filter by tags, 'Create Entity' button"
+        purpose: "Page header: title 'Entities', search input, filter by entity_type dropdown, filter by tags, 'Create Entity' button. Auto-filtered by global project context"
       - id: entities_table
         columns: 12
         purpose: "Data table: checkbox, name, entity_type (badge, filterable), custom_type (if Other), tags (inline editable), projects count, updated_at, actions (delete). Row click -> opens quick edit drawer. Double-click -> full detail page"
@@ -339,7 +345,7 @@ screens:
     blocks:
       - id: header
         columns: 12
-        purpose: "Page header: title 'Documents', search, filter by document_type, filter by project, filter by tags, 'Create Document' button"
+        purpose: "Page header: title 'Documents', search, filter by document_type, filter by tags, 'Create Document' button. Auto-filtered by global project context"
       - id: documents_table
         columns: 12
         purpose: "Data table: checkbox, title, document_type badge, description (truncated), size_bytes (formatted), project (badge), tags, updated_at, actions (delete). Row click -> opens quick edit drawer. Double-click -> full detail page with content editor"
@@ -384,7 +390,7 @@ screens:
     blocks:
       - id: header
         columns: 12
-        purpose: "Page header: title 'Code Artifacts', search, filter by language dropdown, filter by project, filter by tags, 'Create Code Artifact' button"
+        purpose: "Page header: title 'Code Artifacts', search, filter by language dropdown, filter by tags, 'Create Code Artifact' button. Auto-filtered by global project context"
       - id: artifacts_table
         columns: 12
         purpose: "Data table: checkbox, title, language badge (colored by language), description (truncated), project (badge), tags, updated_at, actions (copy code, delete). Row click -> opens quick edit drawer with code preview. Double-click -> full detail page with code editor"
@@ -425,7 +431,7 @@ screens:
   # ---------------------------------------------------------------------------
   graph:
     title: Knowledge Graph
-    purpose: "Interactive force-directed graph visualization of all knowledge base items. Full viewport canvas with floating controls. Dark background (slate-950) with subtle radial gradient center"
+    purpose: "Interactive force-directed graph visualization. Respects global project context - shows only items linked to selected project. Full viewport canvas with floating controls"
     container_max_width: "100%"
     blocks:
       - id: toolbar
@@ -448,14 +454,14 @@ screens:
   # ---------------------------------------------------------------------------
   search_results:
     title: Search Results
-    purpose: "Unified search results overlay showing matches across all types. Semantic search with relevance scoring. Results grouped by type with expandable sections"
+    purpose: "Unified search results overlay showing matches across all types. Respects global project context. Semantic search with relevance scoring. Results grouped by type with expandable sections"
     blocks:
       - id: search_header
         columns: 12
         purpose: "Search query display in large text, result count badge, search mode indicator (semantic/keyword toggle), 'Clear' button"
       - id: search_filters
         columns: 12
-        purpose: "Filter chips row: type toggles (memories/entities/documents/code_artifacts/projects), date range picker, project scope dropdown"
+        purpose: "Filter chips row: type toggles (memories/entities/documents/code_artifacts/projects), date range picker"
       - id: search_results_list
         columns: 12
         purpose: "Grouped results sections, each collapsible"

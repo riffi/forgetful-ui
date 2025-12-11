@@ -1,0 +1,2044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memories - Forgetful Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --accent-memory: #a855f7;
+            --accent-entity: #f59e0b;
+            --accent-document: #3b82f6;
+            --accent-code-artifact: #06b6d4;
+            --accent-project: #22c55e;
+            --text-primary: rgba(255, 255, 255, 0.9);
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --text-dimmed: rgba(255, 255, 255, 0.4);
+            --border-subtle: rgba(255, 255, 255, 0.05);
+            --border-hover: rgba(255, 255, 255, 0.1);
+            --surface-primary: rgba(15, 23, 42, 0.8);
+            --surface-secondary: rgba(30, 41, 59, 0.6);
+            --surface-hover: rgba(51, 65, 85, 0.4);
+            --importance-high: linear-gradient(135deg, #ef4444, #f97316);
+            --importance-medium: #eab308;
+            --importance-low: #6b7280;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #020617;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            min-width: 260px;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.95);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 100;
+            transition: width 0.3s ease, min-width 0.3s ease;
+            backdrop-filter: blur(12px);
+        }
+
+        .sidebar.collapsed {
+            width: 72px;
+            min-width: 72px;
+        }
+
+        .sidebar.collapsed .logo-text,
+        .sidebar.collapsed .search-input,
+        .sidebar.collapsed .nav-label,
+        .sidebar.collapsed .collapse-text {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed .global-search {
+            padding: 0 12px;
+        }
+
+        .sidebar.collapsed .search-wrapper {
+            justify-content: center;
+            padding: 12px;
+        }
+
+        /* Logo */
+        .logo {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .logo-icon svg {
+            width: 22px;
+            height: 22px;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            transition: opacity 0.3s ease;
+            white-space: nowrap;
+        }
+
+        /* Global Search */
+        .global-search {
+            padding: 0 16px 16px;
+        }
+
+        .search-wrapper {
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            gap: 10px;
+            backdrop-filter: blur(8px);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-wrapper:focus-within {
+            border-color: var(--accent-memory);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        .search-wrapper svg {
+            width: 18px;
+            height: 18px;
+            color: var(--text-dimmed);
+            flex-shrink: 0;
+        }
+
+        .search-input {
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            width: 100%;
+            transition: opacity 0.3s ease;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-dimmed);
+        }
+
+        /* Navigation */
+        .nav {
+            flex: 1;
+            padding: 8px 12px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: rgba(168, 85, 247, 0.15);
+            color: white;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .nav-label {
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Collapse Toggle */
+        .collapse-toggle {
+            padding: 16px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
+
+        .collapse-toggle:hover {
+            color: var(--text-primary);
+        }
+
+        .collapse-toggle svg {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.3s;
+        }
+
+        .sidebar.collapsed .collapse-toggle svg {
+            transform: rotate(180deg);
+        }
+
+        .collapse-text {
+            font-size: 13px;
+            transition: opacity 0.3s ease;
+            white-space: nowrap;
+        }
+
+        /* Main Content Area */
+        .main-wrapper {
+            flex: 1;
+            margin-left: 260px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            transition: margin-left 0.3s ease;
+            background: radial-gradient(ellipse at center, rgba(30, 41, 59, 0.3) 0%, transparent 70%);
+        }
+
+        .sidebar.collapsed ~ .main-wrapper {
+            margin-left: 72px;
+        }
+
+        /* Auth Warning */
+        .auth-warning {
+            background: rgba(234, 179, 8, 0.15);
+            border-bottom: 1px solid rgba(234, 179, 8, 0.3);
+            padding: 6px 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #fbbf24;
+        }
+
+        .auth-warning.hidden {
+            display: none;
+        }
+
+        .auth-warning svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        .auth-warning-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: #fbbf24;
+            cursor: pointer;
+            padding: 4px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .auth-warning-close:hover {
+            opacity: 1;
+        }
+
+        .auth-warning-close svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-right: auto;
+        }
+
+        .header-search {
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            gap: 8px;
+            min-width: 220px;
+            backdrop-filter: blur(8px);
+        }
+
+        .header-search:focus-within {
+            border-color: var(--accent-memory);
+        }
+
+        .header-search svg {
+            width: 16px;
+            height: 16px;
+            color: var(--text-dimmed);
+        }
+
+        .header-search input {
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .header-search input::placeholder {
+            color: var(--text-dimmed);
+        }
+
+        /* Filter Dropdowns */
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-dropdown {
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .filter-dropdown:hover {
+            background: var(--surface-hover);
+            border-color: var(--border-hover);
+        }
+
+        .filter-dropdown.active {
+            border-color: var(--accent-memory);
+            color: var(--text-primary);
+        }
+
+        .filter-dropdown svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            min-width: 160px;
+            background: var(--surface-primary);
+            border: 1px solid var(--border-hover);
+            border-radius: 8px;
+            padding: 6px;
+            z-index: 50;
+            display: none;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+
+        .dropdown-item.selected {
+            background: rgba(168, 85, 247, 0.15);
+            color: var(--text-primary);
+        }
+
+        /* Create Button */
+        .btn-primary {
+            background: var(--accent-memory);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #9333ea;
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+        }
+
+        .btn-primary svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Data Table */
+        .table-container {
+            background: var(--surface-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            flex: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(30, 41, 59, 0.5);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-subtle);
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        th:hover {
+            color: var(--text-primary);
+        }
+
+        th .sort-icon {
+            display: inline-block;
+            margin-left: 6px;
+            opacity: 0.5;
+        }
+
+        th.sorted .sort-icon {
+            opacity: 1;
+            color: var(--accent-memory);
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 14px;
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        tbody tr {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: var(--surface-hover);
+        }
+
+        tbody tr.selected {
+            background: rgba(168, 85, 247, 0.1);
+        }
+
+        /* Checkbox */
+        .checkbox-wrapper {
+            width: 40px;
+        }
+
+        .custom-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--text-dimmed);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .custom-checkbox:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .custom-checkbox.checked {
+            background: var(--accent-memory);
+            border-color: var(--accent-memory);
+        }
+
+        .custom-checkbox svg {
+            width: 12px;
+            height: 12px;
+            color: white;
+            display: none;
+        }
+
+        .custom-checkbox.checked svg {
+            display: block;
+        }
+
+        /* Title Cell */
+        .title-cell {
+            font-weight: 500;
+            max-width: 280px;
+        }
+
+        .title-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Importance Input */
+        .importance-input {
+            width: 50px;
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 6px 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .importance-input:focus {
+            outline: none;
+            border-color: var(--accent-memory);
+        }
+
+        .importance-high {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(249, 115, 22, 0.2));
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        .importance-medium {
+            background: rgba(234, 179, 8, 0.15);
+            border-color: rgba(234, 179, 8, 0.4);
+        }
+
+        /* Tags */
+        .tags-cell {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            max-width: 200px;
+        }
+
+        .tag {
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--accent-memory);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .tag-remove:hover {
+            opacity: 1;
+        }
+
+        .add-tag-btn {
+            background: var(--surface-secondary);
+            border: 1px dashed var(--border-hover);
+            color: var(--text-dimmed);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-tag-btn:hover {
+            border-color: var(--accent-memory);
+            color: var(--text-secondary);
+        }
+
+        /* Project Badge */
+        .project-badge {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--accent-project);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        /* Date */
+        .date-cell {
+            color: var(--text-secondary);
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        /* Actions */
+        .actions-cell {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--text-dimmed);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+
+        .action-btn.delete:hover {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .action-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+            background: rgba(30, 41, 59, 0.3);
+        }
+
+        .pagination-info {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .page-btn {
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: var(--surface-hover);
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .page-btn.active {
+            background: var(--accent-memory);
+            border-color: var(--accent-memory);
+            color: white;
+        }
+
+        /* Bulk Actions Bar */
+        .bulk-actions-bar {
+            position: fixed;
+            bottom: 0;
+            left: 260px;
+            right: 0;
+            background: var(--surface-primary);
+            border-top: 1px solid var(--border-hover);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 50;
+            backdrop-filter: blur(12px);
+            transform: translateY(100%);
+            transition: transform 0.3s ease, left 0.3s ease;
+        }
+
+        .sidebar.collapsed ~ .main-wrapper .bulk-actions-bar {
+            left: 72px;
+        }
+
+        .bulk-actions-bar.visible {
+            transform: translateY(0);
+        }
+
+        .selected-count {
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .selected-count span {
+            color: var(--accent-memory);
+        }
+
+        .bulk-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--border-subtle);
+        }
+
+        .bulk-btn {
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .bulk-btn:hover {
+            background: var(--surface-hover);
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        .bulk-btn.danger:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+        }
+
+        .bulk-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Detail Panel */
+        .detail-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 380px;
+            height: 100vh;
+            background: var(--surface-primary);
+            border-left: 1px solid var(--border-subtle);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            backdrop-filter: blur(12px);
+        }
+
+        .detail-panel.open {
+            transform: translateX(0);
+        }
+
+        .detail-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            position: relative;
+        }
+
+        .detail-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .detail-close:hover {
+            color: var(--text-primary);
+            background: var(--surface-hover);
+        }
+
+        .detail-close svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .type-badge.memory {
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--accent-memory);
+        }
+
+        .detail-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: text;
+            padding: 4px 0;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .detail-title:hover {
+            border-bottom-color: var(--accent-memory);
+        }
+
+        .detail-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        /* Quick Edit Form */
+        .form-row {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            font-size: 13px;
+            color: var(--text-dimmed);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .importance-slider-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .importance-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            background: var(--surface-secondary);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .importance-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-memory);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+        }
+
+        .importance-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .tags-edit {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag-input {
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 6px 12px;
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            width: 100px;
+        }
+
+        .tag-input:focus {
+            border-color: var(--accent-memory);
+        }
+
+        .project-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .add-project-btn {
+            background: var(--surface-secondary);
+            border: 1px dashed var(--border-hover);
+            border-radius: 20px;
+            padding: 6px 12px;
+            color: var(--text-dimmed);
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .add-project-btn:hover {
+            border-color: var(--accent-project);
+            color: var(--text-secondary);
+        }
+
+        .add-project-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Content Preview */
+        .content-preview {
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .show-more-link {
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        .show-more-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Related Items */
+        .related-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .related-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--surface-secondary);
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .related-item:hover {
+            background: var(--surface-hover);
+        }
+
+        .related-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .related-dot.entity { background: var(--accent-entity); }
+        .related-dot.document { background: var(--accent-document); }
+        .related-dot.project { background: var(--accent-project); }
+
+        .related-title {
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .related-title:hover {
+            text-decoration: underline;
+        }
+
+        .unlink-btn {
+            background: none;
+            border: none;
+            color: var(--text-dimmed);
+            font-size: 12px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .unlink-btn:hover {
+            color: var(--text-secondary);
+        }
+
+        .show-all-link {
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        .show-all-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Detail Footer */
+        .detail-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .detail-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .detail-meta-item {
+            font-size: 12px;
+            color: var(--text-dimmed);
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-ghost {
+            background: none;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+            background: var(--surface-hover);
+        }
+
+        .btn-delete {
+            background: none;
+            border: none;
+            padding: 8px 14px;
+            color: var(--text-dimmed);
+            font-size: 13px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .btn-delete:hover {
+            color: #ef4444;
+        }
+
+        .btn-accent {
+            background: var(--accent-memory);
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-accent:hover {
+            background: #9333ea;
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.5);
+        }
+
+        /* Overlay */
+        .panel-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 150;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .panel-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-wrapper {
+                margin-left: 0;
+            }
+
+            .bulk-actions-bar {
+                left: 0;
+            }
+
+            .detail-panel {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .page-title {
+                margin-right: 0;
+            }
+
+            .header-search {
+                min-width: 100%;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" ui-spec-block-id="sidebar">
+        <!-- Logo -->
+        <div class="logo" ui-spec-block-id="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2a9 9 0 0 1 9 9c0 3.6-2.4 6.6-5.7 7.8-.3.1-.5.3-.7.5L12 22l-2.6-2.7c-.2-.2-.4-.4-.7-.5A9 9 0 0 1 3 11a9 9 0 0 1 9-9z"/>
+                    <circle cx="12" cy="11" r="3"/>
+                    <path d="M12 8V5m0 9v3M9 11H6m12 0h-3"/>
+                </svg>
+            </div>
+            <span class="logo-text">Forgetful</span>
+        </div>
+
+        <!-- Global Search -->
+        <div class="global-search" ui-spec-block-id="global_search">
+            <div class="search-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" class="search-input" placeholder="Search memories, entities... (Ctrl+K)">
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="nav" ui-spec-block-id="nav">
+            <a href="#" class="nav-item" data-nav="dashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1"/>
+                </svg>
+                <span class="nav-label">Dashboard</span>
+            </a>
+            <a href="#" class="nav-item active" data-nav="memories">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2a9 9 0 0 1 9 9c0 3.6-2.4 6.6-5.7 7.8-.3.1-.5.3-.7.5L12 22l-2.6-2.7c-.2-.2-.4-.4-.7-.5A9 9 0 0 1 3 11a9 9 0 0 1 9-9z"/>
+                    <circle cx="12" cy="11" r="3"/>
+                </svg>
+                <span class="nav-label">Memories</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="entities">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                    <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="nav-label">Entities</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="projects">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span class="nav-label">Projects</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="documents">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                <span class="nav-label">Documents</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="code_artifacts">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="16 18 22 12 16 6"/>
+                    <polyline points="8 6 2 12 8 18"/>
+                </svg>
+                <span class="nav-label">Code Artifacts</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="graph">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <circle cx="19" cy="5" r="2"/>
+                    <circle cx="5" cy="5" r="2"/>
+                    <circle cx="19" cy="19" r="2"/>
+                    <circle cx="5" cy="19" r="2"/>
+                    <line x1="14.5" y1="9.5" x2="17.5" y2="6.5"/>
+                    <line x1="9.5" y1="9.5" x2="6.5" y2="6.5"/>
+                    <line x1="14.5" y1="14.5" x2="17.5" y2="17.5"/>
+                    <line x1="9.5" y1="14.5" x2="6.5" y2="17.5"/>
+                </svg>
+                <span class="nav-label">Graph</span>
+            </a>
+        </nav>
+
+        <!-- Collapse Toggle -->
+        <div class="collapse-toggle" ui-spec-block-id="collapse_toggle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            <span class="collapse-text">Collapse</span>
+        </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+        <!-- Auth Warning -->
+        <div class="auth-warning" ui-spec-block-id="auth_warning">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>Auth disabled — Server running without authentication</span>
+            <button class="auth-warning-close" aria-label="Dismiss warning">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Content Area -->
+        <main class="content" ui-spec-block-id="content">
+            <!-- Page Header -->
+            <div class="page-header" ui-spec-block-id="header">
+                <h1 class="page-title">Memories</h1>
+                
+                <div class="header-search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <input type="text" placeholder="Search title, content, keywords...">
+                </div>
+
+                <div class="filter-group">
+                    <div class="filter-dropdown" data-filter="importance">
+                        <span>Importance</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" data-value="all">All</div>
+                            <div class="dropdown-item" data-value="high">High (9-10)</div>
+                            <div class="dropdown-item" data-value="medium">Medium (7-8)</div>
+                            <div class="dropdown-item" data-value="low">Low (&lt;7)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-dropdown" data-filter="tags">
+                        <span>Tags</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" data-value="all">All Tags</div>
+                            <div class="dropdown-item" data-value="api">API</div>
+                            <div class="dropdown-item" data-value="frontend">Frontend</div>
+                            <div class="dropdown-item" data-value="backend">Backend</div>
+                            <div class="dropdown-item" data-value="bugfix">Bugfix</div>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-dropdown" data-filter="project">
+                        <span>Project</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" data-value="all">All Projects</div>
+                            <div class="dropdown-item" data-value="forgetful">Forgetful</div>
+                            <div class="dropdown-item" data-value="dashboard">Dashboard</div>
+                            <div class="dropdown-item" data-value="api-v2">API v2</div>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-dropdown" data-filter="status">
+                        <span>Status</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item selected" data-value="active">Active</div>
+                            <div class="dropdown-item" data-value="obsolete">Obsolete</div>
+                            <div class="dropdown-item" data-value="all">All</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Create Memory
+                </button>
+            </div>
+
+            <!-- Memories Table -->
+            <div class="table-container" ui-spec-block-id="memories_table">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="checkbox-wrapper">
+                                    <div class="custom-checkbox" data-select-all>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                    </div>
+                                </th>
+                                <th class="sorted">
+                                    Title
+                                    <span class="sort-icon">↓</span>
+                                </th>
+                                <th>
+                                    Importance
+                                    <span class="sort-icon">↕</span>
+                                </th>
+                                <th>
+                                    Tags
+                                    <span class="sort-icon">↕</span>
+                                </th>
+                                <th>
+                                    Project
+                                    <span class="sort-icon">↕</span>
+                                </th>
+                                <th>
+                                    Updated
+                                    <span class="sort-icon">↕</span>
+                                </th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr data-id="1">
+                                <td class="checkbox-wrapper">
+                                    <div class="custom-checkbox">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                    </div>
+                                </td>
+                                <td class="title-cell">
+                                    <div class="title-text">Implement MCP server authentication flow</div>
+                                </td>
+                                <td>
+                                    <input type="number" class="importance-input importance-high" value="9" min="1" max="10">
+                                </td>
+                                <td>
+                                    <div class="tags-cell">
+                                        <span class="tag">API<span class="tag-remove">×</span></span>
+                                        <span class="tag">Security<span class="tag-remove">×</span></span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="project-badge">Forgetful</span>
+                                </td>
+                                <td class="date-cell">Dec 9, 2025</td>
+                                <td>
+                                    <div class="actions-cell">
+                                        <button class="action-btn" title="Mark Obsolete">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                                                <line x1="12" y1="2" x2="12" y2="12"/>
+                                            </svg>
+                                        </button>
+                                        <button class="action-btn delete" title="Delete">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"/>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr data-id="2">
+                                <td class="checkbox-wrapper">
+                                    <div class="custom-checkbox">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                    </div>
+                                </td>
+                                <td class="title-cell">
+                                    <div class="title-text">Graph visualization performance optimization notes</div>
+                                </td>
+                                <td>
+                                    <input type="number" class="importance-input importance-medium" value="8" min="1" max="10">
+                                </td>
+                                <td>
+                                    <div class="tags-cell">
+                                        <span class="tag">Frontend<span class="tag-remove">×</span></span>
+                                        <span class="tag">Performance<span class="tag-remove">×</span></span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="project-badge">Dashboard</span>
+                                </td>
+                                <td class="date-cell">Dec 8, 2025</td>
+                                <td>
+                                    <div class="actions-cell">
+                                        <button class="action-btn" title="Mark Obsolete">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                                                <line x1="12" y1="2" x2="12" y2="12"/>
+                                            </svg>
+                                        </button>
+                                        <button class="action-btn delete" title="Delete">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"/>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr data-id="3">
+                                <td class="checkbox-wrapper">
+                                    <div class="custom-checkbox">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                    </div>
+                                </td>
+                                <td class="title-cell">
+                                    <div class="title-text">Database schema migration strategy</div>
+                                </td>
+                                <td>
+                                    <input type="number" class="importance-input importance-medium" value="7" min="1" max="10">
+                                </td>
+                                <td>
+                                    <div class="tags-cell">
+                                        <span class="tag">Backend<span class="tag-remove">×</span></span>
+                                        <span class="tag">Database<span class="tag-remove">×</span></span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="project-badge">API v2</span>
+                                </td>
+                                <td class="date-cell">Dec 7, 2025</td>
+                                <td>
+                                    <div class="actions-cell">
+                                        <button class="action-btn" title="Mark Obsolete">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                                                <line x1="12" y1="2" x2="12" y2="12"/>
+                                            </svg>
+                                        </button>
+                                        <button class="action-btn delete" title="Delete">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"/>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr data-id="4">
+                                <td class="checkbox-wrapper">
+                                    <div class="custom-checkbox">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                    </div>
+                                </td>
+                                <td class="title-cell">
+                                    <div class="title-text">User feedback from beta testing session</div>
+                                </td>
+                                <td>
+                                    <input type="number" class="importance-input" value="6" min="1" max="10">
+                                </td>
+                                <td>
+                                    <div class="tags-cell">
+                                        <span class="tag">Feedback<span class="tag-remove">×</span></span>
+                                        <button class="add-tag-btn">+ Tag</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="project-badge">Forgetful</span>
+                                </td>
+                                <td class="date-cell">Dec 6, 2025</td>
+                                <td>
+                                    <div class="actions-cell">
+                                        <button class="action-btn" title="Mark Obsolete">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                                                <line x1="12" y1="2" x2="12" y2="12"/>
+                                            </svg>
+                                        </button>
+                                        <button class="action-btn delete" title="Delete">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"/>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr data-id="5">
+                                <td class="checkbox-wrapper">
+                                    <div class="custom-checkbox">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                    </div>
+                                </td>
+                                <td class="title-cell">
+                                    <div class="title-text">API rate limiting implementation details</div>
+                                </td>
+                                <td>
+                                    <input type="number" class="importance-input importance-high" value="10" min="1" max="10">
+                                </td>
+                                <td>
+                                    <div class="tags-cell">
+                                        <span class="tag">API<span class="tag-remove">×</span></span>
+                                        <span class="tag">Security<span class="tag-remove">×</span></span>
+                                        <span class="tag">Backend<span class="tag-remove">×</span></span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="project-badge">API v2</span>
+                                </td>
+                                <td class="date-cell">Dec 5, 2025</td>
+                                <td>
+                                    <div class="actions-cell">
+                                        <button class="action-btn" title="Mark Obsolete">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                                                <line x1="12" y1="2" x2="12" y2="12"/>
+                                            </svg>
+                                        </button>
+                                        <button class="action-btn delete" title="Delete">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"/>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <div class="pagination-info">
+                        Showing 1-5 of 42 memories
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="page-btn" disabled>Previous</button>
+                        <button class="page-btn active">1</button>
+                        <button class="page-btn">2</button>
+                        <button class="page-btn">3</button>
+                        <button class="page-btn">...</button>
+                        <button class="page-btn">9</button>
+                        <button class="page-btn">Next</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bulk Actions Bar -->
+        <div class="bulk-actions-bar" ui-spec-block-id="bulk_actions_bar">
+            <div class="selected-count"><span>0</span> items selected</div>
+            <div class="bulk-divider"></div>
+            <button class="bulk-btn danger">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                Delete
+            </button>
+            <button class="bulk-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                    <line x1="12" y1="2" x2="12" y2="12"/>
+                </svg>
+                Mark Obsolete
+            </button>
+            <button class="bulk-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    <line x1="12" y1="11" x2="12" y2="17"/>
+                    <line x1="9" y1="14" x2="15" y2="14"/>
+                </svg>
+                Add to Project
+            </button>
+            <button class="bulk-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    <line x1="9" y1="14" x2="15" y2="14"/>
+                </svg>
+                Remove from Project
+            </button>
+        </div>
+    </div>
+
+    <!-- Panel Overlay -->
+    <div class="panel-overlay"></div>
+
+    <!-- Detail Panel -->
+    <aside class="detail-panel" ui-spec-block-id="detail_panel">
+        <div class="detail-header" ui-spec-block-id="detail_header">
+            <button class="detail-close" aria-label="Close panel">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <span class="type-badge memory">Memory</span>
+            <h2 class="detail-title" contenteditable="true">Implement MCP server authentication flow</h2>
+        </div>
+
+        <div class="detail-body">
+            <!-- Quick Edit Section -->
+            <div class="detail-section" ui-spec-block-id="detail_quick_edit">
+                <div class="section-label">Quick Edit</div>
+                
+                <div class="form-row">
+                    <label class="form-label">Importance</label>
+                    <div class="importance-slider-wrapper">
+                        <input type="range" class="importance-slider" min="1" max="10" value="9">
+                        <span class="importance-value">9</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label class="form-label">Tags</label>
+                    <div class="tags-edit">
+                        <span class="tag">API<span class="tag-remove">×</span></span>
+                        <span class="tag">Security<span class="tag-remove">×</span></span>
+                        <input type="text" class="tag-input" placeholder="Add tag...">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label class="form-label">Associated Projects</label>
+                    <div class="project-pills">
+                        <span class="project-badge">Forgetful</span>
+                        <button class="add-project-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Add
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Preview Section -->
+            <div class="detail-section" ui-spec-block-id="detail_content_preview">
+                <div class="section-label">Content Preview</div>
+                <p class="content-preview">
+                    The MCP server authentication flow should implement OAuth 2.0 with support for both authorization code and client credentials grant types. We need to ensure proper token refresh mechanisms and secure storage of credentials. The implementation should follow industry best practices for security...
+                </p>
+                <span class="show-more-link">Show more</span>
+            </div>
+
+            <!-- Related Items Section -->
+            <div class="detail-section" ui-spec-block-id="detail_related_items">
+                <div class="section-label">Related Items</div>
+                <div class="related-list">
+                    <div class="related-item">
+                        <span class="related-dot entity"></span>
+                        <span class="related-title">OAuth Provider</span>
+                        <button class="unlink-btn">Unlink</button>
+                    </div>
+                    <div class="related-item">
+                        <span class="related-dot document"></span>
+                        <span class="related-title">Security Guidelines v2</span>
+                        <button class="unlink-btn">Unlink</button>
+                    </div>
+                    <div class="related-item">
+                        <span class="related-dot entity"></span>
+                        <span class="related-title">Token Manager</span>
+                        <button class="unlink-btn">Unlink</button>
+                    </div>
+                    <div class="related-item">
+                        <span class="related-dot project"></span>
+                        <span class="related-title">API v2 Roadmap</span>
+                        <button class="unlink-btn">Unlink</button>
+                    </div>
+                </div>
+                <span class="show-all-link">Show all 8 items</span>
+            </div>
+        </div>
+
+        <div class="detail-footer" ui-spec-block-id="detail_footer">
+            <div class="detail-meta">
+                <span class="detail-meta-item">ID: 1</span>
+                <span class="detail-meta-item">Created: Dec 1, 2025</span>
+            </div>
+            <div class="detail-actions" ui-spec-block-id="detail_actions">
+                <button class="btn-delete">Delete</button>
+                <button class="btn-ghost">View in Graph</button>
+                <button class="btn-accent">Edit Full</button>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        // Sidebar collapse toggle
+        const sidebar = document.querySelector('.sidebar');
+        const collapseToggle = document.querySelector('.collapse-toggle');
+        
+        collapseToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+        });
+
+        // Auth warning dismiss
+        const authWarning = document.querySelector('.auth-warning');
+        const authClose = document.querySelector('.auth-warning-close');
+        
+        authClose.addEventListener('click', () => {
+            authWarning.classList.add('hidden');
+            sessionStorage.setItem('authWarningDismissed', 'true');
+        });
+
+        // Check if auth warning was previously dismissed
+        if (sessionStorage.getItem('authWarningDismissed') === 'true') {
+            authWarning.classList.add('hidden');
+        }
+
+        // Filter dropdowns
+        const filterDropdowns = document.querySelectorAll('.filter-dropdown');
+        
+        filterDropdowns.forEach(dropdown => {
+            dropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const menu = dropdown.querySelector('.dropdown-menu');
+                
+                // Close all other dropdowns
+                filterDropdowns.forEach(d => {
+                    if (d !== dropdown) {
+                        d.querySelector('.dropdown-menu').classList.remove('show');
+                    }
+                });
+                
+                menu.classList.toggle('show');
+            });
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        });
+
+        // Dropdown item selection
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const menu = item.closest('.dropdown-menu');
+                const dropdown = item.closest('.filter-dropdown');
+                
+                menu.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+                
+                dropdown.querySelector('span').textContent = item.textContent;
+                
+                if (item.dataset.value !== 'all') {
+                    dropdown.classList.add('active');
+                } else {
+                    dropdown.classList.remove('active');
+                }
+                
+                menu.classList.remove('show');
+            });
+        });
+
+        // Checkbox functionality
+        const checkboxes = document.querySelectorAll('.custom-checkbox');
+        const selectAllCheckbox = document.querySelector('[data-select-all]');
+        const bulkActionsBar = document.querySelector('.bulk-actions-bar');
+        const selectedCountEl = document.querySelector('.selected-count span');
+        
+        function updateBulkActionsBar() {
+            const selectedCount = document.querySelectorAll('tbody .custom-checkbox.checked').length;
+            selectedCountEl.textContent = selectedCount;
+            
+            if (selectedCount > 0) {
+                bulkActionsBar.classList.add('visible');
+            } else {
+                bulkActionsBar.classList.remove('visible');
+            }
+        }
+
+        checkboxes.forEach(checkbox => {
+            if (checkbox.hasAttribute('data-select-all')) {
+                checkbox.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    checkbox.classList.toggle('checked');
+                    const isChecked = checkbox.classList.contains('checked');
+                    
+                    document.querySelectorAll('tbody .custom-checkbox').forEach(cb => {
+                        cb.classList.toggle('checked', isChecked);
+                        cb.closest('tr').classList.toggle('selected', isChecked);
+                    });
+                    
+                    updateBulkActionsBar();
+                });
+            } else {
+                checkbox.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    checkbox.classList.toggle('checked');
+                    checkbox.closest('tr').classList.toggle('selected', checkbox.classList.contains('checked'));
+                    updateBulkActionsBar();
+                });
+            }
+        });
+
+        // Row click opens detail panel
+        const detailPanel = document.querySelector('.detail-panel');
+        const panelOverlay = document.querySelector('.panel-overlay');
+        const detailClose = document.querySelector('.detail-close');
+        
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('.custom-checkbox') || 
+                    e.target.closest('.importance-input') || 
+                    e.target.closest('.action-btn') ||
+                    e.target.closest('.tag-remove') ||
+                    e.target.closest('.add-tag-btn')) {
+                    return;
+                }
+                
+                detailPanel.classList.add('open');
+                panelOverlay.classList.add('visible');
+            });
+        });
+
+        function closeDetailPanel() {
+            detailPanel.classList.remove('open');
+            panelOverlay.classList.remove('visible');
+        }
+
+        detailClose.addEventListener('click', closeDetailPanel);
+        panelOverlay.addEventListener('click', closeDetailPanel);
+
+        // Importance input styling
+        document.querySelectorAll('.importance-input').forEach(input => {
+            function updateStyle() {
+                const value = parseInt(input.value);
+                input.classList.remove('importance-high', 'importance-medium');
+                
+                if (value >= 9) {
+                    input.classList.add('importance-high');
+                } else if (value >= 7) {
+                    input.classList.add('importance-medium');
+                }
+            }
+            
+            input.addEventListener('change', updateStyle);
+            input.addEventListener('click', (e) => e.stopPropagation());
+        });
+
+        // Importance slider in detail panel
+        const importanceSlider = document.querySelector('.importance-slider');
+        const importanceValue = document.querySelector('.importance-value');
+        
+        if (importanceSlider) {
+            importanceSlider.addEventListener('input', () => {
+                importanceValue.textContent = importanceSlider.value;
+            });
+        }
+
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+K for search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.querySelector('.search-input').focus();
+            }
+            
+            // Escape to close panel
+            if (e.key === 'Escape') {
+                closeDetailPanel();
+            }
+        });
+
+        // Sortable columns
+        document.querySelectorAll('th').forEach(th => {
+            th.addEventListener('click', () => {
+                document.querySelectorAll('th').forEach(h => h.classList.remove('sorted'));
+                th.classList.add('sorted');
+            });
+        });
+    </script>
+</body>
+</html>

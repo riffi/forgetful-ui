@@ -1,12 +1,17 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { AppShell } from '@mantine/core'
+import { IconFolder, IconX } from '@tabler/icons-react'
 import { Sidebar } from './Sidebar'
 import { AuthWarning } from '@/components/auth'
+import { useProjectContext } from '@/context/ProjectContext'
+import { useProject } from '@/hooks/queries/useProjects'
 import classes from './MainLayout.module.css'
 
 export function MainLayout() {
   const [collapsed, setCollapsed] = useState(false)
+  const { selectedProjectId, clearProject } = useProjectContext()
+  const { data: selectedProject } = useProject(selectedProjectId ?? 0)
 
   return (
     <AppShell
@@ -23,6 +28,18 @@ export function MainLayout() {
 
       <AppShell.Main className={classes.main}>
         <AuthWarning />
+        {selectedProjectId && selectedProject && (
+          <div className={classes.projectContextBar}>
+            <div className={classes.projectContextInfo}>
+              <IconFolder size={14} />
+              <span>{selectedProject.name}</span>
+            </div>
+            <button className={classes.projectContextClear} onClick={clearProject}>
+              <span>Clear filter</span>
+              <IconX size={14} />
+            </button>
+          </div>
+        )}
         <div className={classes.content}>
           <Outlet />
         </div>

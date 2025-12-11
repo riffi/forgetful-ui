@@ -149,3 +149,13 @@
 .collapseText {
   font-size: 13px;
 }
+
+.projectSelector {
+  padding: 0 16px 16px;
+}
+
+.projectHint {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}

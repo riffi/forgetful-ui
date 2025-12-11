@@ -6,32 +6,32 @@ export const dashboardKeys = {
   stats: ['dashboard', 'stats'] as const,
 }
 
-export function useDashboardStats() {
+export function useDashboardStats(projectId?: number | null) {
   const results = useQueries({
     queries: [
       {
-        queryKey: ['memories', 'count'],
-        queryFn: () => memoriesApi.list({ limit: 1 }),
+        queryKey: ['memories', 'count', projectId],
+        queryFn: () => memoriesApi.list({ limit: 1, project_id: projectId ?? undefined }),
       },
       {
-        queryKey: ['entities', 'count'],
-        queryFn: () => entitiesApi.list({ limit: 1 }),
+        queryKey: ['entities', 'count', projectId],
+        queryFn: () => entitiesApi.list({ limit: 1, project_id: projectId ?? undefined }),
       },
       {
         queryKey: ['projects', 'count'],
         queryFn: () => projectsApi.list({ limit: 1 }),
       },
       {
-        queryKey: ['documents', 'count'],
-        queryFn: () => documentsApi.list({ limit: 1 }),
+        queryKey: ['documents', 'count', projectId],
+        queryFn: () => documentsApi.list({ limit: 1, project_id: projectId ?? undefined }),
       },
       {
-        queryKey: ['codeArtifacts', 'count'],
-        queryFn: () => codeArtifactsApi.list({ limit: 1 }),
+        queryKey: ['codeArtifacts', 'count', projectId],
+        queryFn: () => codeArtifactsApi.list({ limit: 1, project_id: projectId ?? undefined }),
       },
       {
-        queryKey: ['graph', 'meta'],
-        queryFn: () => graphApi.getData({ limit: 1 }),
+        queryKey: ['graph', 'meta', projectId],
+        queryFn: () => graphApi.getData({ limit: 1, projectId: projectId ?? undefined }),
       },
     ],
   })

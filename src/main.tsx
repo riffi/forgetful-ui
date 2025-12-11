@@ -6,6 +6,7 @@ import { BrowserRouter } from 'react-router-dom'
 
 import { theme, cssVariablesResolver } from '@/styles/theme'
 import { AuthProvider } from '@/context/AuthContext'
+import { ProjectProvider } from '@/context/ProjectContext'
 import App from './App'
 
 import '@mantine/core/styles.css'
@@ -27,7 +28,9 @@ createRoot(document.getElementById('root')!).render(
       <MantineProvider theme={theme} defaultColorScheme="dark" cssVariablesResolver={cssVariablesResolver}>
         <BrowserRouter>
           <AuthProvider>
-            <App />
+            <ProjectProvider>
+              <App />
+            </ProjectProvider>
           </AuthProvider>
         </BrowserRouter>
       </MantineProvider>

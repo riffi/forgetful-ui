@@ -14,6 +14,7 @@ export const entitiesApi = {
     const params = new URLSearchParams()
 
     if (filters.entity_type) params.set('entity_type', filters.entity_type)
+    if (filters.project_id) params.set('project_id', String(filters.project_id))
     if (filters.limit) params.set('limit', String(filters.limit))
     if (filters.offset) params.set('offset', String(filters.offset))
 

@@ -1,0 +1,88 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  background: var(--surface-primary);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mainColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+.section {
+  background: var(--surface-primary);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.sectionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.contentText {
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.codeContent {
+  background: var(--surface-secondary) !important;
+  border: 1px solid var(--border-subtle);
+  max-height: 500px;
+  overflow: auto;
+  font-size: 13px;
+}
+
+.projectCard {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.projectCard:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+}
+
+.errorState {
+  background: var(--surface-primary);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 48px;
+  text-align: center;
+}

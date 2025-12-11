@@ -1,0 +1,48 @@
+.modalContent {
+  background: var(--surface-primary);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+}
+
+.modalHeader {
+  background: transparent;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 16px 20px;
+}
+
+.modalBody {
+  padding: 20px;
+}
+
+.input {
+  background: var(--surface-secondary) !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+  transition: all 0.2s;
+}
+
+.input:focus {
+  border-color: var(--accent-memory) !important;
+}
+
+.input::placeholder {
+  color: var(--text-dimmed) !important;
+}
+
+.slider {
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.actions {
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.submitBtn {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+.submitBtn:hover {
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+}

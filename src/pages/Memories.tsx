@@ -20,6 +20,7 @@ import {
 } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useMemories, useDeleteMemory } from '@/hooks'
+import { useProjectContext } from '@/context/ProjectContext'
 import { CreateMemoryModal } from '@/components/modals'
 import type { Memory, MemoryFilters } from '@/types'
 import classes from './Memories.module.css'
@@ -34,6 +35,7 @@ function getImportanceClass(value: number): string {
 
 export function Memories() {
   const navigate = useNavigate()
+  const { selectedProjectId } = useProjectContext()
 
   // Create modal state
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
@@ -63,8 +65,9 @@ export function Memories() {
       importance_min: importanceFilter ? parseInt(importanceFilter) : undefined,
       tags: tagsFilter.length > 0 ? tagsFilter : undefined,
       is_obsolete: showObsolete || undefined,
+      project_id: selectedProjectId ?? undefined,
     }),
-    [page, importanceFilter, tagsFilter, showObsolete]
+    [page, importanceFilter, tagsFilter, showObsolete, selectedProjectId]
   )
 
   // Fetch memories

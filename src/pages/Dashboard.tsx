@@ -24,6 +24,7 @@ import {
 } from '@tabler/icons-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useDashboardStats, useMemories } from '@/hooks'
+import { useProjectContext } from '@/context/ProjectContext'
 import type { Memory } from '@/types'
 import classes from './Dashboard.module.css'
 
@@ -198,8 +199,12 @@ function HighImportanceMemories({ memories }: { memories: Memory[] }) {
 }
 
 export function Dashboard() {
-  const { stats, isLoading: statsLoading, isError } = useDashboardStats()
-  const { data: memoriesData, isLoading: memoriesLoading } = useMemories({ limit: 10 })
+  const { selectedProjectId } = useProjectContext()
+  const { stats, isLoading: statsLoading, isError } = useDashboardStats(selectedProjectId)
+  const { data: memoriesData, isLoading: memoriesLoading } = useMemories({
+    limit: 10,
+    project_id: selectedProjectId ?? undefined,
+  })
 
   const statCards = [
     {

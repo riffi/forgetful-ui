@@ -1,5 +1,6 @@
+import { useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { Tooltip } from '@mantine/core'
+import { Tooltip, Select } from '@mantine/core'
 import {
   IconLayoutDashboard,
   IconBrain,
@@ -11,7 +12,10 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconSearch,
+  IconX,
 } from '@tabler/icons-react'
+import { useProjectContext } from '@/context/ProjectContext'
+import { useProjects } from '@/hooks/queries/useProjects'
 import classes from './Sidebar.module.css'
 
 interface SidebarProps {
@@ -31,6 +35,30 @@ const navItems = [
 
 export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
   const location = useLocation()
+  const { selectedProjectId, setSelectedProject, clearProject } = useProjectContext()
+  const { data: projectsData } = useProjects({ limit: 100 })
+
+  const projectOptions = [
+    { value: '', label: 'All Projects' },
+    ...(projectsData?.projects || [])
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      .map(p => ({ value: String(p.id), label: p.name }))
+  ]
+
+  const selectedProject = projectsData?.projects?.find(p => p.id === selectedProjectId)
+
+  // Keyboard shortcut Ctrl+P
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault()
+        const select = document.querySelector('[data-project-selector]') as HTMLElement
+        select?.click()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <div className={classes.sidebar}>
@@ -48,6 +76,52 @@ export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
           <IconSearch size={18} className={classes.searchIcon} />
           <span className={classes.searchText}>Quick search...</span>
           <kbd className={classes.searchKbd}>⌘K</kbd>
+        </div>
+      )}
+
+      {/* Project Context Selector */}
+      {!collapsed && (
+        <div className={classes.projectSelector}>
+          <Select
+            data-project-selector
+            placeholder="All Projects"
+            data={projectOptions}
+            value={selectedProjectId ? String(selectedProjectId) : ''}
+            onChange={(value) => setSelectedProject(value ? parseInt(value, 10) : null)}
+            leftSection={<IconFolder size={16} />}
+            rightSection={selectedProjectId ? (
+              <IconX
+                size={14}
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  clearProject()
+                }}
+              />
+            ) : undefined}
+            styles={{
+              input: {
+                backgroundColor: 'var(--surface-secondary)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-primary)',
+              },
+              dropdown: {
+                backgroundColor: 'var(--surface-primary)',
+                border: '1px solid var(--border-subtle)',
+              },
+              option: {
+                '&[data-selected]': {
+                  backgroundColor: 'var(--accent-project)',
+                },
+              },
+            }}
+            comboboxProps={{ withinPortal: true }}
+          />
+          {selectedProject && (
+            <div className={classes.projectHint}>
+              <kbd className={classes.searchKbd}>Ctrl+P</kbd>
+            </div>
+          )}
         </div>
       )}
 

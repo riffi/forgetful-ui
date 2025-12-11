@@ -283,6 +283,7 @@ export interface EntityFilters {
   search?: string
   entity_type?: EntityType
   tags?: string[]
+  project_id?: number
   limit?: number
   offset?: number
 }
