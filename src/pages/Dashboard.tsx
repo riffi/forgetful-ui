@@ -29,6 +29,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useDashboardStats, useMemories } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
 import { UnifiedEditorModal } from '@/components/modals'
+import { Section, Card } from '@/components/ui'
 import type { Memory } from '@/types'
 import classes from './Dashboard.module.css'
 
@@ -353,27 +354,26 @@ export function Dashboard() {
 
       <div className={classes.mainGrid}>
         {/* Recent Activities */}
-        <Paper className={classes.section}>
-          <div className={classes.sectionHeader}>
-            <h2 className={classes.sectionTitle}>
-              <IconClock size={16} className={classes.sectionIcon} />
-              Recent Activities
-            </h2>
+        <Section
+          title="Recent Activities"
+          icon={<IconClock size={16} />}
+          action={
             <Anchor component={Link} to="/memories" className={classes.viewAllLink}>
               View All
             </Anchor>
-          </div>
+          }
+          noPadding
+        >
           <RecentMemories
             memories={memoriesData?.memories ?? []}
             isLoading={memoriesLoading}
             projects={projectsData?.projects ?? []}
           />
-        </Paper>
+        </Section>
 
         {/* Quick Actions Panel */}
         <div className={classes.quickActions}>
-          <Paper className={classes.actionCard}>
-            <h3 className={classes.actionCardTitle}>Quick Search</h3>
+          <Card title="Quick Search">
             <div className={classes.quickSearchBox}>
               <IconSearch size={18} className={classes.quickSearchIcon} />
               <input
@@ -382,17 +382,15 @@ export function Dashboard() {
                 placeholder="Search all types..."
               />
             </div>
-          </Paper>
+          </Card>
 
-          <Paper className={classes.actionCard}>
-            <h3 className={classes.actionCardTitle}>Quick Create</h3>
+          <Card title="Quick Create">
             <QuickActions onOpenEditor={handleOpenEditor} />
-          </Paper>
+          </Card>
 
-          <Paper className={classes.actionCard}>
-            <h3 className={classes.actionCardTitle}>High Importance</h3>
+          <Card title="High Importance">
             <HighImportanceMemories memories={memoriesData?.memories ?? []} />
-          </Paper>
+          </Card>
         </div>
       </div>
 

@@ -10,8 +10,6 @@ import {
   TextInput,
   Textarea,
   Select,
-  Breadcrumbs,
-  Anchor,
   Skeleton,
   Modal,
   Tabs,
@@ -34,8 +32,9 @@ import {
   IconCode,
   IconCube,
 } from '@tabler/icons-react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useProject, useUpdateProject, useDeleteProject, useMemories, useDocuments, useCodeArtifacts, useEntities } from '@/hooks'
+import { Breadcrumb } from '@/components/ui'
 import type { ProjectType, ProjectStatus } from '@/types'
 import classes from './ProjectDetail.module.css'
 
@@ -173,18 +172,14 @@ export function ProjectDetail() {
     )
   }
 
-  const breadcrumbs = [
+  const breadcrumbItems = [
     { title: 'Projects', href: '/projects' },
     { title: project.name, href: `/projects/${project.id}` },
-  ].map((item, index) => (
-    <Anchor key={index} component={Link} to={item.href} size="sm">
-      {item.title}
-    </Anchor>
-  ))
+  ]
 
   return (
     <div className={classes.container}>
-      <Breadcrumbs mb="md">{breadcrumbs}</Breadcrumbs>
+      <Breadcrumb items={breadcrumbItems} />
 
       {/* Header */}
       <Paper className={classes.header} mb="md">

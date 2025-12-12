@@ -10,8 +10,6 @@ import {
   TextInput,
   Textarea,
   Select,
-  Breadcrumbs,
-  Anchor,
   Skeleton,
   TagsInput,
   Modal,
@@ -30,8 +28,9 @@ import {
   IconFolder,
   IconCopy,
 } from '@tabler/icons-react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useCodeArtifact, useUpdateCodeArtifact, useDeleteCodeArtifact } from '@/hooks'
+import { Breadcrumb } from '@/components/ui'
 import classes from './CodeArtifactDetail.module.css'
 
 const LANGUAGE_OPTIONS = [
@@ -179,18 +178,14 @@ export function CodeArtifactDetail() {
     )
   }
 
-  const breadcrumbs = [
+  const breadcrumbItems = [
     { title: 'Code Artifacts', href: '/code-artifacts' },
     { title: artifact.title, href: `/code-artifacts/${artifact.id}` },
-  ].map((item, index) => (
-    <Anchor key={index} component={Link} to={item.href} size="sm">
-      {item.title}
-    </Anchor>
-  ))
+  ]
 
   return (
     <div className={classes.container}>
-      <Breadcrumbs mb="md">{breadcrumbs}</Breadcrumbs>
+      <Breadcrumb items={breadcrumbItems} />
 
       {/* Header */}
       <Paper className={classes.header} mb="md">

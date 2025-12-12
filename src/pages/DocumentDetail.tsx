@@ -10,8 +10,6 @@ import {
   TextInput,
   Textarea,
   Select,
-  Breadcrumbs,
-  Anchor,
   Skeleton,
   TagsInput,
   Modal,
@@ -30,8 +28,9 @@ import {
   IconFolder,
   IconFile,
 } from '@tabler/icons-react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useDocument, useUpdateDocument, useDeleteDocument } from '@/hooks'
+import { Breadcrumb } from '@/components/ui'
 import classes from './DocumentDetail.module.css'
 
 const DOCUMENT_TYPE_OPTIONS = [
@@ -157,18 +156,14 @@ export function DocumentDetail() {
     )
   }
 
-  const breadcrumbs = [
+  const breadcrumbItems = [
     { title: 'Documents', href: '/documents' },
     { title: document.title, href: `/documents/${document.id}` },
-  ].map((item, index) => (
-    <Anchor key={index} component={Link} to={item.href} size="sm">
-      {item.title}
-    </Anchor>
-  ))
+  ]
 
   return (
     <div className={classes.container}>
-      <Breadcrumbs mb="md">{breadcrumbs}</Breadcrumbs>
+      <Breadcrumb items={breadcrumbItems} />
 
       {/* Header */}
       <Paper className={classes.header} mb="md">

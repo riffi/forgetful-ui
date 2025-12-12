@@ -7,15 +7,11 @@ import {
   Paper,
   Badge,
   Button,
-  ActionIcon,
   TextInput,
   Textarea,
   Slider,
-  Breadcrumbs,
-  Anchor,
   Skeleton,
   TagsInput,
-  Tooltip,
   Modal,
   Box,
   Select,
@@ -25,17 +21,19 @@ import {
   IconBrain,
   IconPencil,
   IconTrash,
-  IconShare3,
   IconDeviceFloppy,
   IconX,
   IconLink,
   IconArrowLeft,
-  IconCalendar,
-  IconHash,
   IconBox,
+  IconPlus,
+  IconFileText,
+  IconCode,
+  IconFolder,
 } from '@tabler/icons-react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useMemory, useUpdateMemory, useDeleteMemory, useMemoryLinks, useEntities, useLinkEntityToMemory } from '@/hooks'
+import { Breadcrumb, Card, Section } from '@/components/ui'
 import type { Memory } from '@/types'
 import classes from './MemoryDetail.module.css'
 
@@ -191,18 +189,14 @@ export function MemoryDetail() {
     )
   }
 
-  const breadcrumbs = [
+  const breadcrumbItems = [
     { title: 'Memories', href: '/memories' },
     { title: memory.title, href: `/memories/${memory.id}` },
-  ].map((item, index) => (
-    <Anchor key={index} component={Link} to={item.href} size="sm">
-      {item.title}
-    </Anchor>
-  ))
+  ]
 
   return (
     <div className={classes.container}>
-      <Breadcrumbs mb="md">{breadcrumbs}</Breadcrumbs>
+      <Breadcrumb items={breadcrumbItems} />
 
       {/* Header */}
       <Paper className={classes.header} mb="md">
@@ -276,8 +270,7 @@ export function MemoryDetail() {
         {/* Left Column - Content */}
         <div className={classes.mainColumn}>
           {/* Importance */}
-          <Paper className={classes.section} mb="md">
-            <Text className={classes.sectionLabel}>Importance</Text>
+          <Section title="Importance">
             {isEditing ? (
               <Stack gap="xs">
                 <Slider
@@ -310,11 +303,10 @@ export function MemoryDetail() {
             ) : (
               <ImportanceBadge importance={memory.importance} />
             )}
-          </Paper>
+          </Section>
 
           {/* Content */}
-          <Paper className={classes.section} mb="md">
-            <Text className={classes.sectionLabel}>Content</Text>
+          <Section title="Content">
             {isEditing ? (
               <Textarea
                 value={editedContent}
@@ -326,11 +318,10 @@ export function MemoryDetail() {
             ) : (
               <Text className={classes.contentText}>{memory.content}</Text>
             )}
-          </Paper>
+          </Section>
 
           {/* Context */}
-          <Paper className={classes.section} mb="md">
-            <Text className={classes.sectionLabel}>Context</Text>
+          <Section title="Context">
             {isEditing ? (
               <Textarea
                 value={editedContext}
@@ -342,13 +333,13 @@ export function MemoryDetail() {
             ) : (
               <Text className={classes.contentText}>{memory.context}</Text>
             )}
-          </Paper>
+          </Section>
 
           {/* Keywords & Tags */}
-          <Paper className={classes.section}>
+          <Section title="Keywords & Tags">
             <Group gap="xl">
               <Box style={{ flex: 1 }}>
-                <Text className={classes.sectionLabel}>Keywords</Text>
+                <Text className={classes.fieldLabel}>Keywords</Text>
                 {isEditing ? (
                   <TagsInput
                     value={editedKeywords}
@@ -366,7 +357,7 @@ export function MemoryDetail() {
                 )}
               </Box>
               <Box style={{ flex: 1 }}>
-                <Text className={classes.sectionLabel}>Tags</Text>
+                <Text className={classes.fieldLabel}>Tags</Text>
                 {isEditing ? (
                   <TagsInput
                     value={editedTags}
@@ -384,92 +375,106 @@ export function MemoryDetail() {
                 )}
               </Box>
             </Group>
-          </Paper>
+          </Section>
         </div>
 
         {/* Right Column - Sidebar */}
         <div className={classes.sidebar}>
           {/* Metadata */}
-          <Paper className={classes.section} mb="md">
-            <Text className={classes.sectionLabel}>Metadata</Text>
-            <Stack gap="xs">
-              <Group gap="xs">
-                <IconHash size={14} color="var(--text-dimmed)" />
-                <Text size="sm" c="dimmed">
-                  ID: {memory.id}
-                </Text>
-              </Group>
-              <Group gap="xs">
-                <IconCalendar size={14} color="var(--text-dimmed)" />
-                <Text size="sm" c="dimmed">
-                  Created: {new Date(memory.created_at).toLocaleString()}
-                </Text>
-              </Group>
-              <Group gap="xs">
-                <IconCalendar size={14} color="var(--text-dimmed)" />
-                <Text size="sm" c="dimmed">
-                  Updated: {new Date(memory.updated_at).toLocaleString()}
-                </Text>
-              </Group>
-            </Stack>
-          </Paper>
+          <Card title="Metadata">
+            <div className={classes.metadataRow}>
+              <span className={classes.metadataLabel}>ID</span>
+              <span className={classes.metadataValue}>#{memory.id}</span>
+            </div>
+            <div className={classes.metadataRow}>
+              <span className={classes.metadataLabel}>Created</span>
+              <span className={classes.metadataValue}>
+                {new Date(memory.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            </div>
+            <div className={classes.metadataRow}>
+              <span className={classes.metadataLabel}>Updated</span>
+              <span className={classes.metadataValue}>
+                {new Date(memory.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            </div>
+          </Card>
+
+          {/* Linked Projects */}
+          <Card title="Linked Projects">
+            {memory.project_ids?.length ? (
+              <>
+                {memory.project_ids.slice(0, 3).map((projectId) => (
+                  <div
+                    key={projectId}
+                    className={classes.linkedItem}
+                    onClick={() => navigate(`/projects/${projectId}`)}
+                  >
+                    <div className={`${classes.linkedItemDot} ${classes.linkedItemDot}.project`} style={{ background: 'var(--accent-project)' }} />
+                    <div className={classes.linkedItemContent}>
+                      <div className={classes.linkedItemTitle}>Project #{projectId}</div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <Text size="sm" c="dimmed">No linked projects</Text>
+            )}
+            <button className={classes.addLinkBtn}>
+              <IconPlus size={14} />
+              Add project link
+            </button>
+          </Card>
 
           {/* Linked Memories */}
-          <Paper className={classes.section} mb="md">
-            <Group justify="space-between" mb="sm">
-              <Text className={classes.sectionLabel}>Linked Memories</Text>
-              <Tooltip label="View in Graph">
-                <ActionIcon
-                  variant="subtle"
-                  onClick={() => navigate(`/graph?memory=${memory.id}`)}
-                >
-                  <IconShare3 size={16} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
+          <Card title="Linked Memories">
             {linksData?.linked_memories?.length ? (
-              <Stack gap="xs">
+              <>
                 {linksData.linked_memories.slice(0, 5).map((linked) => (
-                  <LinkedMemoryCard key={linked.id} memory={linked} />
+                  <div
+                    key={linked.id}
+                    className={classes.linkedItem}
+                    onClick={() => navigate(`/memories/${linked.id}`)}
+                  >
+                    <div className={`${classes.linkedItemDot}`} style={{ background: 'var(--accent-memory)' }} />
+                    <div className={classes.linkedItemContent}>
+                      <div className={classes.linkedItemTitle}>{linked.title}</div>
+                      <div className={classes.linkedItemMeta}>Importance: {linked.importance}</div>
+                    </div>
+                  </div>
                 ))}
                 {linksData.linked_memories.length > 5 && (
-                  <Text size="sm" c="dimmed" ta="center">
+                  <Text size="sm" c="dimmed" ta="center" mt="xs">
                     +{linksData.linked_memories.length - 5} more
                   </Text>
                 )}
-              </Stack>
+              </>
             ) : (
-              <Text size="sm" c="dimmed">
-                No linked memories
-              </Text>
+              <Text size="sm" c="dimmed">No linked memories</Text>
             )}
-          </Paper>
+            <button className={classes.addLinkBtn}>
+              <IconPlus size={14} />
+              Link memory
+            </button>
+          </Card>
 
-          {/* Actions */}
-          <Paper className={classes.section}>
-            <Text className={classes.sectionLabel} mb="sm">
-              Actions
-            </Text>
-            <Stack gap="xs">
-              <Button
-                variant="light"
-                leftSection={<IconShare3 size={16} />}
-                fullWidth
-                onClick={() => navigate(`/graph?memory=${memory.id}`)}
-              >
-                View in Graph
-              </Button>
-              <Button
-                variant="light"
-                leftSection={<IconBox size={16} />}
-                fullWidth
-                color="orange"
-                onClick={openLinkEntity}
-              >
-                Link Entity
-              </Button>
-            </Stack>
-          </Paper>
+          {/* Linked Documents */}
+          <Card title="Linked Documents">
+            <Text size="sm" c="dimmed">No linked documents</Text>
+            <button className={classes.addLinkBtn}>
+              <IconPlus size={14} />
+              Link document
+            </button>
+          </Card>
+
+          {/* Linked Code Artifacts */}
+          <Card title="Linked Code Artifacts">
+            <Text size="sm" c="dimmed">No linked code artifacts</Text>
+            <button className={classes.addLinkBtn}>
+              <IconPlus size={14} />
+              Link code artifact
+            </button>
+          </Card>
         </div>
       </div>
 

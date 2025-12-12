@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entities - Forgetful Dashboard</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --surface-primary: rgba(15, 23, 42, 0.8);
+            --surface-secondary: rgba(30, 41, 59, 0.6);
+            --surface-hover: rgba(51, 65, 85, 0.4);
+            --accent-memory: #a855f7;
+            --accent-entity: #f59e0b;
+            --accent-document: #3b82f6;
+            --accent-code: #06b6d4;
+            --accent-project: #22c55e;
+            --text-primary: rgba(255, 255, 255, 0.9);
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --text-dimmed: rgba(255, 255, 255, 0.4);
+            --border-subtle: rgba(255, 255, 255, 0.05);
+            --border-hover: rgba(255, 255, 255, 0.1);
+            --bg-base: #020617;
+            --bg-sidebar: rgba(15, 23, 42, 0.95);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 100;
+            transition: width 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            width: 72px;
+        }
+
+        .sidebar.collapsed .sidebar-text,
+        .sidebar.collapsed .global-search,
+        .sidebar.collapsed .project-context {
+            display: none;
+        }
+
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding: 12px;
+        }
+
+        .sidebar.collapsed .logo-text {
+            display: none;
+        }
+
+        /* Logo */
+        .logo {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .logo-icon svg {
+            width: 22px;
+            height: 22px;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Global Search */
+        .global-search {
+            padding: 0 16px 16px;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input-wrapper svg {
+            position: absolute;
+            left: 12px;
+            width: 16px;
+            height: 16px;
+            color: var(--text-dimmed);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 12px 10px 38px;
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-dimmed);
+        }
+
+        .search-input:focus {
+            border-color: var(--border-hover);
+            background: var(--surface-hover);
+        }
+
+        .search-shortcut {
+            position: absolute;
+            right: 10px;
+            font-size: 11px;
+            color: var(--text-dimmed);
+            background: var(--surface-primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        /* Project Context */
+        .project-context {
+            padding: 0 16px 16px;
+        }
+
+        .project-selector {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s;
+        }
+
+        .project-selector:hover {
+            border-color: var(--border-hover);
+            background: var(--surface-hover);
+        }
+
+        .project-selector svg {
+            width: 14px;
+            height: 14px;
+            color: var(--text-dimmed);
+        }
+
+        .project-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--surface-primary);
+            border: 1px solid var(--border-hover);
+            border-radius: 8px;
+            margin-top: 4px;
+            backdrop-filter: blur(12px);
+            z-index: 50;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .project-dropdown.open {
+            display: block;
+        }
+
+        .project-dropdown-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .project-dropdown-item:hover {
+            background: var(--surface-hover);
+        }
+
+        .project-dropdown-item.active {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--accent-project);
+        }
+
+        .project-context-wrapper {
+            position: relative;
+        }
+
+        /* Navigation */
+        .nav {
+            flex: 1;
+            padding: 8px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: rgba(248, 158, 11, 0.15);
+            color: white;
+            box-shadow: 0 0 20px rgba(248, 158, 11, 0.2);
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .nav-item span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Collapse Toggle */
+        .collapse-toggle {
+            padding: 16px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .collapse-toggle:hover {
+            color: var(--text-primary);
+        }
+
+        .collapse-toggle svg {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.3s;
+        }
+
+        .sidebar.collapsed .collapse-toggle svg {
+            transform: rotate(180deg);
+        }
+
+        /* Main Content */
+        .main-wrapper {
+            flex: 1;
+            margin-left: 260px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        .sidebar.collapsed ~ .main-wrapper {
+            margin-left: 72px;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            background: radial-gradient(ellipse at center, rgba(30, 41, 59, 0.3) 0%, transparent 70%);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content-inner {
+            padding: 24px;
+            flex: 1;
+        }
+
+        /* Auth Warning */
+        .auth-warning {
+            background: rgba(234, 179, 8, 0.15);
+            border-bottom: 1px solid rgba(234, 179, 8, 0.3);
+            padding: 6px 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #eab308;
+        }
+
+        .auth-warning.hidden {
+            display: none;
+        }
+
+        .auth-warning svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        .auth-warning-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: #eab308;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .auth-warning-close:hover {
+            opacity: 1;
+        }
+
+        /* Project Context Bar */
+        .project-context-bar {
+            background: rgba(34, 197, 94, 0.1);
+            border-bottom: 1px solid rgba(34, 197, 94, 0.2);
+            padding: 10px 24px;
+            display: none;
+            align-items: center;
+            gap: 16px;
+            font-size: 13px;
+        }
+
+        .project-context-bar.visible {
+            display: flex;
+        }
+
+        .project-context-bar .project-name {
+            color: var(--accent-project);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .project-context-bar .item-counts {
+            color: var(--text-secondary);
+        }
+
+        .project-context-bar .clear-filter {
+            margin-left: auto;
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-decoration: underline;
+            transition: color 0.2s;
+        }
+
+        .project-context-bar .clear-filter:hover {
+            color: var(--text-primary);
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-right: auto;
+        }
+
+        .header-search {
+            position: relative;
+            width: 240px;
+        }
+
+        .header-search svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            color: var(--text-dimmed);
+        }
+
+        .header-search input {
+            width: 100%;
+            padding: 10px 12px 10px 38px;
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            backdrop-filter: blur(8px);
+        }
+
+        .header-search input:focus {
+            border-color: var(--border-hover);
+        }
+
+        /* Filter Dropdowns */
+        .filter-dropdown {
+            position: relative;
+        }
+
+        .filter-btn {
+            padding: 10px 14px;
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: var(--surface-hover);
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        .filter-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 180px;
+            background: var(--surface-primary);
+            border: 1px solid var(--border-hover);
+            border-radius: 8px;
+            margin-top: 4px;
+            backdrop-filter: blur(12px);
+            z-index: 50;
+            overflow: hidden;
+        }
+
+        .dropdown-menu.open {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .dropdown-item:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+
+        .dropdown-item.selected {
+            background: rgba(248, 158, 11, 0.15);
+            color: var(--accent-entity);
+        }
+
+        /* Create Button */
+        .btn-create {
+            padding: 10px 18px;
+            background: var(--accent-entity);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(248, 158, 11, 0.3);
+        }
+
+        .btn-create:hover {
+            background: #d97706;
+            box-shadow: 0 0 30px rgba(248, 158, 11, 0.4);
+        }
+
+        .btn-create svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Data Table */
+        .data-table-wrapper {
+            background: var(--surface-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 14px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--surface-secondary);
+        }
+
+        .data-table td {
+            padding: 14px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+        }
+
+        .data-table tbody tr {
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--surface-hover);
+        }
+
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tbody tr.selected {
+            background: rgba(248, 158, 11, 0.1);
+        }
+
+        /* Checkbox */
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border-hover);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            background: transparent;
+        }
+
+        .checkbox:hover {
+            border-color: var(--accent-entity);
+        }
+
+        .checkbox.checked {
+            background: var(--accent-entity);
+            border-color: var(--accent-entity);
+        }
+
+        .checkbox svg {
+            width: 12px;
+            height: 12px;
+            color: white;
+            display: none;
+        }
+
+        .checkbox.checked svg {
+            display: block;
+        }
+
+        /* Entity Type Badge */
+        .entity-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            background: rgba(248, 158, 11, 0.15);
+            color: var(--accent-entity);
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 20px;
+        }
+
+        .entity-badge.individual {
+            background: rgba(168, 85, 247, 0.15);
+            color: var(--accent-memory);
+        }
+
+        .entity-badge.organization {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-document);
+        }
+
+        .entity-badge.team {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--accent-project);
+        }
+
+        .entity-badge.device {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent-code);
+        }
+
+        /* Tags */
+        .tags-cell {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.15s;
+        }
+
+        .tag-remove:hover {
+            opacity: 1;
+        }
+
+        .tag-add {
+            padding: 3px 8px;
+            background: transparent;
+            border: 1px dashed var(--border-hover);
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--text-dimmed);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .tag-add:hover {
+            border-color: var(--accent-entity);
+            color: var(--accent-entity);
+        }
+
+        /* Projects Count */
+        .projects-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-secondary);
+        }
+
+        .projects-count svg {
+            width: 14px;
+            height: 14px;
+            color: var(--accent-project);
+        }
+
+        /* Actions */
+        .action-btn {
+            padding: 6px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-dimmed);
+            border-radius: 4px;
+            transition: all 0.15s;
+        }
+
+        .action-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+
+        .action-btn.delete:hover {
+            color: #ef4444;
+        }
+
+        .action-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Bulk Actions Bar */
+        .bulk-actions-bar {
+            display: none;
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface-primary);
+            border: 1px solid var(--border-hover);
+            border-radius: 12px;
+            padding: 12px 20px;
+            backdrop-filter: blur(12px);
+            z-index: 90;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .bulk-actions-bar.visible {
+            display: flex;
+        }
+
+        .bulk-count {
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .bulk-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--border-subtle);
+        }
+
+        .bulk-btn {
+            padding: 8px 14px;
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .bulk-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+
+        .bulk-btn.delete:hover {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Detail Panel */
+        .detail-panel {
+            width: 380px;
+            height: 100vh;
+            background: var(--surface-primary);
+            border-left: 1px solid var(--border-subtle);
+            position: fixed;
+            right: -380px;
+            top: 0;
+            z-index: 110;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(12px);
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .detail-panel.open {
+            right: 0;
+        }
+
+        .detail-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            position: relative;
+        }
+
+        .detail-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 4px;
+            transition: color 0.15s;
+        }
+
+        .detail-close:hover {
+            color: white;
+        }
+
+        .detail-close svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .detail-type-badge {
+            display: inline-flex;
+            padding: 4px 10px;
+            background: rgba(248, 158, 11, 0.15);
+            color: var(--accent-entity);
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .detail-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: text;
+            padding: 4px 0;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.15s;
+        }
+
+        .detail-title:hover {
+            border-bottom-color: var(--border-hover);
+        }
+
+        .detail-section {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .detail-section-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+        }
+
+        /* Quick Edit */
+        .quick-edit-field {
+            margin-bottom: 16px;
+        }
+
+        .quick-edit-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .field-label {
+            font-size: 12px;
+            color: var(--text-dimmed);
+            margin-bottom: 8px;
+        }
+
+        /* Importance Slider */
+        .importance-slider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider-track {
+            flex: 1;
+            height: 6px;
+            background: var(--surface-secondary);
+            border-radius: 3px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .slider-fill {
+            height: 100%;
+            background: var(--accent-entity);
+            border-radius: 3px;
+            width: 70%;
+        }
+
+        .slider-thumb {
+            position: absolute;
+            top: 50%;
+            left: 70%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            background: var(--accent-entity);
+            border-radius: 50%;
+            cursor: grab;
+            box-shadow: 0 0 10px rgba(248, 158, 11, 0.4);
+        }
+
+        .slider-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-entity);
+            min-width: 20px;
+        }
+
+        /* Tags in Quick Edit */
+        .tags-edit {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: var(--surface-secondary);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        .tag-pill-remove {
+            cursor: pointer;
+            color: var(--text-dimmed);
+            transition: color 0.15s;
+        }
+
+        .tag-pill-remove:hover {
+            color: #ef4444;
+        }
+
+        .tag-add-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 10px;
+            background: transparent;
+            border: 1px dashed var(--border-hover);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text-dimmed);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .tag-add-btn:hover {
+            border-color: var(--accent-entity);
+            color: var(--accent-entity);
+        }
+
+        /* Projects in Quick Edit */
+        .projects-edit {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .project-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: rgba(34, 197, 94, 0.15);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--accent-project);
+        }
+
+        /* Content Preview */
+        .content-preview-text {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .show-more {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+
+        .show-more:hover {
+            color: var(--text-primary);
+            text-decoration: underline;
+        }
+
+        /* Related Items */
+        .related-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .related-item:last-child {
+            border-bottom: none;
+        }
+
+        .related-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .related-dot.memory {
+            background: var(--accent-memory);
+        }
+
+        .related-dot.document {
+            background: var(--accent-document);
+        }
+
+        .related-title {
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+
+        .related-title:hover {
+            color: var(--accent-entity);
+        }
+
+        .unlink-btn {
+            font-size: 12px;
+            color: var(--text-dimmed);
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+
+        .unlink-btn:hover {
+            color: var(--text-secondary);
+        }
+
+        .show-all-link {
+            display: block;
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+
+        .show-all-link:hover {
+            color: var(--text-primary);
+            text-decoration: underline;
+        }
+
+        /* Detail Footer */
+        .detail-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: auto;
+        }
+
+        .detail-meta {
+            font-size: 12px;
+            color: var(--text-dimmed);
+        }
+
+        .detail-meta span {
+            margin-right: 16px;
+        }
+
+        /* Detail Actions */
+        .detail-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-delete {
+            padding: 8px 14px;
+            background: none;
+            border: none;
+            color: var(--text-dimmed);
+            font-size: 13px;
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+
+        .btn-delete:hover {
+            color: #ef4444;
+        }
+
+        .btn-ghost {
+            padding: 8px 14px;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-ghost:hover {
+            background: var(--surface-hover);
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            padding: 8px 16px;
+            background: var(--accent-entity);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: 0 0 16px rgba(248, 158, 11, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #d97706;
+            box-shadow: 0 0 24px rgba(248, 158, 11, 0.4);
+        }
+
+        /* Panel Overlay */
+        .panel-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 105;
+        }
+
+        .panel-overlay.visible {
+            display: block;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            color: var(--text-dimmed);
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .detail-panel {
+                width: 340px;
+                right: -340px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 72px;
+            }
+
+            .sidebar .sidebar-text,
+            .sidebar .global-search,
+            .sidebar .project-context {
+                display: none;
+            }
+
+            .sidebar .nav-item {
+                justify-content: center;
+                padding: 12px;
+            }
+
+            .sidebar .logo-text {
+                display: none;
+            }
+
+            .main-wrapper {
+                margin-left: 72px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .page-title {
+                margin-right: 0;
+                margin-bottom: 16px;
+            }
+
+            .header-search {
+                width: 100%;
+            }
+
+            .header-controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .data-table-wrapper {
+                overflow-x: auto;
+            }
+
+            .data-table {
+                min-width: 800px;
+            }
+
+            .bulk-actions-bar {
+                left: 16px;
+                right: 16px;
+                transform: none;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" ui-spec-block-id="sidebar" id="sidebar">
+        <!-- Logo -->
+        <div class="logo" ui-spec-block-id="logo" onclick="navigateTo('dashboard')">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a4 4 0 0 1 4 4c0 1.5-.8 2.8-2 3.5v1a3 3 0 0 1 3 3v1a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3v-1a3 3 0 0 1 3-3v-1c-1.2-.7-2-2-2-3.5a4 4 0 0 1 4-4z"/>
+                    <circle cx="8" cy="18" r="2"/>
+                    <circle cx="16" cy="18" r="2"/>
+                </svg>
+            </div>
+            <span class="logo-text sidebar-text">Forgetful</span>
+        </div>
+
+        <!-- Global Search -->
+        <div class="global-search" ui-spec-block-id="global_search">
+            <div class="search-input-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                </svg>
+                <input type="text" class="search-input" placeholder="Search memories, entities..." aria-label="Global search">
+                <span class="search-shortcut">⌘K</span>
+            </div>
+        </div>
+
+        <!-- Project Context -->
+        <div class="project-context" ui-spec-block-id="project_context">
+            <div class="project-context-wrapper">
+                <button class="project-selector" onclick="toggleProjectDropdown()" aria-haspopup="listbox" aria-expanded="false">
+                    <span id="selectedProject">All Projects</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </button>
+                <div class="project-dropdown" id="projectDropdown" role="listbox">
+                    <div class="project-dropdown-item active" onclick="selectProject('All Projects')" role="option">All Projects</div>
+                    <div class="project-dropdown-item" onclick="selectProject('Work Tasks')" role="option">Work Tasks</div>
+                    <div class="project-dropdown-item" onclick="selectProject('Personal Notes')" role="option">Personal Notes</div>
+                    <div class="project-dropdown-item" onclick="selectProject('Research')" role="option">Research</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="nav" ui-spec-block-id="nav" role="navigation" aria-label="Main navigation">
+            <a href="#" class="nav-item" data-nav="dashboard" onclick="navigateTo('dashboard')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                <span class="sidebar-text">Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="memories" onclick="navigateTo('memories')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a4 4 0 0 1 4 4c0 1.5-.8 2.8-2 3.5v1a3 3 0 0 1 3 3v1a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3v-1a3 3 0 0 1 3-3v-1c-1.2-.7-2-2-2-3.5a4 4 0 0 1 4-4z"/>
+                </svg>
+                <span class="sidebar-text">Memories</span>
+            </a>
+            <a href="#" class="nav-item active" data-nav="entities" onclick="navigateTo('entities')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                </svg>
+                <span class="sidebar-text">Entities</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="projects" onclick="navigateTo('projects')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span class="sidebar-text">Projects</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="documents" onclick="navigateTo('documents')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span class="sidebar-text">Documents</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="code_artifacts" onclick="navigateTo('code_artifacts')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 18 22 12 16 6"/>
+                    <polyline points="8 6 2 12 8 18"/>
+                </svg>
+                <span class="sidebar-text">Code Artifacts</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="graph" onclick="navigateTo('graph')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <circle cx="19" cy="5" r="2"/>
+                    <circle cx="5" cy="5" r="2"/>
+                    <circle cx="19" cy="19" r="2"/>
+                    <circle cx="5" cy="19" r="2"/>
+                    <line x1="12" y1="9" x2="12" y2="5"/>
+                    <line x1="14.5" y1="13.5" x2="17.5" y2="17"/>
+                    <line x1="9.5" y1="13.5" x2="6.5" y2="17"/>
+                </svg>
+                <span class="sidebar-text">Graph</span>
+            </a>
+        </nav>
+
+        <!-- Collapse Toggle -->
+        <div class="collapse-toggle" ui-spec-block-id="collapse_toggle" onclick="toggleSidebar()" role="button" aria-label="Toggle sidebar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            <span class="sidebar-text">Collapse</span>
+        </div>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+        <main class="content">
+            <!-- Auth Warning -->
+            <div class="auth-warning" ui-spec-block-id="auth_warning" id="authWarning" role="alert">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span>Auth disabled — Server running without authentication</span>
+                <button class="auth-warning-close" onclick="dismissAuthWarning()" aria-label="Dismiss warning">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Project Context Bar -->
+            <div class="project-context-bar" ui-spec-block-id="project_context_bar" id="projectContextBar">
+                <span class="project-name">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span id="contextProjectName">Work Tasks</span>
+                </span>
+                <span class="item-counts" id="contextItemCounts">12 entities</span>
+                <span class="clear-filter" onclick="clearProjectFilter()">Clear filter</span>
+            </div>
+
+            <!-- Content Inner -->
+            <div class="content-inner">
+                <!-- Page Header -->
+                <header class="page-header" ui-spec-block-id="header">
+                    <h1 class="page-title">Entities</h1>
+                    
+                    <div class="header-search">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="M21 21l-4.35-4.35"/>
+                        </svg>
+                        <input type="text" placeholder="Search entities..." aria-label="Search entities">
+                    </div>
+
+                    <div class="filter-dropdown">
+                        <button class="filter-btn" onclick="toggleDropdown('typeFilter')" aria-haspopup="listbox">
+                            <span>Entity Type</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 9l6 6 6-6"/>
+                            </svg>
+                        </button>
+                        <div class="dropdown-menu" id="typeFilter" role="listbox">
+                            <div class="dropdown-item selected" onclick="selectFilter('typeFilter', 'All Types')">All Types</div>
+                            <div class="dropdown-item" onclick="selectFilter('typeFilter', 'Individual')">Individual</div>
+                            <div class="dropdown-item" onclick="selectFilter('typeFilter', 'Organization')">Organization</div>
+                            <div class="dropdown-item" onclick="selectFilter('typeFilter', 'Team')">Team</div>
+                            <div class="dropdown-item" onclick="selectFilter('typeFilter', 'Device')">Device</div>
+                            <div class="dropdown-item" onclick="selectFilter('typeFilter', 'Other')">Other</div>
+                        </div>
+                    </div>
+
+                    <div class="filter-dropdown">
+                        <button class="filter-btn" onclick="toggleDropdown('tagFilter')" aria-haspopup="listbox">
+                            <span>Tags</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 9l6 6 6-6"/>
+                            </svg>
+                        </button>
+                        <div class="dropdown-menu" id="tagFilter" role="listbox">
+                            <div class="dropdown-item selected" onclick="selectFilter('tagFilter', 'All Tags')">All Tags</div>
+                            <div class="dropdown-item" onclick="selectFilter('tagFilter', 'important')">important</div>
+                            <div class="dropdown-item" onclick="selectFilter('tagFilter', 'work')">work</div>
+                            <div class="dropdown-item" onclick="selectFilter('tagFilter', 'personal')">personal</div>
+                        </div>
+                    </div>
+
+                    <button class="btn-create" onclick="createEntity()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Create Entity
+                    </button>
+                </header>
+
+                <!-- Entities Table -->
+                <div class="data-table-wrapper" ui-spec-block-id="entities_table">
+                    <table class="data-table" role="grid">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">
+                                    <div class="checkbox-wrapper">
+                                        <div class="checkbox" id="selectAll" onclick="toggleSelectAll()" role="checkbox" aria-checked="false" tabindex="0">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Custom Type</th>
+                                <th>Tags</th>
+                                <th>Projects</th>
+                                <th>Updated</th>
+                                <th style="width: 60px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr onclick="openDetailPanel(this)" ondblclick="openFullDetail(1)">
+                                <td>
+                                    <div class="checkbox-wrapper">
+                                        <div class="checkbox" onclick="event.stopPropagation(); toggleCheckbox(this)" role="checkbox" aria-checked="false" tabindex="0">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>John Smith</td>
+                                <td><span class="entity-badge individual">Individual</span></td>
+                                <td>—</td>
+                                <td>
+                                    <div class="tags-cell">
+                                        <span class="tag">work<span class="tag-remove" onclick="event.stopPropagation()">×</span></span>
+                                        <span class="tag">important<span class="tag-remove" onclick="event.stopPropagation()">×</span></span>
+                                        <span class="tag-add" onclick="event.stopPropagation()">+ Add</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="projects-count">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                        </svg>
+                                        3
+                                    </span>
+                                </td>
+                                <td style="color: var(--text-secondary);">Dec 10, 2024</td>
+                                <td>
+                                    <button class="action-btn delete" onclick="event.stopPropagation(); deleteEntity(1)" aria-label="Delete entity">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"/>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr onclick="openDetailPanel(this)" ondblclick="openFullDetail(2)">
+                                <td>
+                                    <div class="checkbox-wrapper">
+                                        <div class="checkbox" onclick="event.stopPropagation(); toggleCheckbox(this)" role="checkbox" aria-checked="false" tabindex="0">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Acme Corporation</td>
+                                <td><span class="entity-badge organization">Organization</span></td>
+                                <td>—</td>
+                                <td>
+                                    <div class="tags-cell">
+                                        <span class="tag">client<span class="tag-remove" onclick="event.stopPropagation()">×</span></span>
+                                        <span class="tag-add" onclick="event.stopPropagation()">+ Add</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="projects-count">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                        </svg>
+                                        2
+                                    </span>
+                                </td>
+                                <td style="color: var(--text-secondary);">Dec 9, 2024</td>
+                                <td>
+                                    <button class="action-btn delete" onclick="event.stopPropagation(); deleteEntity(2)" aria-label="Delete entity">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"/>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr onclick="openDetailPanel(this)" ondblclick="openFullDetail(3)">
+                                <td>
+                                    <div class="checkbox-wrapper">
+                                        <div class="checkbox" onclick="event.stopPropagation(); toggleCheckbox(this)" role="checkbox" aria-checked="false" tabindex="0">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Engineering Team</td>
+                                <td><span class="entity-badge team">Team</span></td>
+                                <td>—</td>
+                                <td>
+                                    <div class="tags-cell">
+                                        <span class="tag">internal<span class="tag-remove" onclick="event.stopPropagation()">×</span></span>
+                                        <span class="tag-add" onclick="event.stopPropagation()">+ Add</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="projects-count">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                        </svg>
+                                        5
+                                    </span>
+                                </td>
+                                <td style="color: var(--text-secondary);">Dec 8, 2024</td>
+                                <td>
+                                    <button class="action-btn delete" onclick="event.stopPropagation(); deleteEntity(3)" aria-label="Delete entity">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"/>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr onclick="openDetailPanel(this)" ondblclick="openFullDetail(4)">
+                                <td>
+                                    <div class="checkbox-wrapper">
+                                        <div class="checkbox" onclick="event.stopPropagation(); toggleCheckbox(this)" role="checkbox" aria-checked="false" tabindex="0">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Production Server</td>
+                                <td><span class="entity-badge device">Device</span></td>
+                                <td>—</td>
+                                <td>
+                                    <div class="tags-cell">
+                                        <span class="tag">infrastructure<span class="tag-remove" onclick="event.stopPropagation()">×</span></span>
+                                        <span class="tag">critical<span class="tag-remove" onclick="event.stopPropagation()">×</span></span>
+                                        <span class="tag-add" onclick="event.stopPropagation()">+ Add</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="projects-count">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                        </svg>
+                                        1
+                                    </span>
+                                </td>
+                                <td style="color: var(--text-secondary);">Dec 7, 2024</td>
+                                <td>
+                                    <button class="action-btn delete" onclick="event.stopPropagation(); deleteEntity(4)" aria-label="Delete entity">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"/>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr onclick="openDetailPanel(this)" ondblclick="openFullDetail(5)">
+                                <td>
+                                    <div class="checkbox-wrapper">
+                                        <div class="checkbox" onclick="event.stopPropagation(); toggleCheckbox(this)" role="checkbox" aria-checked="false" tabindex="0">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Conference Room A</td>
+                                <td><span class="entity-badge">Other</span></td>
+                                <td style="color: var(--text-secondary);">Location</td>
+                                <td>
+                                    <div class="tags-cell">
+                                        <span class="tag-add" onclick="event.stopPropagation()">+ Add</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="projects-count">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                        </svg>
+                                        0
+                                    </span>
+                                </td>
+                                <td style="color: var(--text-secondary);">Dec 5, 2024</td>
+                                <td>
+                                    <button class="action-btn delete" onclick="event.stopPropagation(); deleteEntity(5)" aria-label="Delete entity">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"/>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bulk Actions Bar -->
+    <div class="bulk-actions-bar" ui-spec-block-id="bulk_actions_bar" id="bulkActionsBar" role="toolbar" aria-label="Bulk actions">
+        <span class="bulk-count"><span id="selectedCount">0</span> selected</span>
+        <div class="bulk-divider"></div>
+        <button class="bulk-btn delete" onclick="bulkDelete()">Delete</button>
+        <button class="bulk-btn" onclick="bulkAddToProject()">Add to Project</button>
+    </div>
+
+    <!-- Panel Overlay -->
+    <div class="panel-overlay" id="panelOverlay" onclick="closeDetailPanel()"></div>
+
+    <!-- Detail Panel -->
+    <aside class="detail-panel" ui-spec-block-id="detail_panel" id="detailPanel" aria-label="Entity details">
+        <!-- Detail Header -->
+        <div class="detail-header" ui-spec-block-id="detail_header">
+            <button class="detail-close" onclick="closeDetailPanel()" aria-label="Close panel">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <span class="detail-type-badge">Entity</span>
+            <h2 class="detail-title" contenteditable="true" id="detailTitle">John Smith</h2>
+        </div>
+
+        <!-- Quick Edit Section -->
+        <div class="detail-section" ui-spec-block-id="detail_quick_edit">
+            <div class="detail-section-label">Quick edit</div>
+            
+            <div class="quick-edit-field">
+                <div class="field-label">Importance</div>
+                <div class="importance-slider">
+                    <div class="slider-track" onclick="updateImportance(event)">
+                        <div class="slider-fill" id="sliderFill"></div>
+                        <div class="slider-thumb" id="sliderThumb"></div>
+                    </div>
+                    <span class="slider-value" id="importanceValue">7</span>
+                </div>
+            </div>
+
+            <div class="quick-edit-field">
+                <div class="field-label">Tags</div>
+                <div class="tags-edit">
+                    <span class="tag-pill">work <span class="tag-pill-remove" onclick="removeTag(this)">×</span></span>
+                    <span class="tag-pill">important <span class="tag-pill-remove" onclick="removeTag(this)">×</span></span>
+                    <button class="tag-add-btn" onclick="addTag()">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Add
+                    </button>
+                </div>
+            </div>
+
+            <div class="quick-edit-field">
+                <div class="field-label">Associated projects</div>
+                <div class="projects-edit">
+                    <span class="project-pill">Work Tasks</span>
+                    <span class="project-pill">Research</span>
+                    <button class="tag-add-btn" onclick="addProject()">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Add
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Preview -->
+        <div class="detail-section" ui-spec-block-id="detail_content_preview">
+            <div class="detail-section-label">Content preview</div>
+            <p class="content-preview-text">
+                John Smith is a senior software engineer at Acme Corporation. He specializes in backend development and has been with the company for over 5 years. Primary contact for the engineering team.
+            </p>
+            <span class="show-more">Show more</span>
+        </div>
+
+        <!-- Related Items -->
+        <div class="detail-section" ui-spec-block-id="detail_related_items">
+            <div class="detail-section-label">Related Items</div>
+            
+            <div class="related-item">
+                <span class="related-dot memory"></span>
+                <span class="related-title" onclick="openRelatedItem(1)">Meeting notes with John</span>
+                <span class="unlink-btn" onclick="unlinkItem(1)">Unlink</span>
+            </div>
+            <div class="related-item">
+                <span class="related-dot document"></span>
+                <span class="related-title" onclick="openRelatedItem(2)">Project proposal Q4</span>
+                <span class="unlink-btn" onclick="unlinkItem(2)">Unlink</span>
+            </div>
+            <div class="related-item">
+                <span class="related-dot memory"></span>
+                <span class="related-title" onclick="openRelatedItem(3)">Performance review 2024</span>
+                <span class="unlink-btn" onclick="unlinkItem(3)">Unlink</span>
+            </div>
+            
+            <span class="show-all-link">Show all 8 items</span>
+        </div>
+
+        <!-- Footer -->
+        <div class="detail-footer" ui-spec-block-id="detail_footer">
+            <div class="detail-meta">
+                <span>ID: 42</span>
+                <span>Created: Nov 15, 2024</span>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="padding: 0 20px 20px; display: flex; justify-content: flex-end; gap: 8px;" ui-spec-block-id="detail_actions">
+            <button class="btn-delete">Delete</button>
+            <button class="btn-ghost">View in Graph</button>
+            <button class="btn-primary">Edit Full</button>
+        </div>
+    </aside>
+
+    <script>
+        // Sidebar collapse toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+
+        // Navigation
+        function navigateTo(page) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            const activeItem = document.querySelector(`[data-nav="${page}"]`);
+            if (activeItem) {
+                activeItem.classList.add('active');
+            }
+            // In a real app, this would navigate to the page
+            console.log(`Navigating to ${page}`);
+        }
+
+        // Project dropdown
+        function toggleProjectDropdown() {
+            const dropdown = document.getElementById('projectDropdown');
+            dropdown.classList.toggle('open');
+        }
+
+        function selectProject(project) {
+            document.getElementById('selectedProject').textContent = project;
+            document.getElementById('projectDropdown').classList.remove('open');
+            
+            // Update project context bar
+            const contextBar = document.getElementById('projectContextBar');
+            if (project !== 'All Projects') {
+                document.getElementById('contextProjectName').textContent = project;
+                contextBar.classList.add('visible');
+            } else {
+                contextBar.classList.remove('visible');
+            }
+
+            // Update active state
+            document.querySelectorAll('.project-dropdown-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.textContent === project) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        function clearProjectFilter() {
+            selectProject('All Projects');
+        }
+
+        // Auth warning
+        function dismissAuthWarning() {
+            document.getElementById('authWarning').classList.add('hidden');
+            sessionStorage.setItem('authWarningDismissed', 'true');
+        }
+
+        // Check if auth warning was dismissed
+        if (sessionStorage.getItem('authWarningDismissed') === 'true') {
+            document.getElementById('authWarning').classList.add('hidden');
+        }
+
+        // Filter dropdowns
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(id);
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            
+            allDropdowns.forEach(d => {
+                if (d.id !== id) d.classList.remove('open');
+            });
+            
+            dropdown.classList.toggle('open');
+        }
+
+        function selectFilter(dropdownId, value) {
+            const dropdown = document.getElementById(dropdownId);
+            const button = dropdown.previousElementSibling;
+            
+            button.querySelector('span').textContent = value;
+            dropdown.classList.remove('open');
+            
+            dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                item.classList.remove('selected');
+                if (item.textContent === value) {
+                    item.classList.add('selected');
+                }
+            });
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.filter-dropdown') && !e.target.closest('.project-context-wrapper')) {
+                document.querySelectorAll('.dropdown-menu, .project-dropdown').forEach(d => {
+                    d.classList.remove('open');
+                });
+            }
+        });
+
+        // Checkbox functionality
+        function toggleCheckbox(checkbox) {
+            checkbox.classList.toggle('checked');
+            const isChecked = checkbox.classList.contains('checked');
+            checkbox.setAttribute('aria-checked', isChecked);
+            
+            // Update row selection
+            const row = checkbox.closest('tr');
+            if (row) {
+                row.classList.toggle('selected', isChecked);
+            }
+            
+            updateBulkActionsBar();
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const isChecked = !selectAll.classList.contains('checked');
+            
+            selectAll.classList.toggle('checked', isChecked);
+            selectAll.setAttribute('aria-checked', isChecked);
+            
+            document.querySelectorAll('.data-table tbody .checkbox').forEach(checkbox => {
+                checkbox.classList.toggle('checked', isChecked);
+                checkbox.setAttribute('aria-checked', isChecked);
+                const row = checkbox.closest('tr');
+                if (row) {
+                    row.classList.toggle('selected', isChecked);
+                }
+            });
+            
+            updateBulkActionsBar();
+        }
+
+        function updateBulkActionsBar() {
+            const selectedCount = document.querySelectorAll('.data-table tbody .checkbox.checked').length;
+            document.getElementById('selectedCount').textContent = selectedCount;
+            
+            const bulkBar = document.getElementById('bulkActionsBar');
+            if (selectedCount > 0) {
+                bulkBar.classList.add('visible');
+            } else {
+                bulkBar.classList.remove('visible');
+            }
+        }
+
+        // Detail panel
+        function openDetailPanel(row) {
+            const panel = document.getElementById('detailPanel');
+            const overlay = document.getElementById('panelOverlay');
+            
+            // Get entity name from row
+            const name = row.querySelector('td:nth-child(2)').textContent;
+            document.getElementById('detailTitle').textContent = name;
+            
+            panel.classList.add('open');
+            overlay.classList.add('visible');
+            
+            // Remove selected from other rows
+            document.querySelectorAll('.data-table tbody tr').forEach(r => {
+                r.classList.remove('selected');
+            });
+            
+            // Only add selected if checkbox not checked
+            if (!row.querySelector('.checkbox.checked')) {
+                row.classList.add('selected');
+            }
+        }
+
+        function closeDetailPanel() {
+            const panel = document.getElementById('detailPanel');
+            const overlay = document.getElementById('panelOverlay');
+            
+            panel.classList.remove('open');
+            overlay.classList.remove('visible');
+            
+            // Remove selected from rows without checked checkbox
+            document.querySelectorAll('.data-table tbody tr').forEach(r => {
+                if (!r.querySelector('.checkbox.checked')) {
+                    r.classList.remove('selected');
+                }
+            });
+        }
+
+        function openFullDetail(id) {
+            console.log(`Opening full detail for entity ${id}`);
+            // In a real app, navigate to full detail page
+        }
+
+        // Quick edit functions
+        function updateImportance(event) {
+            const track = event.currentTarget;
+            const rect = track.getBoundingClientRect();
+            const percentage = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
+            const value = Math.round((percentage / 100) * 9 + 1);
+            
+            document.getElementById('sliderFill').style.width = percentage + '%';
+            document.getElementById('sliderThumb').style.left = percentage + '%';
+            document.getElementById('importanceValue').textContent = value;
+        }
+
+        function removeTag(element) {
+            element.parentElement.remove();
+        }
+
+        function addTag() {
+            const newTag = prompt('Enter tag name:');
+            if (newTag) {
+                const tagsContainer = document.querySelector('.tags-edit');
+                const addBtn = tagsContainer.querySelector('.tag-add-btn');
+                const tagPill = document.createElement('span');
+                tagPill.className = 'tag-pill';
+                tagPill.innerHTML = `${newTag} <span class="tag-pill-remove" onclick="removeTag(this)">×</span>`;
+                tagsContainer.insertBefore(tagPill, addBtn);
+            }
+        }
+
+        function addProject() {
+            const newProject = prompt('Enter project name:');
+            if (newProject) {
+                const projectsContainer = document.querySelector('.projects-edit');
+                const addBtn = projectsContainer.querySelector('.tag-add-btn');
+                const projectPill = document.createElement('span');
+                projectPill.className = 'project-pill';
+                projectPill.textContent = newProject;
+                projectsContainer.insertBefore(projectPill, addBtn);
+            }
+        }
+
+        // Bulk actions
+        function bulkDelete() {
+            const count = document.querySelectorAll('.data-table tbody .checkbox.checked').length;
+            if (confirm(`Delete ${count} selected entities?`)) {
+                console.log('Deleting selected entities');
+                // In a real app, perform deletion
+            }
+        }
+
+        function bulkAddToProject() {
+            const project = prompt('Enter project name:');
+            if (project) {
+                console.log(`Adding selected entities to project: ${project}`);
+                // In a real app, add to project
+            }
+        }
+
+        // Entity actions
+        function createEntity() {
+            console.log('Creating new entity');
+            // In a real app, open create modal/page
+        }
+
+        function deleteEntity(id) {
+            if (confirm('Delete this entity?')) {
+                console.log(`Deleting entity ${id}`);
+                // In a real app, perform deletion
+            }
+        }
+
+        function openRelatedItem(id) {
+            console.log(`Opening related item ${id}`);
+        }
+
+        function unlinkItem(id) {
+            if (confirm('Unlink this item?')) {
+                console.log(`Unlinking item ${id}`);
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+K for global search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.querySelector('.global-search input').focus();
+            }
+            
+            // Ctrl+P for project selector
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                toggleProjectDropdown();
+            }
+            
+            // Escape to close panel
+            if (e.key === 'Escape') {
+                closeDetailPanel();
+                document.querySelectorAll('.dropdown-menu, .project-dropdown').forEach(d => {
+                    d.classList.remove('open');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

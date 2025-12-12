@@ -1,0 +1,1998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Detail - Forgetful Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --surface-primary: rgba(15, 23, 42, 0.8);
+            --surface-secondary: rgba(30, 41, 59, 0.6);
+            --surface-hover: rgba(51, 65, 85, 0.4);
+            --accent-memory: #a855f7;
+            --accent-entity: #f59e0b;
+            --accent-document: #3b82f6;
+            --accent-code: #06b6d4;
+            --accent-project: #22c55e;
+            --text-primary: rgba(255, 255, 255, 0.9);
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --text-dimmed: rgba(255, 255, 255, 0.4);
+            --border-subtle: rgba(255, 255, 255, 0.05);
+            --border-hover: rgba(255, 255, 255, 0.1);
+            --bg-base: #020617;
+            --bg-sidebar: rgba(15, 23, 42, 0.95);
+            --importance-high: linear-gradient(135deg, #ef4444, #f97316);
+            --importance-medium: #eab308;
+            --importance-low: #6b7280;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 100;
+            transition: width 0.3s ease;
+            backdrop-filter: blur(8px);
+        }
+
+        .sidebar.collapsed {
+            width: 72px;
+        }
+
+        .sidebar.collapsed .logo-text,
+        .sidebar.collapsed .nav-label,
+        .sidebar.collapsed .search-input,
+        .sidebar.collapsed .collapse-text,
+        .sidebar.collapsed .project-selector-text {
+            display: none;
+        }
+
+        .sidebar.collapsed .global-search {
+            padding: 12px;
+        }
+
+        .sidebar.collapsed .search-icon-wrapper {
+            justify-content: center;
+        }
+
+        /* Logo */
+        .logo {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-memory), #ec4899);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .logo-icon svg {
+            width: 22px;
+            height: 22px;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Global Search */
+        .global-search {
+            padding: 16px 20px;
+        }
+
+        .search-wrapper {
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            gap: 8px;
+            backdrop-filter: blur(8px);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-wrapper:focus-within {
+            border-color: var(--accent-memory);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        .search-icon-wrapper {
+            display: flex;
+            color: var(--text-dimmed);
+        }
+
+        .search-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-dimmed);
+        }
+
+        /* Project Selector */
+        .project-selector {
+            padding: 0 20px 16px;
+        }
+
+        .project-dropdown {
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .project-dropdown:hover {
+            border-color: var(--border-hover);
+            background: var(--surface-hover);
+        }
+
+        .project-dropdown-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .project-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-project);
+            border-radius: 50%;
+        }
+
+        .project-selector-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Navigation */
+        .nav {
+            flex: 1;
+            padding: 8px 12px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 4px;
+        }
+
+        .nav-item:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: rgba(168, 85, 247, 0.15);
+            color: white;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .nav-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Collapse Toggle */
+        .collapse-toggle {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
+
+        .collapse-toggle:hover {
+            color: var(--text-primary);
+        }
+
+        .collapse-text {
+            font-size: 14px;
+        }
+
+        .collapse-icon {
+            transition: transform 0.3s;
+        }
+
+        .sidebar.collapsed .collapse-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Main Content Area */
+        .main-wrapper {
+            flex: 1;
+            margin-left: 260px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        .sidebar.collapsed ~ .main-wrapper {
+            margin-left: 72px;
+        }
+
+        .content-area {
+            flex: 1;
+            background: radial-gradient(ellipse at center, rgba(30, 41, 59, 0.3) 0%, var(--bg-base) 70%);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Auth Warning */
+        .auth-warning {
+            background: rgba(234, 179, 8, 0.15);
+            border-bottom: 1px solid rgba(234, 179, 8, 0.3);
+            padding: 6px 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #fbbf24;
+        }
+
+        .auth-warning.hidden {
+            display: none;
+        }
+
+        .auth-warning-text {
+            flex: 1;
+        }
+
+        .auth-warning-close {
+            background: none;
+            border: none;
+            color: #fbbf24;
+            cursor: pointer;
+            padding: 4px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .auth-warning-close:hover {
+            opacity: 1;
+        }
+
+        /* Project Context Bar */
+        .project-context-bar {
+            background: rgba(34, 197, 94, 0.1);
+            border-bottom: 1px solid rgba(34, 197, 94, 0.2);
+            padding: 8px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 13px;
+        }
+
+        .project-context-bar.hidden {
+            display: none;
+        }
+
+        .project-context-name {
+            color: var(--accent-project);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .project-context-stats {
+            color: var(--text-secondary);
+        }
+
+        .project-context-clear {
+            margin-left: auto;
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .project-context-clear:hover {
+            color: var(--text-primary);
+            text-decoration: underline;
+        }
+
+        /* Page Content */
+        .page-content {
+            padding: 24px;
+            flex: 1;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .breadcrumb-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .breadcrumb-link:hover {
+            color: var(--text-primary);
+        }
+
+        .breadcrumb-separator {
+            color: var(--text-dimmed);
+        }
+
+        .breadcrumb-current {
+            color: var(--text-primary);
+        }
+
+        /* Header */
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: text;
+            padding: 4px 8px;
+            margin: -4px -8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+            outline: none;
+            border: 2px solid transparent;
+        }
+
+        .page-title:hover {
+            background: var(--surface-hover);
+        }
+
+        .page-title:focus {
+            background: var(--surface-secondary);
+            border-color: var(--accent-memory);
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .importance-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .importance-badge:hover {
+            transform: scale(1.05);
+        }
+
+        .importance-badge.high {
+            background: var(--importance-high);
+            color: white;
+        }
+
+        .importance-badge.medium {
+            background: var(--importance-medium);
+            color: #1a1a1a;
+        }
+
+        .importance-badge.low {
+            background: var(--importance-low);
+            color: white;
+        }
+
+        .obsolete-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--accent-memory);
+            color: white;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #9333ea;
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--surface-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-hover);
+            border-color: var(--border-hover);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: var(--text-dimmed);
+        }
+
+        .btn-danger:hover {
+            color: #f87171;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--surface-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(8px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .card-action {
+            color: var(--text-dimmed);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .card-action:hover {
+            color: var(--text-primary);
+            background: var(--surface-hover);
+        }
+
+        /* Content Field */
+        .content-field {
+            margin-bottom: 24px;
+        }
+
+        .field-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .field-content {
+            color: var(--text-primary);
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .field-content p {
+            margin-bottom: 12px;
+        }
+
+        .field-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .field-textarea {
+            width: 100%;
+            min-height: 150px;
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 16px;
+            color: var(--text-primary);
+            font-size: 15px;
+            line-height: 1.7;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .field-textarea:focus {
+            outline: none;
+            border-color: var(--accent-memory);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        /* Tags */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .tag {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tag:hover {
+            background: var(--surface-hover);
+            border-color: var(--border-hover);
+        }
+
+        .tag-remove {
+            color: var(--text-dimmed);
+            display: flex;
+            align-items: center;
+        }
+
+        .tag-remove:hover {
+            color: #f87171;
+        }
+
+        .tag.keyword {
+            background: rgba(168, 85, 247, 0.15);
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+
+        .tag.colored {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .tag-input-wrapper {
+            display: flex;
+            align-items: center;
+        }
+
+        .tag-input {
+            background: transparent;
+            border: 1px dashed var(--border-hover);
+            border-radius: 20px;
+            padding: 6px 12px;
+            color: var(--text-primary);
+            font-size: 13px;
+            width: 120px;
+            outline: none;
+        }
+
+        .tag-input::placeholder {
+            color: var(--text-dimmed);
+        }
+
+        .tag-input:focus {
+            border-style: solid;
+            border-color: var(--accent-memory);
+        }
+
+        /* Sidebar Cards */
+        .sidebar-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .metadata-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .metadata-row:last-child {
+            border-bottom: none;
+        }
+
+        .metadata-label {
+            color: var(--text-dimmed);
+            font-size: 13px;
+        }
+
+        .metadata-value {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        /* Linked Items */
+        .linked-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            margin: 0 -12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .linked-item:hover {
+            background: var(--surface-hover);
+        }
+
+        .linked-item-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .linked-item-dot.memory {
+            background: var(--accent-memory);
+        }
+
+        .linked-item-dot.project {
+            background: var(--accent-project);
+        }
+
+        .linked-item-dot.document {
+            background: var(--accent-document);
+        }
+
+        .linked-item-dot.code {
+            background: var(--accent-code);
+        }
+
+        .linked-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .linked-item-title {
+            color: var(--text-primary);
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .linked-item-meta {
+            color: var(--text-dimmed);
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .linked-item-remove {
+            color: var(--text-dimmed);
+            padding: 4px;
+            opacity: 0;
+            transition: all 0.2s;
+        }
+
+        .linked-item:hover .linked-item-remove {
+            opacity: 1;
+        }
+
+        .linked-item-remove:hover {
+            color: #f87171;
+        }
+
+        .add-link-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            margin: 8px -12px 0;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px dashed var(--border-hover);
+            background: transparent;
+            width: calc(100% + 24px);
+        }
+
+        .add-link-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+            border-color: var(--accent-memory);
+        }
+
+        /* Detail Panel */
+        .detail-panel {
+            width: 380px;
+            background: var(--surface-primary);
+            border-left: 1px solid var(--border-subtle);
+            height: 100vh;
+            position: fixed;
+            right: 0;
+            top: 0;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            z-index: 99;
+            backdrop-filter: blur(12px);
+        }
+
+        .detail-panel.open {
+            transform: translateX(0);
+        }
+
+        .detail-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            position: relative;
+        }
+
+        .detail-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+
+        .detail-close:hover {
+            color: white;
+        }
+
+        .detail-type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .detail-type-badge.memory {
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--accent-memory);
+        }
+
+        .detail-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: text;
+            padding: 4px;
+            margin: -4px;
+            border-radius: 4px;
+            outline: none;
+            border: 1px solid transparent;
+        }
+
+        .detail-title:hover {
+            background: var(--surface-hover);
+        }
+
+        .detail-title:focus {
+            border-color: var(--accent-memory);
+        }
+
+        .detail-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        /* Slider */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            background: var(--surface-secondary);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-memory);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+        }
+
+        .slider-value {
+            background: var(--surface-secondary);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            min-width: 36px;
+            text-align: center;
+        }
+
+        /* Detail Related Items */
+        .detail-related-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+        }
+
+        .detail-related-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .detail-related-dot.memory {
+            background: var(--accent-memory);
+        }
+
+        .detail-related-dot.entity {
+            background: var(--accent-entity);
+        }
+
+        .detail-related-title {
+            flex: 1;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .detail-related-title:hover {
+            text-decoration: underline;
+        }
+
+        .detail-unlink {
+            color: var(--text-dimmed);
+            font-size: 12px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 4px 8px;
+        }
+
+        .detail-unlink:hover {
+            color: var(--text-secondary);
+        }
+
+        .show-all-link {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-top: 8px;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .show-all-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Detail Footer */
+        .detail-footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .detail-meta {
+            font-size: 12px;
+            color: var(--text-dimmed);
+        }
+
+        .detail-meta span {
+            margin-right: 12px;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .detail-btn {
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .detail-btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .detail-btn-ghost:hover {
+            background: var(--surface-hover);
+            border-color: var(--border-hover);
+        }
+
+        .detail-btn-primary {
+            background: var(--accent-memory);
+            color: white;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+        }
+
+        .detail-btn-primary:hover {
+            background: #9333ea;
+        }
+
+        .detail-btn-danger {
+            background: transparent;
+            color: var(--text-dimmed);
+        }
+
+        .detail-btn-danger:hover {
+            color: #f87171;
+        }
+
+        /* Content Preview */
+        .content-preview {
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .content-preview.expanded {
+            -webkit-line-clamp: unset;
+        }
+
+        .show-more-link {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-top: 8px;
+            display: inline-block;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .show-more-link:hover {
+            color: var(--text-primary);
+        }
+
+        /* Importance Editor Modal */
+        .importance-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+
+        .importance-modal.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .importance-modal-content {
+            background: var(--surface-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 24px;
+            width: 320px;
+            backdrop-filter: blur(12px);
+        }
+
+        .importance-modal-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .importance-modal-slider {
+            margin-bottom: 20px;
+        }
+
+        .importance-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-wrapper {
+                margin-left: 0;
+            }
+
+            .page-header {
+                flex-direction: column;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
+            .detail-panel {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" ui-spec-block-id="sidebar">
+        <!-- Logo -->
+        <div class="logo" ui-spec-block-id="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2a9 9 0 0 1 9 9c0 3.6-2.4 6.6-5.5 8.1-.4.2-.9.4-1.4.5a9.5 9.5 0 0 1-4.2 0c-.5-.1-1-.3-1.4-.5C5.4 17.6 3 14.6 3 11a9 9 0 0 1 9-9z"/>
+                    <path d="M12 6v2m0 8v2M8 11H6m12 0h-2"/>
+                    <circle cx="12" cy="11" r="3"/>
+                </svg>
+            </div>
+            <span class="logo-text">Forgetful</span>
+        </div>
+
+        <!-- Global Search -->
+        <div class="global-search" ui-spec-block-id="global_search">
+            <div class="search-wrapper">
+                <div class="search-icon-wrapper">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                </div>
+                <input type="text" class="search-input" placeholder="Search memories... (Ctrl+K)">
+            </div>
+        </div>
+
+        <!-- Project Selector -->
+        <div class="project-selector">
+            <div class="project-dropdown" onclick="toggleProjectDropdown()">
+                <div class="project-dropdown-content">
+                    <div class="project-dot"></div>
+                    <span class="project-selector-text">All Projects</span>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m6 9 6 6 6-6"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="nav" ui-spec-block-id="nav">
+            <a href="#" class="nav-item" data-nav="dashboard">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1"/>
+                </svg>
+                <span class="nav-label">Dashboard</span>
+            </a>
+            <a href="#" class="nav-item active" data-nav="memories">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2a9 9 0 0 1 9 9c0 3.6-2.4 6.6-5.5 8.1-.4.2-.9.4-1.4.5a9.5 9.5 0 0 1-4.2 0c-.5-.1-1-.3-1.4-.5C5.4 17.6 3 14.6 3 11a9 9 0 0 1 9-9z"/>
+                    <circle cx="12" cy="11" r="3"/>
+                </svg>
+                <span class="nav-label">Memories</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="entities">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                </svg>
+                <span class="nav-label">Entities</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="projects">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span class="nav-label">Projects</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="documents">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span class="nav-label">Documents</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="code_artifacts">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="16 18 22 12 16 6"/>
+                    <polyline points="8 6 2 12 8 18"/>
+                </svg>
+                <span class="nav-label">Code Artifacts</span>
+            </a>
+            <a href="#" class="nav-item" data-nav="graph">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="6" cy="6" r="3"/>
+                    <circle cx="18" cy="6" r="3"/>
+                    <circle cx="6" cy="18" r="3"/>
+                    <circle cx="18" cy="18" r="3"/>
+                    <line x1="8.5" y1="7.5" x2="15.5" y2="16.5"/>
+                    <line x1="15.5" y1="7.5" x2="8.5" y2="16.5"/>
+                </svg>
+                <span class="nav-label">Graph</span>
+            </a>
+        </nav>
+
+        <!-- Collapse Toggle -->
+        <div class="collapse-toggle" ui-spec-block-id="collapse_toggle" onclick="toggleSidebar()">
+            <svg class="collapse-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            <span class="collapse-text">Collapse</span>
+        </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+        <main class="content-area" ui-spec-block-id="content">
+            <!-- Auth Warning -->
+            <div class="auth-warning" ui-spec-block-id="auth_warning">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span class="auth-warning-text">Auth disabled — Server running without authentication</span>
+                <button class="auth-warning-close" onclick="dismissAuthWarning()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Project Context Bar -->
+            <div class="project-context-bar hidden" ui-spec-block-id="project_context_bar">
+                <span class="project-context-name">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    Project Alpha
+                </span>
+                <span class="project-context-stats">12 memories • 5 documents</span>
+                <a href="#" class="project-context-clear" onclick="clearProjectFilter()">Clear filter</a>
+            </div>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Breadcrumb -->
+                <nav class="breadcrumb" ui-spec-block-id="breadcrumb">
+                    <a href="#" class="breadcrumb-link">Memories</a>
+                    <span class="breadcrumb-separator">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </span>
+                    <span class="breadcrumb-current">API Integration Architecture</span>
+                </nav>
+
+                <!-- Header -->
+                <header class="page-header" ui-spec-block-id="header">
+                    <div class="header-left">
+                        <h1 class="page-title" contenteditable="true" spellcheck="false">API Integration Architecture</h1>
+                        <div class="header-badges">
+                            <span class="importance-badge high" onclick="openImportanceModal()">Importance: 9</span>
+                            <span class="obsolete-badge" style="display: none;">Obsolete</span>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-danger" onclick="markObsolete()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="15" y1="9" x2="9" y2="15"/>
+                                <line x1="9" y1="9" x2="15" y2="15"/>
+                            </svg>
+                            Mark Obsolete
+                        </button>
+                        <button class="btn btn-secondary" onclick="deleteMemory()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                            Delete
+                        </button>
+                        <button class="btn btn-primary" onclick="saveMemory()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                <polyline points="17 21 17 13 7 13 7 21"/>
+                                <polyline points="7 3 7 8 15 8"/>
+                            </svg>
+                            Save
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Main Grid -->
+                <div class="main-grid">
+                    <!-- Main Content Column -->
+                    <div class="main-column" ui-spec-block-id="main_content">
+                        <!-- Content Field -->
+                        <div class="card content-field" ui-spec-block-id="content_field">
+                            <div class="card-header">
+                                <span class="card-title">Content</span>
+                                <button class="card-action" onclick="toggleContentEdit(this)">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="field-content" id="content-display">
+                                <p>The API integration follows a layered architecture pattern with clear separation between transport, serialization, and business logic layers.</p>
+                                <p>Key components include:</p>
+                                <p>• <strong>Transport Layer:</strong> Handles HTTP/HTTPS communication with retry logic and circuit breaker patterns</p>
+                                <p>• <strong>Serialization Layer:</strong> JSON/Protocol Buffers conversion with schema validation</p>
+                                <p>• <strong>Business Logic Layer:</strong> Domain-specific operations and data transformations</p>
+                            </div>
+                            <textarea class="field-textarea" id="content-edit" style="display: none;" onblur="saveContentEdit()">The API integration follows a layered architecture pattern with clear separation between transport, serialization, and business logic layers.
+
+Key components include:
+
+- Transport Layer: Handles HTTP/HTTPS communication with retry logic and circuit breaker patterns
+- Serialization Layer: JSON/Protocol Buffers conversion with schema validation
+- Business Logic Layer: Domain-specific operations and data transformations</textarea>
+                        </div>
+
+                        <!-- Context Field -->
+                        <div class="card content-field" ui-spec-block-id="context_field">
+                            <div class="card-header">
+                                <span class="card-title">Context</span>
+                                <button class="card-action" onclick="toggleContextEdit(this)">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="field-content" id="context-display">
+                                <p>This architecture was designed during the Q3 2024 system redesign initiative to improve API reliability and maintainability. It addresses previous issues with tight coupling and lack of proper error handling.</p>
+                            </div>
+                            <textarea class="field-textarea" id="context-edit" style="display: none;" onblur="saveContextEdit()">This architecture was designed during the Q3 2024 system redesign initiative to improve API reliability and maintainability. It addresses previous issues with tight coupling and lack of proper error handling.</textarea>
+                        </div>
+
+                        <!-- Keywords Field -->
+                        <div class="card content-field" ui-spec-block-id="keywords_field">
+                            <div class="card-header">
+                                <span class="card-title">Keywords</span>
+                            </div>
+                            <div class="tags-container" id="keywords-container">
+                                <span class="tag keyword" onclick="searchTag('api')">api <button class="tag-remove" onclick="removeTag(event, 'keyword', 'api')">×</button></span>
+                                <span class="tag keyword" onclick="searchTag('architecture')">architecture <button class="tag-remove" onclick="removeTag(event, 'keyword', 'architecture')">×</button></span>
+                                <span class="tag keyword" onclick="searchTag('integration')">integration <button class="tag-remove" onclick="removeTag(event, 'keyword', 'integration')">×</button></span>
+                                <span class="tag keyword" onclick="searchTag('layered')">layered <button class="tag-remove" onclick="removeTag(event, 'keyword', 'layered')">×</button></span>
+                                <div class="tag-input-wrapper">
+                                    <input type="text" class="tag-input" placeholder="Add keyword..." onkeypress="addTag(event, 'keyword')">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tags Field -->
+                        <div class="card content-field" ui-spec-block-id="tags_field">
+                            <div class="card-header">
+                                <span class="card-title">Tags</span>
+                            </div>
+                            <div class="tags-container" id="tags-container">
+                                <span class="tag colored" onclick="searchTag('backend')">backend <button class="tag-remove" onclick="removeTag(event, 'tag', 'backend')">×</button></span>
+                                <span class="tag colored" onclick="searchTag('design-pattern')">design-pattern <button class="tag-remove" onclick="removeTag(event, 'tag', 'design-pattern')">×</button></span>
+                                <span class="tag colored" onclick="searchTag('documentation')">documentation <button class="tag-remove" onclick="removeTag(event, 'tag', 'documentation')">×</button></span>
+                                <div class="tag-input-wrapper">
+                                    <input type="text" class="tag-input" placeholder="Add tag..." onkeypress="addTag(event, 'tag')">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Column -->
+                    <div class="sidebar-content" ui-spec-block-id="sidebar">
+                        <!-- Metadata Card -->
+                        <div class="card" ui-spec-block-id="metadata_card">
+                            <div class="card-header">
+                                <span class="card-title">Metadata</span>
+                            </div>
+                            <div class="metadata-row">
+                                <span class="metadata-label">ID</span>
+                                <span class="metadata-value">#1247</span>
+                            </div>
+                            <div class="metadata-row">
+                                <span class="metadata-label">Created</span>
+                                <span class="metadata-value">Oct 15, 2024</span>
+                            </div>
+                            <div class="metadata-row">
+                                <span class="metadata-label">Updated</span>
+                                <span class="metadata-value">Dec 10, 2024</span>
+                            </div>
+                        </div>
+
+                        <!-- Projects Card -->
+                        <div class="card" ui-spec-block-id="projects_card">
+                            <div class="card-header">
+                                <span class="card-title">Linked Projects</span>
+                            </div>
+                            <div class="linked-item" onclick="navigateToProject(1)">
+                                <div class="linked-item-dot project"></div>
+                                <div class="linked-item-content">
+                                    <div class="linked-item-title">API Modernization</div>
+                                    <div class="linked-item-meta">Development</div>
+                                </div>
+                                <button class="linked-item-remove" onclick="unlinkProject(event, 1)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="linked-item" onclick="navigateToProject(2)">
+                                <div class="linked-item-dot project"></div>
+                                <div class="linked-item-content">
+                                    <div class="linked-item-title">Documentation Hub</div>
+                                    <div class="linked-item-meta">Documentation</div>
+                                </div>
+                                <button class="linked-item-remove" onclick="unlinkProject(event, 2)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <button class="add-link-btn" onclick="openLinkModal('project')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Add project link
+                            </button>
+                        </div>
+
+                        <!-- Linked Memories Card -->
+                        <div class="card" ui-spec-block-id="linked_memories_card">
+                            <div class="card-header">
+                                <span class="card-title">Linked Memories</span>
+                            </div>
+                            <div class="linked-item" onclick="navigateToMemory(1)">
+                                <div class="linked-item-dot memory"></div>
+                                <div class="linked-item-content">
+                                    <div class="linked-item-title">REST API Best Practices</div>
+                                    <div class="linked-item-meta">Importance: 8</div>
+                                </div>
+                                <button class="linked-item-remove" onclick="unlinkMemory(event, 1)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="linked-item" onclick="navigateToMemory(2)">
+                                <div class="linked-item-dot memory"></div>
+                                <div class="linked-item-content">
+                                    <div class="linked-item-title">Error Handling Patterns</div>
+                                    <div class="linked-item-meta">Importance: 7</div>
+                                </div>
+                                <button class="linked-item-remove" onclick="unlinkMemory(event, 2)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="linked-item" onclick="navigateToMemory(3)">
+                                <div class="linked-item-dot memory"></div>
+                                <div class="linked-item-content">
+                                    <div class="linked-item-title">Authentication Flow</div>
+                                    <div class="linked-item-meta">Importance: 9</div>
+                                </div>
+                                <button class="linked-item-remove" onclick="unlinkMemory(event, 3)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <button class="add-link-btn" onclick="openLinkModal('memory')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Link memory
+                            </button>
+                        </div>
+
+                        <!-- Documents Card -->
+                        <div class="card" ui-spec-block-id="documents_card">
+                            <div class="card-header">
+                                <span class="card-title">Linked Documents</span>
+                            </div>
+                            <div class="linked-item" onclick="navigateToDocument(1)">
+                                <div class="linked-item-dot document"></div>
+                                <div class="linked-item-content">
+                                    <div class="linked-item-title">API Specification v2.0</div>
+                                    <div class="linked-item-meta">OpenAPI</div>
+                                </div>
+                                <button class="linked-item-remove" onclick="unlinkDocument(event, 1)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <button class="add-link-btn" onclick="openLinkModal('document')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Link document
+                            </button>
+                        </div>
+
+                        <!-- Code Artifacts Card -->
+                        <div class="card" ui-spec-block-id="code_artifacts_card">
+                            <div class="card-header">
+                                <span class="card-title">Linked Code Artifacts</span>
+                            </div>
+                            <div class="linked-item" onclick="navigateToCodeArtifact(1)">
+                                <div class="linked-item-dot code"></div>
+                                <div class="linked-item-content">
+                                    <div class="linked-item-title">api-client.ts</div>
+                                    <div class="linked-item-meta">TypeScript</div>
+                                </div>
+                                <button class="linked-item-remove" onclick="unlinkCodeArtifact(event, 1)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="linked-item" onclick="navigateToCodeArtifact(2)">
+                                <div class="linked-item-dot code"></div>
+                                <div class="linked-item-content">
+                                    <div class="linked-item-title">retry-handler.py</div>
+                                    <div class="linked-item-meta">Python</div>
+                                </div>
+                                <button class="linked-item-remove" onclick="unlinkCodeArtifact(event, 2)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <button class="add-link-btn" onclick="openLinkModal('code')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Link code artifact
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Detail Panel -->
+    <aside class="detail-panel" ui-spec-block-id="detail_panel">
+        <div class="detail-header" ui-spec-block-id="detail_header">
+            <button class="detail-close" onclick="closeDetailPanel()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <span class="detail-type-badge memory">Memory</span>
+            <h2 class="detail-title" contenteditable="true" spellcheck="false">REST API Best Practices</h2>
+        </div>
+        
+        <div class="detail-body">
+            <div class="detail-section" ui-spec-block-id="detail_quick_edit">
+                <div class="detail-section-title">Quick Edit</div>
+                <div style="margin-bottom: 16px;">
+                    <label style="font-size: 12px; color: var(--text-dimmed); display: block; margin-bottom: 8px;">Importance</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" min="1" max="10" value="8" oninput="updateSliderValue(this)">
+                        <span class="slider-value">8</span>
+                    </div>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="font-size: 12px; color: var(--text-dimmed); display: block; margin-bottom: 8px;">Tags</label>
+                    <div class="tags-container">
+                        <span class="tag" style="font-size: 12px; padding: 4px 10px;">rest <button class="tag-remove">×</button></span>
+                        <span class="tag" style="font-size: 12px; padding: 4px 10px;">api <button class="tag-remove">×</button></span>
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--text-dimmed); display: block; margin-bottom: 8px;">Projects</label>
+                    <div class="tags-container">
+                        <span class="tag" style="font-size: 12px; padding: 4px 10px; background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.3);">API Modernization</span>
+                        <button style="width: 24px; height: 24px; border-radius: 50%; border: 1px dashed var(--border-hover); background: transparent; color: var(--text-dimmed); cursor: pointer;">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-section" ui-spec-block-id="detail_content_preview">
+                <div class="detail-section-title">Content Preview</div>
+                <div class="content-preview" id="detail-content-preview">
+                    Best practices for designing RESTful APIs include using proper HTTP methods, meaningful resource naming, consistent error handling, and proper use of status codes. Always version your APIs and document them thoroughly.
+                </div>
+                <a class="show-more-link" onclick="toggleContentPreview()">Show more</a>
+            </div>
+
+            <div class="detail-section" ui-spec-block-id="detail_related_items">
+                <div class="detail-section-title">Related Items</div>
+                <div class="detail-related-item">
+                    <div class="detail-related-dot memory"></div>
+                    <span class="detail-related-title">API Integration Architecture</span>
+                    <button class="detail-unlink">Unlink</button>
+                </div>
+                <div class="detail-related-item">
+                    <div class="detail-related-dot entity"></div>
+                    <span class="detail-related-title">Backend Team</span>
+                    <button class="detail-unlink">Unlink</button>
+                </div>
+                <div class="detail-related-item">
+                    <div class="detail-related-dot memory"></div>
+                    <span class="detail-related-title">Error Handling Patterns</span>
+                    <button class="detail-unlink">Unlink</button>
+                </div>
+                <a class="show-all-link">Show all 7 items</a>
+            </div>
+        </div>
+
+        <div class="detail-footer" ui-spec-block-id="detail_footer">
+            <div class="detail-meta">
+                <span>ID: 1246</span>
+                <span>Created: Oct 12, 2024</span>
+            </div>
+            <div class="detail-actions" ui-spec-block-id="detail_actions">
+                <button class="detail-btn detail-btn-danger">Delete</button>
+                <button class="detail-btn detail-btn-ghost">View in Graph</button>
+                <button class="detail-btn detail-btn-primary">Edit Full</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Importance Modal -->
+    <div class="importance-modal" id="importance-modal">
+        <div class="importance-modal-content">
+            <h3 class="importance-modal-title">Edit Importance</h3>
+            <div class="importance-modal-slider">
+                <div class="slider-container">
+                    <input type="range" class="slider" min="1" max="10" value="9" id="importance-slider" oninput="updateImportanceValue(this)">
+                    <span class="slider-value" id="importance-value">9</span>
+                </div>
+            </div>
+            <div class="importance-modal-actions">
+                <button class="btn btn-secondary" onclick="closeImportanceModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveImportance()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sidebar collapse toggle
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+
+        // Auth warning dismiss
+        function dismissAuthWarning() {
+            const warning = document.querySelector('.auth-warning');
+            warning.classList.add('hidden');
+            sessionStorage.setItem('authWarningDismissed', 'true');
+        }
+
+        // Check if auth warning was dismissed
+        if (sessionStorage.getItem('authWarningDismissed') === 'true') {
+            document.querySelector('.auth-warning').classList.add('hidden');
+        }
+
+        // Project filter
+        function clearProjectFilter() {
+            document.querySelector('.project-context-bar').classList.add('hidden');
+        }
+
+        function toggleProjectDropdown() {
+            // Toggle project dropdown - implementation would show project list
+            console.log('Toggle project dropdown');
+        }
+
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        // Content editing
+        function toggleContentEdit(btn) {
+            const display = document.getElementById('content-display');
+            const edit = document.getElementById('content-edit');
+            
+            if (display.style.display !== 'none') {
+                display.style.display = 'none';
+                edit.style.display = 'block';
+                edit.focus();
+            }
+        }
+
+        function saveContentEdit() {
+            const display = document.getElementById('content-display');
+            const edit = document.getElementById('content-edit');
+            
+            // Convert textarea content to HTML
+            const content = edit.value.split('\n\n').map(p => `<p>${p}</p>`).join('');
+            display.innerHTML = content;
+            
+            display.style.display = 'block';
+            edit.style.display = 'none';
+        }
+
+        function toggleContextEdit(btn) {
+            const display = document.getElementById('context-display');
+            const edit = document.getElementById('context-edit');
+            
+            if (display.style.display !== 'none') {
+                display.style.display = 'none';
+                edit.style.display = 'block';
+                edit.focus();
+            }
+        }
+
+        function saveContextEdit() {
+            const display = document.getElementById('context-display');
+            const edit = document.getElementById('context-edit');
+            
+            display.innerHTML = `<p>${edit.value}</p>`;
+            
+            display.style.display = 'block';
+            edit.style.display = 'none';
+        }
+
+        // Tags
+        function addTag(event, type) {
+            if (event.key === 'Enter') {
+                const input = event.target;
+                const value = input.value.trim();
+                
+                if (value) {
+                    const container = type === 'keyword' ? 
+                        document.getElementById('keywords-container') : 
+                        document.getElementById('tags-container');
+                    
+                    const inputWrapper = input.parentElement;
+                    const tag = document.createElement('span');
+                    tag.className = `tag ${type === 'keyword' ? 'keyword' : 'colored'}`;
+                    tag.innerHTML = `${value} <button class="tag-remove" onclick="removeTag(event, '${type}', '${value}')">×</button>`;
+                    tag.onclick = () => searchTag(value);
+                    
+                    container.insertBefore(tag, inputWrapper);
+                    input.value = '';
+                }
+            }
+        }
+
+        function removeTag(event, type, value) {
+            event.stopPropagation();
+            event.target.closest('.tag').remove();
+        }
+
+        function searchTag(tag) {
+            console.log('Search for tag:', tag);
+        }
+
+        // Importance modal
+        function openImportanceModal() {
+            document.getElementById('importance-modal').classList.add('open');
+        }
+
+        function closeImportanceModal() {
+            document.getElementById('importance-modal').classList.remove('open');
+        }
+
+        function updateImportanceValue(slider) {
+            document.getElementById('importance-value').textContent = slider.value;
+        }
+
+        function saveImportance() {
+            const value = document.getElementById('importance-slider').value;
+            const badge = document.querySelector('.importance-badge');
+            badge.textContent = `Importance: ${value}`;
+            
+            // Update badge color class
+            badge.classList.remove('high', 'medium', 'low');
+            if (value >= 9) {
+                badge.classList.add('high');
+            } else if (value >= 7) {
+                badge.classList.add('medium');
+            } else {
+                badge.classList.add('low');
+            }
+            
+            closeImportanceModal();
+        }
+
+        // Detail panel
+        function openDetailPanel() {
+            document.querySelector('.detail-panel').classList.add('open');
+        }
+
+        function closeDetailPanel() {
+            document.querySelector('.detail-panel').classList.remove('open');
+        }
+
+        function updateSliderValue(slider) {
+            slider.nextElementSibling.textContent = slider.value;
+        }
+
+        function toggleContentPreview() {
+            const preview = document.getElementById('detail-content-preview');
+            const link = event.target;
+            
+            if (preview.classList.contains('expanded')) {
+                preview.classList.remove('expanded');
+                link.textContent = 'Show more';
+            } else {
+                preview.classList.add('expanded');
+                link.textContent = 'Show less';
+            }
+        }
+
+        // Actions
+        function saveMemory() {
+            console.log('Saving memory...');
+            // Show save feedback
+        }
+
+        function deleteMemory() {
+            if (confirm('Are you sure you want to delete this memory?')) {
+                console.log('Deleting memory...');
+            }
+        }
+
+        function markObsolete() {
+            const badge = document.querySelector('.obsolete-badge');
+            badge.style.display = badge.style.display === 'none' ? 'inline-block' : 'none';
+        }
+
+        // Navigation functions
+        function navigateToProject(id) {
+            console.log('Navigate to project:', id);
+        }
+
+        function navigateToMemory(id) {
+            console.log('Navigate to memory:', id);
+            openDetailPanel();
+        }
+
+        function navigateToDocument(id) {
+            console.log('Navigate to document:', id);
+        }
+
+        function navigateToCodeArtifact(id) {
+            console.log('Navigate to code artifact:', id);
+        }
+
+        // Link functions
+        function unlinkProject(event, id) {
+            event.stopPropagation();
+            if (confirm('Unlink this project?')) {
+                event.target.closest('.linked-item').remove();
+            }
+        }
+
+        function unlinkMemory(event, id) {
+            event.stopPropagation();
+            if (confirm('Unlink this memory?')) {
+                event.target.closest('.linked-item').remove();
+            }
+        }
+
+        function unlinkDocument(event, id) {
+            event.stopPropagation();
+            if (confirm('Unlink this document?')) {
+                event.target.closest('.linked-item').remove();
+            }
+        }
+
+        function unlinkCodeArtifact(event, id) {
+            event.stopPropagation();
+            if (confirm('Unlink this code artifact?')) {
+                event.target.closest('.linked-item').remove();
+            }
+        }
+
+        function openLinkModal(type) {
+            console.log('Open link modal for:', type);
+            // Would open a search modal to find and link items
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+K for search
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                document.querySelector('.search-input').focus();
+            }
+            
+            // Ctrl+P for project selector
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                toggleProjectDropdown();
+            }
+            
+            // Escape to close modal/panel
+            if (e.key === 'Escape') {
+                closeImportanceModal();
+                closeDetailPanel();
+            }
+        });
+
+        // Close modal on outside click
+        document.getElementById('importance-modal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                closeImportanceModal();
+            }
+        });
+    </script>
+</body>
+</html>

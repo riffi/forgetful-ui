@@ -1,0 +1,40 @@
+.section {
+  background: var(--surface-primary);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  font-family: inherit;
+}
+
+.icon {
+  color: var(--text-dimmed);
+  display: flex;
+  align-items: center;
+}
+
+.content {
+  padding: 20px;
+}
+
+.contentNoPadding {
+  padding: 0;
+}

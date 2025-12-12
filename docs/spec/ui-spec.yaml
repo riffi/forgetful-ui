@@ -32,7 +32,7 @@ metadata:
 
 templates:
   main_layout:
-    purpose: "Three-column layout with collapsible sidebar, main content area, and slide-in detail panel"
+    purpose: "Three-column layout with collapsible sidebar, main content area, and slide-in detail panel. Global project context filtering: UI must provide a way to filter all views by a single project (dropdown with 'All Projects' default, projects sorted by recent activity, Ctrl+P shortcut). When project selected: all list screens auto-filter, 'Create' actions pre-fill project, search scoped to project. Implementation decides placement and visual style."
     regions:
       - id: sidebar
         type: static
@@ -47,9 +47,6 @@ templates:
           - id: global_search
             type: custom
             purpose: "Search input below logo: search icon, placeholder 'Search memories, entities... (Ctrl+K)', glass surface background. Opens search results overlay on focus"
-          - id: project_context
-            type: custom
-            purpose: "Global project context selector. Dropdown with 'All Projects' option (default) and list of projects sorted by recent activity. When project selected: all list screens auto-filter by this project, nav items show counts for selected project, 'Create' actions pre-fill project field, search scoped to project. Clear button to reset. Keyboard shortcut Ctrl+P"
           - id: nav
             type: main_navigation
             purpose: "Vertical navigation list with icons and labels. Items: Dashboard (grid icon), Memories (brain icon), Entities (cube icon), Projects (folder icon), Documents (file icon), Code Artifacts (code brackets icon), Graph (network icon). Active item: accent background glow, white text. Inactive: text-secondary. Hover: subtle highlight"

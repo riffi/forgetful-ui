@@ -11,8 +11,6 @@ import {
   TextInput,
   Textarea,
   Select,
-  Breadcrumbs,
-  Anchor,
   Skeleton,
   TagsInput,
   Tooltip,
@@ -36,8 +34,9 @@ import {
   IconDevices,
   IconArrowRight,
 } from '@tabler/icons-react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useEntity, useUpdateEntity, useDeleteEntity, useEntityRelationships, useCreateEntityRelationship, useEntities } from '@/hooks'
+import { Breadcrumb } from '@/components/ui'
 import type { EntityType, EntityRelationship } from '@/types'
 import classes from './EntityDetail.module.css'
 
@@ -231,14 +230,10 @@ export function EntityDetail() {
     )
   }
 
-  const breadcrumbs = [
+  const breadcrumbItems = [
     { title: 'Entities', href: '/entities' },
     { title: entity.name, href: `/entities/${entity.id}` },
-  ].map((item, index) => (
-    <Anchor key={index} component={Link} to={item.href} size="sm">
-      {item.title}
-    </Anchor>
-  ))
+  ]
 
   const allRelationships = [
     ...(relationshipsData?.relationships ?? []),
@@ -246,7 +241,7 @@ export function EntityDetail() {
 
   return (
     <div className={classes.container}>
-      <Breadcrumbs mb="md">{breadcrumbs}</Breadcrumbs>
+      <Breadcrumb items={breadcrumbItems} />
 
       {/* Header */}
       <Paper className={classes.header} mb="md">

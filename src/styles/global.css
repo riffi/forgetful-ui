@@ -470,11 +470,6 @@ body {
   font-weight: 600;
 }
 
-/* Breadcrumb styling */
-.mantine-Breadcrumbs-separator {
-  color: var(--text-dimmed) !important;
-}
-
 /* Tooltip styling */
 .mantine-Tooltip-tooltip {
   background: var(--surface-primary) !important;
