@@ -22,7 +22,9 @@ import {
   IconPlus,
   IconAlertTriangle,
   IconSearch,
+  IconClock,
 } from '@tabler/icons-react'
+import { useProjects } from '@/hooks/queries/useProjects'
 import { useNavigate, Link } from 'react-router-dom'
 import { useDashboardStats, useMemories } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
@@ -62,19 +64,44 @@ function StatCard({ title, count, icon, iconClass, path, isLoading }: StatCardPr
   )
 }
 
-function getImportanceClass(importance: number): string {
-  if (importance >= 9) return classes.importanceHigh
-  if (importance >= 7) return classes.importanceMedium
-  return classes.importanceLow
+function getImportanceDotClass(importance: number): string {
+  if (importance >= 9) return classes.importanceDotHigh
+  if (importance >= 7) return classes.importanceDotMedium
+  return classes.importanceDotLow
+}
+
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1) return 'just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays < 7) return `${diffDays}d ago`
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 interface RecentMemoriesProps {
   memories: Memory[]
   isLoading: boolean
+  projects: { id: number; name: string }[]
 }
 
-function RecentMemories({ memories, isLoading }: RecentMemoriesProps) {
+function RecentMemories({ memories, isLoading, projects }: RecentMemoriesProps) {
   const navigate = useNavigate()
+
+  // Create project lookup map
+  const projectMap = new Map(projects.map(p => [p.id, p.name]))
+
+  const getProjectName = (memory: Memory): string | null => {
+    const projectIds = memory.project_ids || []
+    if (projectIds.length === 0) return null
+    return projectMap.get(projectIds[0]) || null
+  }
 
   if (isLoading) {
     return (
@@ -110,32 +137,53 @@ function RecentMemories({ memories, isLoading }: RecentMemoriesProps) {
   }
 
   return (
-    <div className={classes.memoryList}>
-      {memories.map((memory) => (
-        <div
-          key={memory.id}
-          className={classes.memoryRow}
-          onClick={() => navigate(`/memories/${memory.id}`)}
-        >
-          <span className={classes.memoryTitle}>{memory.title}</span>
-          <span className={`${classes.importanceBadge} ${getImportanceClass(memory.importance)}`}>
-            {memory.importance}
-          </span>
-          <div className={classes.tagList}>
-            {memory.tags?.slice(0, 2).map((tag) => (
-              <span key={tag} className={classes.tag}>{tag}</span>
-            ))}
-          </div>
-          <span className={classes.projectBadge}>General</span>
-          <span className={classes.memoryDate}>
-            {new Date(memory.updated_at).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })}
-          </span>
-        </div>
-      ))}
+    <div className={classes.tableWrapper}>
+      <table className={classes.table}>
+        <thead>
+          <tr className={classes.tableHeader}>
+            <th className={classes.thTitle}>Title</th>
+            <th className={classes.thContext}>Context</th>
+            <th className={classes.thTags}>Tags</th>
+            <th className={classes.thUpdated}>Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          {memories.map((memory) => {
+            const projectName = getProjectName(memory)
+            return (
+              <tr
+                key={memory.id}
+                className={classes.tableRow}
+                onClick={() => navigate(`/memories/${memory.id}`)}
+              >
+                <td className={classes.tdTitle}>
+                  <div className={classes.titleCell}>
+                    <span className={`${classes.importanceDot} ${getImportanceDotClass(memory.importance)}`} />
+                    <span className={classes.memoryTitle}>{memory.title}</span>
+                  </div>
+                </td>
+                <td className={classes.tdContext}>
+                  {projectName ? (
+                    <span className={classes.projectBadge}>{projectName}</span>
+                  ) : (
+                    <span className={classes.noProject}>No project</span>
+                  )}
+                </td>
+                <td className={classes.tdTags}>
+                  <div className={classes.tagList}>
+                    {memory.tags?.slice(0, 2).map((tag) => (
+                      <span key={tag} className={classes.tag}>#{tag}</span>
+                    ))}
+                  </div>
+                </td>
+                <td className={classes.tdUpdated}>
+                  {formatRelativeTime(memory.updated_at)}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -226,6 +274,7 @@ export function Dashboard() {
     limit: 10,
     project_id: selectedProjectId ?? undefined,
   })
+  const { data: projectsData } = useProjects({ limit: 100 })
 
   // Editor modal state
   const [editorOpened, setEditorOpened] = useState(false)
@@ -303,17 +352,21 @@ export function Dashboard() {
       </SimpleGrid>
 
       <div className={classes.mainGrid}>
-        {/* Recent Memories */}
+        {/* Recent Activities */}
         <Paper className={classes.section}>
           <div className={classes.sectionHeader}>
-            <h2 className={classes.sectionTitle}>Recent Memories</h2>
+            <h2 className={classes.sectionTitle}>
+              <IconClock size={16} className={classes.sectionIcon} />
+              Recent Activities
+            </h2>
             <Anchor component={Link} to="/memories" className={classes.viewAllLink}>
-              View All →
+              View All
             </Anchor>
           </div>
           <RecentMemories
             memories={memoriesData?.memories ?? []}
             isLoading={memoriesLoading}
+            projects={projectsData?.projects ?? []}
           />
         </Paper>
 

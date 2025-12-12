@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forgetful MCP - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Custom Theme Configuration based on UI Spec */
+        :root {
+            --surface-primary: rgba(15, 23, 42, 0.8);
+            --surface-secondary: rgba(30, 41, 59, 0.6);
+            --accent-memory: #a855f7;
+            --accent-entity: #f59e0b;
+            --accent-document: #3b82f6;
+            --accent-code: #06b6d4;
+            --accent-project: #22c55e;
+            --text-primary: rgba(255, 255, 255, 0.9);
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --text-dimmed: rgba(255, 255, 255, 0.4);
+            --border-subtle: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: #020617; /* slate-950 */
+            color: var(--text-primary);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow: hidden; /* App-like feel */
+        }
+
+        /* Glassmorphism utilities */
+        .glass-primary {
+            background-color: var(--surface-primary);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-subtle);
+        }
+        
+        .glass-secondary {
+            background-color: var(--surface-secondary);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-memory);
+            cursor: pointer;
+            margin-top: -6px; 
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: var(--surface-secondary);
+            border-radius: 2px;
+        }
+
+        /* Background Radial Gradient for Content */
+        .content-bg {
+            background: radial-gradient(circle at center, rgba(30, 41, 59, 0.3) 0%, rgba(2, 6, 23, 0) 70%);
+        }
+
+        /* Transitions */
+        .slide-panel {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+    </style>
+</head>
+
+<body x-data="{ 
+    sidebarCollapsed: false, 
+    projectContext: 'All Projects',
+    authDisabled: true,
+    detailPanelOpen: false,
+    selectedItem: null,
+    searchOpen: false,
+    
+    // Mock Data for the UI interaction
+    selectItem(itemType, id) {
+        this.selectedItem = { type: itemType, id: id, title: 'Project Specification v2', importance: 8 };
+        this.detailPanelOpen = true;
+    }
+}" class="flex h-screen w-screen">
+
+    <aside 
+        ui-spec-block-id="sidebar"
+        class="flex flex-col h-full bg-slate-900/95 border-r border-white/5 transition-all duration-300 z-20 flex-shrink-0"
+        :class="sidebarCollapsed ? 'w-16' : 'w-64'"
+    >
+        
+        <div ui-spec-block-id="logo" class="h-16 flex items-center px-4 border-b border-white/5 shrink-0 cursor-pointer hover:bg-white/5 transition-colors">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                <i class="fa-solid fa-brain text-white text-sm"></i>
+            </div>
+            <span x-show="!sidebarCollapsed" class="ml-3 font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 whitespace-nowrap">
+                Forgetful
+            </span>
+        </div>
+
+        <div ui-spec-block-id="global_search" class="p-3 shrink-0" x-show="!sidebarCollapsed">
+            <div class="relative group" @click="searchOpen = true">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 group-hover:text-slate-300"></i>
+                <input type="text" placeholder="Search... (Ctrl+K)" class="w-full bg-slate-800/50 border border-white/5 rounded-md py-2 pl-9 pr-2 text-sm text-slate-300 focus:outline-none focus:border-purple-500/50 focus:bg-slate-800 transition-all placeholder-slate-600">
+            </div>
+        </div>
+
+        <div ui-spec-block-id="project_context" class="px-3 pb-2 shrink-0" x-show="!sidebarCollapsed">
+            <div x-data="{ open: false }" class="relative">
+                <button @click="open = !open" @click.outside="open = false" class="w-full flex items-center justify-between bg-slate-800/30 border border-white/5 hover:bg-slate-800/50 rounded-md px-3 py-2 transition-all">
+                    <div class="flex items-center truncate">
+                        <i class="fa-solid fa-layer-group text-green-500 text-xs mr-2"></i>
+                        <span class="text-sm text-slate-200 truncate" x-text="projectContext"></span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-xs text-slate-500"></i>
+                </button>
+
+                <div x-show="open" x-transition.opacity class="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-white/10 rounded-md shadow-xl z-50 py-1">
+                    <a href="#" @click="projectContext = 'All Projects'; open = false" class="block px-3 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white">All Projects</a>
+                    <div class="h-px bg-white/5 my-1"></div>
+                    <a href="#" @click="projectContext = 'Website Redesign'; open = false" class="block px-3 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white">Website Redesign</a>
+                    <a href="#" @click="projectContext = 'API Migration'; open = false" class="block px-3 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white">API Migration</a>
+                </div>
+            </div>
+        </div>
+
+        <nav ui-spec-block-id="nav" class="flex-1 overflow-y-auto py-2 space-y-0.5 px-2">
+            <a href="#" class="flex items-center px-3 py-2 rounded-md bg-purple-500/10 border border-purple-500/20 text-white group relative">
+                <i class="fa-solid fa-grid-2 w-5 text-center text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]"></i>
+                <span x-show="!sidebarCollapsed" class="ml-3 text-sm font-medium">Dashboard</span>
+                <div x-show="!sidebarCollapsed" class="absolute right-2 w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
+            </a>
+
+            <a href="#" class="flex items-center px-3 py-2 rounded-md text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-colors group">
+                <i class="fa-solid fa-brain w-5 text-center group-hover:text-purple-400 transition-colors"></i>
+                <span x-show="!sidebarCollapsed" class="ml-3 text-sm font-medium">Memories</span>
+            </a>
+
+            <a href="#" class="flex items-center px-3 py-2 rounded-md text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-colors group">
+                <i class="fa-solid fa-cube w-5 text-center group-hover:text-amber-500 transition-colors"></i>
+                <span x-show="!sidebarCollapsed" class="ml-3 text-sm font-medium">Entities</span>
+            </a>
+
+            <a href="#" class="flex items-center px-3 py-2 rounded-md text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-colors group">
+                <i class="fa-regular fa-folder w-5 text-center group-hover:text-green-500 transition-colors"></i>
+                <span x-show="!sidebarCollapsed" class="ml-3 text-sm font-medium">Projects</span>
+            </a>
+
+            <a href="#" class="flex items-center px-3 py-2 rounded-md text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-colors group">
+                <i class="fa-regular fa-file w-5 text-center group-hover:text-blue-500 transition-colors"></i>
+                <span x-show="!sidebarCollapsed" class="ml-3 text-sm font-medium">Documents</span>
+            </a>
+
+            <a href="#" class="flex items-center px-3 py-2 rounded-md text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-colors group">
+                <i class="fa-solid fa-code w-5 text-center group-hover:text-cyan-500 transition-colors"></i>
+                <span x-show="!sidebarCollapsed" class="ml-3 text-sm font-medium">Code Artifacts</span>
+            </a>
+
+            <a href="#" class="flex items-center px-3 py-2 rounded-md text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-colors group">
+                <i class="fa-solid fa-circle-nodes w-5 text-center group-hover:text-pink-500 transition-colors"></i>
+                <span x-show="!sidebarCollapsed" class="ml-3 text-sm font-medium">Graph</span>
+            </a>
+        </nav>
+
+        <button 
+            ui-spec-block-id="collapse_toggle"
+            @click="sidebarCollapsed = !sidebarCollapsed"
+            class="h-12 border-t border-white/5 flex items-center justify-center hover:bg-white/5 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer shrink-0"
+        >
+            <i class="fa-solid" :class="sidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
+            <span x-show="!sidebarCollapsed" class="ml-2 text-xs font-medium uppercase tracking-wider">Collapse</span>
+        </button>
+    </aside>
+
+
+    <main ui-spec-block-id="content" class="flex-1 flex flex-col h-full overflow-y-auto content-bg relative">
+        
+        <div 
+            ui-spec-block-id="auth_warning" 
+            x-show="authDisabled" 
+            class="bg-yellow-500/15 border-b border-yellow-500/20 px-4 h-7 flex items-center justify-between shrink-0 backdrop-blur-sm"
+        >
+            <div class="flex items-center text-xs text-yellow-500/90 font-medium">
+                <i class="fa-solid fa-triangle-exclamation mr-2"></i>
+                Auth disabled — Server running without authentication
+            </div>
+            <button @click="authDisabled = false" class="text-yellow-500/60 hover:text-yellow-400">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+        </div>
+
+        <div 
+            ui-spec-block-id="project_context_bar" 
+            x-show="projectContext !== 'All Projects'"
+            class="bg-green-500/5 border-b border-green-500/10 px-6 py-2 flex items-center justify-between backdrop-blur-sm"
+        >
+            <div class="flex items-center">
+                <span class="text-xs font-semibold text-green-400 uppercase tracking-wide mr-2">Context:</span>
+                <span class="text-sm text-green-100 font-medium" x-text="projectContext"></span>
+                <span class="ml-3 px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 text-[10px] font-mono border border-green-500/20">12 items</span>
+            </div>
+            <button @click="projectContext = 'All Projects'" class="text-xs text-green-400/60 hover:text-green-300 underline decoration-dotted">
+                Clear filter
+            </button>
+        </div>
+
+        <div class="p-6 space-y-6 max-w-7xl mx-auto w-full">
+
+            <div class="flex items-end justify-between mb-2">
+                <div>
+                    <h1 class="text-2xl font-bold text-white tracking-tight">Dashboard</h1>
+                    <p class="text-sm text-slate-400 mt-1">Overview of your knowledge base.</p>
+                </div>
+                <div class="text-xs text-slate-500 font-mono">Last synced: 2m ago</div>
+            </div>
+
+            <div ui-spec-block-id="stats_row" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-4">
+                
+                <div ui-spec-block-id="stat_memories" class="col-span-2 glass-primary rounded-xl p-4 hover:bg-slate-800/80 transition-all cursor-pointer group border-l-2 border-l-purple-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Memories</div>
+                            <div class="text-2xl font-bold text-white">124</div>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
+                            <i class="fa-solid fa-brain text-purple-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div ui-spec-block-id="stat_entities" class="col-span-2 glass-primary rounded-xl p-4 hover:bg-slate-800/80 transition-all cursor-pointer group border-l-2 border-l-amber-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Entities</div>
+                            <div class="text-2xl font-bold text-white">48</div>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
+                            <i class="fa-solid fa-cube text-amber-500"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div ui-spec-block-id="stat_projects" class="col-span-2 glass-primary rounded-xl p-4 hover:bg-slate-800/80 transition-all cursor-pointer group border-l-2 border-l-green-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Projects</div>
+                            <div class="text-2xl font-bold text-white">7</div>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center group-hover:bg-green-500/20 transition-colors">
+                            <i class="fa-regular fa-folder text-green-500"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div ui-spec-block-id="stat_documents" class="col-span-2 glass-primary rounded-xl p-4 hover:bg-slate-800/80 transition-all cursor-pointer group border-l-2 border-l-blue-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Docs</div>
+                            <div class="text-2xl font-bold text-white">32</div>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                            <i class="fa-regular fa-file text-blue-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div ui-spec-block-id="stat_code_artifacts" class="col-span-2 glass-primary rounded-xl p-4 hover:bg-slate-800/80 transition-all cursor-pointer group border-l-2 border-l-cyan-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Code</div>
+                            <div class="text-2xl font-bold text-white">89</div>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center group-hover:bg-cyan-500/20 transition-colors">
+                            <i class="fa-solid fa-code text-cyan-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div ui-spec-block-id="stat_graph" class="col-span-2 glass-primary rounded-xl p-4 hover:bg-slate-800/80 transition-all cursor-pointer group border-l-2 border-l-pink-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Relations</div>
+                            <div class="text-2xl font-bold text-white">1.2k</div>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center group-hover:bg-pink-500/20 transition-colors">
+                            <i class="fa-solid fa-circle-nodes text-pink-500"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <div ui-spec-block-id="recent_memories" class="lg:col-span-8 glass-primary rounded-xl overflow-hidden flex flex-col">
+                    <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between bg-slate-900/40">
+                        <h2 class="text-sm font-semibold text-white flex items-center">
+                            <i class="fa-regular fa-clock text-slate-500 mr-2"></i> Recent Activities
+                        </h2>
+                        <a href="#" class="text-xs text-purple-400 hover:text-purple-300 font-medium">View All</a>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-xs text-slate-500 border-b border-white/5">
+                                    <th class="pl-5 pr-2 py-3 font-medium uppercase tracking-wider">Title</th>
+                                    <th class="px-2 py-3 font-medium uppercase tracking-wider">Context</th>
+                                    <th class="px-2 py-3 font-medium uppercase tracking-wider">Tags</th>
+                                    <th class="px-2 py-3 font-medium uppercase tracking-wider text-right pr-5">Updated</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm divide-y divide-white/5">
+                                <tr class="hover:bg-white/[0.02] cursor-pointer group transition-colors" @click="selectItem('memory', 1)">
+                                    <td class="pl-5 pr-2 py-3">
+                                        <div class="flex items-center">
+                                            <div class="w-1.5 h-1.5 rounded-full bg-red-500 mr-2 shadow-[0_0_8px_rgba(239,68,68,0.5)]" title="High Importance"></div>
+                                            <span class="text-slate-200 group-hover:text-white font-medium">User Auth Flow fix</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-2 py-3">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                                            API Migration
+                                        </span>
+                                    </td>
+                                    <td class="px-2 py-3">
+                                        <div class="flex gap-1">
+                                            <span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 rounded border border-white/5">#bug</span>
+                                            <span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 rounded border border-white/5">#auth</span>
+                                        </div>
+                                    </td>
+                                    <td class="pr-5 pl-2 py-3 text-right text-slate-500 text-xs font-mono">10m ago</td>
+                                </tr>
+
+                                <tr class="hover:bg-white/[0.02] cursor-pointer group transition-colors" @click="selectItem('memory', 2)">
+                                    <td class="pl-5 pr-2 py-3">
+                                        <div class="flex items-center">
+                                            <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-2" title="Medium Importance"></div>
+                                            <span class="text-slate-200 group-hover:text-white font-medium">Update color palette spec</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-2 py-3">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                                            Website Redesign
+                                        </span>
+                                    </td>
+                                    <td class="px-2 py-3">
+                                        <div class="flex gap-1">
+                                            <span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 rounded border border-white/5">#ui</span>
+                                        </div>
+                                    </td>
+                                    <td class="pr-5 pl-2 py-3 text-right text-slate-500 text-xs font-mono">2h ago</td>
+                                </tr>
+
+                                <tr class="hover:bg-white/[0.02] cursor-pointer group transition-colors" @click="selectItem('memory', 3)">
+                                    <td class="pl-5 pr-2 py-3">
+                                        <div class="flex items-center">
+                                            <div class="w-1.5 h-1.5 rounded-full bg-slate-600 mr-2" title="Low Importance"></div>
+                                            <span class="text-slate-200 group-hover:text-white font-medium">Meeting notes: Q3 Goals</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-2 py-3">
+                                        <span class="text-slate-600 text-[10px] italic">No project</span>
+                                    </td>
+                                    <td class="px-2 py-3">
+                                        <div class="flex gap-1">
+                                            <span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 rounded border border-white/5">#planning</span>
+                                        </div>
+                                    </td>
+                                    <td class="pr-5 pl-2 py-3 text-right text-slate-500 text-xs font-mono">1d ago</td>
+                                </tr>
+                                
+                                <tr class="hover:bg-white/[0.02] cursor-pointer group transition-colors" @click="selectItem('memory', 4)">
+                                    <td class="pl-5 pr-2 py-3">
+                                        <div class="flex items-center">
+                                            <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-2" title="Medium Importance"></div>
+                                            <span class="text-slate-200 group-hover:text-white font-medium">Refactor sidebar component</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-2 py-3">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                                            Website Redesign
+                                        </span>
+                                    </td>
+                                    <td class="px-2 py-3">
+                                        <span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 rounded border border-white/5">#refactor</span>
+                                    </td>
+                                    <td class="pr-5 pl-2 py-3 text-right text-slate-500 text-xs font-mono">2d ago</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div ui-spec-block-id="quick_actions" class="lg:col-span-4 space-y-6">
+                    
+                    <div ui-spec-block-id="global_search" class="relative">
+                        <input type="text" placeholder="Quick find entities..." class="w-full bg-slate-800/80 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-sm text-white focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-slate-500 shadow-lg">
+                        <i class="fa-solid fa-bolt absolute left-3.5 top-3.5 text-amber-500 text-sm"></i>
+                    </div>
+
+                    <div ui-spec-block-id="create_buttons" class="grid grid-cols-2 gap-3">
+                        <button class="p-3 bg-slate-800/60 border border-white/5 hover:bg-slate-700/60 rounded-lg flex flex-col items-center justify-center gap-2 group transition-all hover:border-purple-500/30 hover:shadow-[0_0_15px_rgba(168,85,247,0.15)]">
+                            <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                            </div>
+                            <span class="text-xs font-medium text-slate-300">New Memory</span>
+                        </button>
+
+                        <button class="p-3 bg-slate-800/60 border border-white/5 hover:bg-slate-700/60 rounded-lg flex flex-col items-center justify-center gap-2 group transition-all hover:border-amber-500/30 hover:shadow-[0_0_15px_rgba(245,158,11,0.15)]">
+                            <div class="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                            </div>
+                            <span class="text-xs font-medium text-slate-300">New Entity</span>
+                        </button>
+
+                        <button class="p-3 bg-slate-800/60 border border-white/5 hover:bg-slate-700/60 rounded-lg flex flex-col items-center justify-center gap-2 group transition-all hover:border-green-500/30 hover:shadow-[0_0_15px_rgba(34,197,94,0.15)]">
+                            <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                            </div>
+                            <span class="text-xs font-medium text-slate-300">New Project</span>
+                        </button>
+
+                        <button class="p-3 bg-slate-800/60 border border-white/5 hover:bg-slate-700/60 rounded-lg flex flex-col items-center justify-center gap-2 group transition-all hover:border-blue-500/30 hover:shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                            <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                            </div>
+                            <span class="text-xs font-medium text-slate-300">New Doc</span>
+                        </button>
+
+                         <button class="p-3 bg-slate-800/60 border border-white/5 hover:bg-slate-700/60 rounded-lg flex flex-col items-center justify-center gap-2 group transition-all hover:border-cyan-500/30 hover:shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                            <div class="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-500 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                            </div>
+                            <span class="text-xs font-medium text-slate-300">New Code</span>
+                        </button>
+
+                        <button class="p-3 bg-slate-800/60 border border-white/5 hover:bg-slate-700/60 rounded-lg flex flex-col items-center justify-center gap-2 group transition-all hover:border-pink-500/30">
+                            <div class="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center text-pink-500 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-circle-nodes text-xs"></i>
+                            </div>
+                            <span class="text-xs font-medium text-slate-300">View Graph</span>
+                        </button>
+                    </div>
+
+                    <div ui-spec-block-id="high_importance" class="glass-secondary rounded-xl p-4 border border-red-500/10" x-data="{ expanded: true }">
+                        <div class="flex items-center justify-between mb-3 cursor-pointer" @click="expanded = !expanded">
+                            <div class="flex items-center">
+                                <div class="w-2 h-2 rounded-full bg-gradient-to-br from-red-500 to-orange-500 mr-2 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse"></div>
+                                <span class="text-sm font-semibold text-slate-200">High Importance</span>
+                            </div>
+                            <span class="bg-red-500/20 text-red-400 text-[10px] px-1.5 py-0.5 rounded border border-red-500/20">4</span>
+                        </div>
+                        
+                        <ul x-show="expanded" x-collapse class="space-y-2">
+                            <li class="flex items-start gap-2 p-2 rounded hover:bg-white/5 cursor-pointer transition-colors group" @click="selectItem('memory', 101)">
+                                <i class="fa-solid fa-exclamation text-red-500 text-xs mt-1"></i>
+                                <div>
+                                    <div class="text-sm text-slate-300 group-hover:text-white leading-tight">Server crash logs analysis</div>
+                                    <div class="text-[10px] text-slate-500 mt-0.5">Updated 15m ago</div>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-2 p-2 rounded hover:bg-white/5 cursor-pointer transition-colors group" @click="selectItem('entity', 102)">
+                                <i class="fa-solid fa-exclamation text-orange-500 text-xs mt-1"></i>
+                                <div>
+                                    <div class="text-sm text-slate-300 group-hover:text-white leading-tight">Key: Production DB Password</div>
+                                    <div class="text-[10px] text-slate-500 mt-0.5">Entity • Security</div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <aside 
+        ui-spec-block-id="detail_panel"
+        class="fixed inset-y-0 right-0 w-[380px] bg-slate-900/95 backdrop-blur-md border-l border-white/10 shadow-2xl z-40 transform transition-transform duration-300 ease-out flex flex-col"
+        :class="detailPanelOpen ? 'translate-x-0' : 'translate-x-full'"
+    >
+        <div class="flex-1 overflow-y-auto" x-show="selectedItem">
+            
+            <div ui-spec-block-id="detail_header" class="p-5 pb-0">
+                <div class="flex justify-between items-start mb-2">
+                    <span 
+                        class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+                        :class="{
+                            'bg-purple-500/20 text-purple-300 border-purple-500/30': selectedItem?.type === 'memory',
+                            'bg-amber-500/20 text-amber-300 border-amber-500/30': selectedItem?.type === 'entity',
+                        }"
+                        x-text="selectedItem?.type"
+                    ></span>
+                    
+                    <button @click="detailPanelOpen = false" class="text-slate-500 hover:text-white transition-colors">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="group relative">
+                    <h2 contenteditable="true" class="text-xl font-bold text-white outline-none focus:border-b focus:border-purple-500 border-b border-transparent pb-1 cursor-text" x-text="selectedItem?.title"></h2>
+                    <i class="fa-solid fa-pen text-xs text-slate-600 absolute top-2 -left-4 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                </div>
+            </div>
+
+            <div ui-spec-block-id="detail_quick_edit" class="p-5 space-y-5">
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Quick Edit</div>
+                
+                <div>
+                    <div class="flex justify-between text-xs text-slate-400 mb-2">
+                        <span>Importance</span>
+                        <span class="font-mono text-purple-400 font-bold" x-text="selectedItem?.importance || 5"></span>
+                    </div>
+                    <input type="range" min="1" max="10" x-model="selectedItem.importance" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                    <div class="flex justify-between text-[10px] text-slate-600 mt-1 px-1">
+                        <span>Low</span>
+                        <span>High</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-400 mb-2">Tags</label>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="inline-flex items-center bg-slate-800 border border-white/10 rounded px-2 py-1 text-xs text-slate-300">
+                            #feature
+                            <button class="ml-1.5 text-slate-500 hover:text-red-400"><i class="fa-solid fa-xmark"></i></button>
+                        </span>
+                        <span class="inline-flex items-center bg-slate-800 border border-white/10 rounded px-2 py-1 text-xs text-slate-300">
+                            #ui
+                            <button class="ml-1.5 text-slate-500 hover:text-red-400"><i class="fa-solid fa-xmark"></i></button>
+                        </span>
+                        <input type="text" placeholder="+ Add" class="bg-transparent border-b border-slate-700 text-xs text-white placeholder-slate-600 w-16 focus:w-24 focus:border-purple-500 focus:outline-none transition-all py-1">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-400 mb-2">Associated Projects</label>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="inline-flex items-center bg-green-500/10 border border-green-500/20 rounded-full px-2.5 py-0.5 text-xs text-green-400">
+                            Website Redesign
+                            <button class="ml-1.5 text-green-600 hover:text-green-300"><i class="fa-solid fa-xmark"></i></button>
+                        </span>
+                         <button class="w-6 h-6 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/30 transition-all">
+                            <i class="fa-solid fa-plus text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="h-px bg-white/5 mx-5"></div>
+
+            <div ui-spec-block-id="detail_content_preview" class="p-5">
+                <div class="text-xs text-slate-500 mb-2">Content Preview</div>
+                <div class="text-sm text-slate-300 leading-relaxed bg-slate-800/30 p-3 rounded border border-white/5 font-mono text-[13px]">
+                    This memory contains specifications regarding the new dashboard layout. Specifically, the sidebar needs to be collapsible and the theme must use the 'Dark Glassmorphism' parameters defined in the metadata...
+                </div>
+                <a href="#" class="inline-block mt-2 text-xs text-slate-500 hover:text-purple-400 hover:underline">Show more</a>
+            </div>
+
+            <div class="h-px bg-white/5 mx-5"></div>
+
+            <div ui-spec-block-id="detail_related_items" class="p-5">
+                <div class="text-xs text-slate-500 mb-3">Related Items</div>
+                <ul class="space-y-3">
+                    <li class="flex items-center justify-between group">
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <div class="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0"></div>
+                            <span class="text-sm text-slate-300 group-hover:text-white truncate cursor-pointer transition-colors">UI Spec Document</span>
+                        </div>
+                        <button class="text-[10px] text-slate-600 hover:text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">Unlink</button>
+                    </li>
+                    <li class="flex items-center justify-between group">
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 flex-shrink-0"></div>
+                            <span class="text-sm text-slate-300 group-hover:text-white truncate cursor-pointer transition-colors">main_layout.html</span>
+                        </div>
+                        <button class="text-[10px] text-slate-600 hover:text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">Unlink</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="mt-auto bg-slate-900 border-t border-white/5 p-4 space-y-4">
+            <div ui-spec-block-id="detail_footer" class="flex justify-between text-[10px] text-slate-600 font-mono">
+                <span>ID: MEM-2941</span>
+                <span>Created: Oct 12</span>
+            </div>
+            
+            <div ui-spec-block-id="detail_actions" class="flex items-center justify-end gap-3">
+                <button class="text-xs text-slate-500 hover:text-red-500 px-3 py-1.5 transition-colors">Delete</button>
+                <button class="text-xs text-slate-300 hover:text-white px-3 py-1.5 border border-white/10 rounded hover:bg-white/5 transition-all">
+                    View in Graph
+                </button>
+                <button class="text-xs text-white bg-purple-600 hover:bg-purple-500 px-4 py-1.5 rounded shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all transform hover:scale-105">
+                    Edit Full
+                </button>
+            </div>
+        </div>
+    </aside>
+
+</body>
+</html>
