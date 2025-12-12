@@ -5,9 +5,9 @@ import {
   Badge,
   Slider,
   TagsInput,
-  MultiSelect,
   Loader,
   Tooltip,
+  Select,
 } from '@mantine/core'
 import {
   IconX,
@@ -20,6 +20,7 @@ import {
   IconGraph,
   IconTrash,
   IconUnlink,
+  IconPlus,
 } from '@tabler/icons-react'
 import { useQuickEdit, type QuickEditItemType } from '@/context/QuickEditContext'
 import {
@@ -39,14 +40,15 @@ import classes from './QuickEditPanel.module.css'
 const typeConfig: Record<QuickEditItemType, {
   icon: typeof IconBrain
   color: string
+  bgColor: string
   label: string
   route: string
 }> = {
-  memory: { icon: IconBrain, color: 'var(--accent-memory)', label: 'Memory', route: '/memories' },
-  entity: { icon: IconCube, color: 'var(--accent-entity)', label: 'Entity', route: '/entities' },
-  document: { icon: IconFile, color: 'var(--accent-document)', label: 'Document', route: '/documents' },
-  code_artifact: { icon: IconCode, color: 'var(--accent-code)', label: 'Code Artifact', route: '/code-artifacts' },
-  project: { icon: IconFolder, color: 'var(--accent-project)', label: 'Project', route: '/projects' },
+  memory: { icon: IconBrain, color: 'var(--accent-memory)', bgColor: 'rgba(168, 85, 247, 0.2)', label: 'Memory', route: '/memories' },
+  entity: { icon: IconCube, color: 'var(--accent-entity)', bgColor: 'rgba(245, 158, 11, 0.2)', label: 'Entity', route: '/entities' },
+  document: { icon: IconFile, color: 'var(--accent-document)', bgColor: 'rgba(59, 130, 246, 0.2)', label: 'Document', route: '/documents' },
+  code_artifact: { icon: IconCode, color: 'var(--accent-code)', bgColor: 'rgba(6, 182, 212, 0.2)', label: 'Code Artifact', route: '/code-artifacts' },
+  project: { icon: IconFolder, color: 'var(--accent-project)', bgColor: 'rgba(34, 197, 94, 0.2)', label: 'Project', route: '/projects' },
 }
 
 function getImportanceColor(value: number): string {
@@ -67,6 +69,8 @@ function MemoryContent({ id }: { id: number }) {
 
   const [localImportance, setLocalImportance] = useState<number>(5)
   const [localTags, setLocalTags] = useState<string[]>([])
+  const [newTagValue, setNewTagValue] = useState('')
+  const [showProjectSelector, setShowProjectSelector] = useState(false)
 
   useEffect(() => {
     if (memory) {
@@ -93,9 +97,22 @@ function MemoryContent({ id }: { id: number }) {
     }
   }
 
-  const handleTagsChange = (tags: string[]) => {
-    setLocalTags(tags)
-    updateMemory.mutate({ id, data: { tags } })
+  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && newTagValue.trim()) {
+      const newTag = newTagValue.trim()
+      if (!localTags.includes(newTag) && localTags.length < 10) {
+        const newTags = [...localTags, newTag]
+        setLocalTags(newTags)
+        updateMemory.mutate({ id, data: { tags: newTags } })
+      }
+      setNewTagValue('')
+    }
+  }
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    const newTags = localTags.filter(tag => tag !== tagToRemove)
+    setLocalTags(newTags)
+    updateMemory.mutate({ id, data: { tags: newTags } })
   }
 
   const handleDelete = () => {
@@ -105,7 +122,24 @@ function MemoryContent({ id }: { id: number }) {
     }
   }
 
-  const projectOptions = projectsData?.projects?.map(p => ({ value: String(p.id), label: p.name })) || []
+  // Map project_ids to full project objects using projectsData
+  const currentProjectIds = memory.project_ids || []
+  const currentProjects = projectsData?.projects?.filter(p => currentProjectIds.includes(p.id)) || []
+  const availableProjects = projectsData?.projects?.filter(p => !currentProjectIds.includes(p.id)) || []
+  const projectOptions = availableProjects.map(p => ({ value: String(p.id), label: p.name }))
+
+  const handleAddProject = (projectId: string | null) => {
+    if (projectId) {
+      const newProjectIds = [...currentProjectIds, parseInt(projectId, 10)]
+      updateMemory.mutate({ id, data: { project_ids: newProjectIds } })
+      setShowProjectSelector(false)
+    }
+  }
+
+  const handleRemoveProject = (projectId: number) => {
+    const newProjectIds = currentProjectIds.filter(id => id !== projectId)
+    updateMemory.mutate({ id, data: { project_ids: newProjectIds } })
+  }
 
   return (
     <>
@@ -113,7 +147,7 @@ function MemoryContent({ id }: { id: number }) {
       <div className={classes.header}>
         <Badge
           className={classes.typeBadge}
-          style={{ backgroundColor: typeConfig.memory.color }}
+          style={{ backgroundColor: typeConfig.memory.bgColor, color: typeConfig.memory.color }}
         >
           Memory
         </Badge>
@@ -122,10 +156,10 @@ function MemoryContent({ id }: { id: number }) {
 
       {/* Quick Edit Section */}
       <div className={classes.section}>
-        <Text className={classes.sectionLabel}>Quick edit</Text>
+        <h3 className={classes.sectionTitle}>Quick Edit</h3>
 
         <div className={classes.field}>
-          <Text className={classes.fieldLabel}>Importance</Text>
+          <div className={classes.fieldLabel}>Importance</div>
           <div className={classes.sliderWrapper}>
             <Slider
               value={localImportance}
@@ -148,49 +182,100 @@ function MemoryContent({ id }: { id: number }) {
         </div>
 
         <div className={classes.field}>
-          <Text className={classes.fieldLabel}>Tags</Text>
-          <TagsInput
-            value={localTags}
-            onChange={handleTagsChange}
+          <div className={classes.fieldLabel}>Tags</div>
+          {localTags.length > 0 && (
+            <div className={classes.tagsRow}>
+              {localTags.map((tag) => (
+                <span key={tag} className={classes.tagPill}>
+                  {tag}
+                  <button
+                    type="button"
+                    className={classes.tagRemove}
+                    onClick={() => handleRemoveTag(tag)}
+                  >
+                    <IconX size={10} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <input
+            type="text"
+            className={classes.tagInput}
             placeholder="Add tag..."
-            maxTags={10}
-            classNames={{ input: classes.tagsInput }}
+            value={newTagValue}
+            onChange={(e) => setNewTagValue(e.target.value)}
+            onKeyDown={handleAddTag}
           />
         </div>
 
         <div className={classes.field}>
-          <Text className={classes.fieldLabel}>Associated projects</Text>
-          <MultiSelect
-            data={projectOptions}
-            value={memory.projects?.map(p => String(p.id)) || []}
-            onChange={() => {/* TODO: implement project linking */}}
-            placeholder="Add to project..."
-            searchable
-            classNames={{ input: classes.selectInput }}
-          />
+          <div className={classes.fieldLabel}>Associated Projects</div>
+          <div className={classes.projectsRow}>
+            {currentProjects.length > 0 ? (
+              currentProjects.map((p) => (
+                <span key={p.id} className={classes.projectPill}>
+                  {p.name}
+                  <button
+                    type="button"
+                    className={classes.removePillBtn}
+                    onClick={() => handleRemoveProject(p.id)}
+                  >
+                    <IconX size={10} />
+                  </button>
+                </span>
+              ))
+            ) : (
+              !showProjectSelector && <span className={classes.noProjects}>No projects</span>
+            )}
+            {showProjectSelector ? (
+              <Select
+                placeholder="Select project..."
+                data={projectOptions}
+                onChange={handleAddProject}
+                onBlur={() => setShowProjectSelector(false)}
+                autoFocus
+                size="xs"
+                className={classes.projectSelect}
+                comboboxProps={{ withinPortal: false }}
+              />
+            ) : (
+              projectOptions.length > 0 && (
+                <button
+                  type="button"
+                  className={classes.addProjectBtn}
+                  onClick={() => setShowProjectSelector(true)}
+                >
+                  <IconPlus size={14} />
+                </button>
+              )
+            )}
+          </div>
         </div>
       </div>
 
       {/* Content Preview */}
       <div className={classes.section}>
-        <Text className={classes.sectionLabel}>Content preview</Text>
-        <div className={classes.contentPreview}>
+        <h3 className={classes.sectionTitle}>Content Preview</h3>
+        <p className={classes.contentPreview}>
           {memory.content?.slice(0, 300) || 'No content'}
-          {memory.content && memory.content.length > 300 && (
-            <button
-              className={classes.showMore}
-              onClick={() => navigate(`/memories/${id}`)}
-            >
-              Show more
-            </button>
-          )}
-        </div>
+          {memory.content && memory.content.length > 300 && '...'}
+        </p>
+        {memory.content && memory.content.length > 300 && (
+          <button
+            type="button"
+            className={classes.showMoreLink}
+            onClick={() => navigate(`/memories/${id}`)}
+          >
+            Show more
+          </button>
+        )}
       </div>
 
       {/* Related Items */}
       {links?.linked_memories && links.linked_memories.length > 0 && (
         <div className={classes.section}>
-          <Text className={classes.sectionLabel}>Related Items</Text>
+          <h3 className={classes.sectionTitle}>Related Items</h3>
           <div className={classes.relatedList}>
             {links.linked_memories.slice(0, 5).map((link: Memory) => (
               <div key={link.id} className={classes.relatedItem}>
@@ -300,7 +385,7 @@ function EntityContent({ id }: { id: number }) {
       <div className={classes.header}>
         <Badge
           className={classes.typeBadge}
-          style={{ backgroundColor: typeConfig.entity.color }}
+          style={{ backgroundColor: typeConfig.entity.bgColor, color: typeConfig.entity.color }}
         >
           {entity.entity_type}
         </Badge>
@@ -308,10 +393,10 @@ function EntityContent({ id }: { id: number }) {
       </div>
 
       <div className={classes.section}>
-        <Text className={classes.sectionLabel}>Quick edit</Text>
+        <h3 className={classes.sectionTitle}>Quick Edit</h3>
 
         <div className={classes.field}>
-          <Text className={classes.fieldLabel}>Tags</Text>
+          <div className={classes.fieldLabel}>Tags</div>
           <TagsInput
             value={localTags}
             onChange={handleTagsChange}
@@ -324,18 +409,20 @@ function EntityContent({ id }: { id: number }) {
 
       {entity.notes && (
         <div className={classes.section}>
-          <Text className={classes.sectionLabel}>Notes preview</Text>
-          <div className={classes.contentPreview}>
+          <h3 className={classes.sectionTitle}>Notes Preview</h3>
+          <p className={classes.contentPreview}>
             {entity.notes.slice(0, 300)}
-            {entity.notes.length > 300 && (
-              <button
-                className={classes.showMore}
-                onClick={() => navigate(`/entities/${id}`)}
-              >
-                Show more
-              </button>
-            )}
-          </div>
+            {entity.notes.length > 300 && '...'}
+          </p>
+          {entity.notes.length > 300 && (
+            <button
+              type="button"
+              className={classes.showMoreLink}
+              onClick={() => navigate(`/entities/${id}`)}
+            >
+              Show more
+            </button>
+          )}
         </div>
       )}
 
@@ -412,7 +499,7 @@ function DocumentContent({ id }: { id: number }) {
       <div className={classes.header}>
         <Badge
           className={classes.typeBadge}
-          style={{ backgroundColor: typeConfig.document.color }}
+          style={{ backgroundColor: typeConfig.document.bgColor, color: typeConfig.document.color }}
         >
           {document.document_type}
         </Badge>
@@ -420,10 +507,10 @@ function DocumentContent({ id }: { id: number }) {
       </div>
 
       <div className={classes.section}>
-        <Text className={classes.sectionLabel}>Quick edit</Text>
+        <h3 className={classes.sectionTitle}>Quick Edit</h3>
 
         <div className={classes.field}>
-          <Text className={classes.fieldLabel}>Tags</Text>
+          <div className={classes.fieldLabel}>Tags</div>
           <TagsInput
             value={localTags}
             onChange={handleTagsChange}
@@ -436,7 +523,7 @@ function DocumentContent({ id }: { id: number }) {
 
       {document.content && (
         <div className={classes.section}>
-          <Text className={classes.sectionLabel}>Content preview</Text>
+          <h3 className={classes.sectionTitle}>Content Preview</h3>
           <div className={classes.contentPreview}>
             {document.content.slice(0, 300)}
             {document.content.length > 300 && (
@@ -517,7 +604,7 @@ function CodeArtifactContent({ id }: { id: number }) {
       <div className={classes.header}>
         <Badge
           className={classes.typeBadge}
-          style={{ backgroundColor: typeConfig.code_artifact.color }}
+          style={{ backgroundColor: typeConfig.code_artifact.bgColor, color: typeConfig.code_artifact.color }}
         >
           {artifact.language}
         </Badge>
@@ -525,10 +612,10 @@ function CodeArtifactContent({ id }: { id: number }) {
       </div>
 
       <div className={classes.section}>
-        <Text className={classes.sectionLabel}>Quick edit</Text>
+        <h3 className={classes.sectionTitle}>Quick Edit</h3>
 
         <div className={classes.field}>
-          <Text className={classes.fieldLabel}>Tags</Text>
+          <div className={classes.fieldLabel}>Tags</div>
           <TagsInput
             value={localTags}
             onChange={handleTagsChange}
@@ -541,7 +628,7 @@ function CodeArtifactContent({ id }: { id: number }) {
 
       {artifact.code && (
         <div className={classes.section}>
-          <Text className={classes.sectionLabel}>Code preview</Text>
+          <h3 className={classes.sectionTitle}>Code Preview</h3>
           <pre className={classes.codePreview}>
             {artifact.code.slice(0, 400)}
             {artifact.code.length > 400 && '...'}
@@ -601,7 +688,7 @@ function ProjectContent({ id }: { id: number }) {
       <div className={classes.header}>
         <Badge
           className={classes.typeBadge}
-          style={{ backgroundColor: typeConfig.project.color }}
+          style={{ backgroundColor: typeConfig.project.bgColor, color: typeConfig.project.color }}
         >
           {project.project_type}
         </Badge>
@@ -616,7 +703,7 @@ function ProjectContent({ id }: { id: number }) {
 
       {project.description && (
         <div className={classes.section}>
-          <Text className={classes.sectionLabel}>Description</Text>
+          <h3 className={classes.sectionTitle}>Description</h3>
           <div className={classes.contentPreview}>
             {project.description.slice(0, 300)}
             {project.description.length > 300 && (
@@ -632,7 +719,7 @@ function ProjectContent({ id }: { id: number }) {
       )}
 
       <div className={classes.section}>
-        <Text className={classes.sectionLabel}>Stats</Text>
+        <h3 className={classes.sectionTitle}>Stats</h3>
         <div className={classes.statsGrid}>
           <div className={classes.statItem}>
             <span className={classes.statValue}>{project.memory_count}</span>

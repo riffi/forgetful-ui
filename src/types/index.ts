@@ -39,7 +39,12 @@ export interface Memory {
   obsoleted_at?: string
   created_at: string
   updated_at: string
-  // Relations
+  // Relations (IDs from API)
+  project_ids?: number[]
+  linked_memory_ids?: number[]
+  document_ids?: number[]
+  code_artifact_ids?: number[]
+  // Populated relations (for convenience, may need manual population)
   projects?: Project[]
   linked_memories?: Memory[]
   documents?: Document[]
@@ -63,6 +68,7 @@ export interface MemoryUpdate {
   keywords?: string[]
   tags?: string[]
   importance?: number
+  project_ids?: number[]
 }
 
 export interface Project {
