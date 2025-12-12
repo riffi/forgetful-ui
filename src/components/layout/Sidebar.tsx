@@ -8,7 +8,7 @@ import {
   IconFolder,
   IconFileText,
   IconCode,
-  IconShare3,
+  IconSitemap,
   IconChevronLeft,
   IconChevronRight,
   IconSearch,
@@ -30,7 +30,7 @@ const navItems = [
   { path: '/projects', label: 'Projects', icon: IconFolder },
   { path: '/documents', label: 'Documents', icon: IconFileText },
   { path: '/code-artifacts', label: 'Code Artifacts', icon: IconCode },
-  { path: '/graph', label: 'Graph', icon: IconShare3 },
+  { path: '/graph', label: 'Graph', icon: IconSitemap },
 ]
 
 export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
