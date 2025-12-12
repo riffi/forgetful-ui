@@ -37,7 +37,7 @@ import {
   IconArrowRight,
 } from '@tabler/icons-react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { useEntity, useUpdateEntity, useDeleteEntity, useEntityRelationships } from '@/hooks'
+import { useEntity, useUpdateEntity, useDeleteEntity, useEntityRelationships, useCreateEntityRelationship, useEntities } from '@/hooks'
 import type { EntityType, EntityRelationship } from '@/types'
 import classes from './EntityDetail.module.css'
 
@@ -69,9 +69,23 @@ function EntityTypeIcon({ type, size = 16 }: { type: EntityType; size?: number }
 function RelationshipCard({ relationship, currentEntityId }: { relationship: EntityRelationship; currentEntityId: number }) {
   const navigate = useNavigate()
   const isOutgoing = relationship.source_entity_id === currentEntityId
-  const otherEntity = isOutgoing ? relationship.target_entity : relationship.source_entity
+  const otherEntityId = isOutgoing ? relationship.target_entity_id : relationship.source_entity_id
+  const populatedEntity = isOutgoing ? relationship.target_entity : relationship.source_entity
 
-  if (!otherEntity) return null
+  // Fetch entity data if not populated
+  const { data: fetchedEntity } = useEntity(populatedEntity ? 0 : otherEntityId)
+  const otherEntity = populatedEntity ?? fetchedEntity
+
+  if (!otherEntity) {
+    return (
+      <Paper className={classes.relationshipItem}>
+        <Group gap="xs" wrap="nowrap">
+          <Skeleton height={14} width={14} circle />
+          <Skeleton height={14} style={{ flex: 1 }} />
+        </Group>
+      </Paper>
+    )
+  }
 
   return (
     <Paper
@@ -117,6 +131,13 @@ export function EntityDetail() {
   // Delete modal
   const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false)
 
+  // Add Relationship modal
+  const [addRelOpened, { open: openAddRel, close: closeAddRel }] = useDisclosure(false)
+  const [relTargetId, setRelTargetId] = useState<string | null>(null)
+  const [relType, setRelType] = useState('')
+  const createRelationship = useCreateEntityRelationship()
+  const { data: entitiesData } = useEntities({ limit: 100 })
+
   // Start editing
   const startEditing = () => {
     if (!entity) return
@@ -154,6 +175,30 @@ export function EntityDetail() {
     closeDelete()
     navigate('/entities')
   }
+
+  // Handle add relationship
+  const handleAddRelationship = async () => {
+    if (!relTargetId || !relType.trim()) return
+
+    await createRelationship.mutateAsync({
+      entityId,
+      data: {
+        target_entity_id: parseInt(relTargetId),
+        relationship_type: relType.trim(),
+      },
+    })
+    setRelTargetId(null)
+    setRelType('')
+    closeAddRel()
+  }
+
+  // Get entities for select (exclude current entity)
+  const entitySelectOptions = (entitiesData?.entities ?? [])
+    .filter(e => e.id !== entityId)
+    .map(e => ({
+      value: String(e.id),
+      label: `${e.name} (${e.entity_type})`,
+    }))
 
   if (isLoading) {
     return (
@@ -429,6 +474,7 @@ export function EntityDetail() {
                 leftSection={<IconLink size={16} />}
                 fullWidth
                 color="gray"
+                onClick={openAddRel}
               >
                 Add Relationship
               </Button>
@@ -458,6 +504,52 @@ export function EntityDetail() {
               loading={deleteEntity.isPending}
             >
               Delete
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* Add Relationship Modal */}
+      <Modal
+        opened={addRelOpened}
+        onClose={closeAddRel}
+        title={
+          <Group gap="xs">
+            <IconLink size={20} color="var(--accent-entity)" />
+            <Text fw={600}>Add Relationship</Text>
+          </Group>
+        }
+        centered
+      >
+        <Stack>
+          <Select
+            label="Target Entity"
+            placeholder="Select an entity..."
+            data={entitySelectOptions}
+            value={relTargetId}
+            onChange={setRelTargetId}
+            searchable
+            required
+          />
+          <TextInput
+            label="Relationship Type"
+            placeholder="e.g., works_for, manages, collaborates_with"
+            value={relType}
+            onChange={(e) => setRelType(e.target.value)}
+            required
+          />
+          <Group justify="flex-end" mt="md">
+            <Button variant="light" color="gray" onClick={closeAddRel}>
+              Cancel
+            </Button>
+            <Button
+              color="orange"
+              leftSection={<IconLink size={16} />}
+              onClick={handleAddRelationship}
+              loading={createRelationship.isPending}
+              disabled={!relTargetId || !relType.trim()}
+            >
+              Create Relationship
             </Button>
           </Group>
         </Stack>

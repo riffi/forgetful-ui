@@ -18,6 +18,7 @@ import {
   Tooltip,
   Modal,
   Box,
+  Select,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import {
@@ -31,9 +32,10 @@ import {
   IconArrowLeft,
   IconCalendar,
   IconHash,
+  IconBox,
 } from '@tabler/icons-react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { useMemory, useUpdateMemory, useDeleteMemory, useMemoryLinks } from '@/hooks'
+import { useMemory, useUpdateMemory, useDeleteMemory, useMemoryLinks, useEntities, useLinkEntityToMemory } from '@/hooks'
 import type { Memory } from '@/types'
 import classes from './MemoryDetail.module.css'
 
@@ -90,6 +92,30 @@ export function MemoryDetail() {
   // Delete modal
   const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false)
   const [deleteReason, setDeleteReason] = useState('')
+
+  // Link entity modal
+  const [linkEntityOpened, { open: openLinkEntity, close: closeLinkEntity }] = useDisclosure(false)
+  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null)
+  const { data: entitiesData } = useEntities({ limit: 100 })
+  const linkEntityToMemory = useLinkEntityToMemory()
+
+  // Get entity options for select
+  const entityOptions = (entitiesData?.entities ?? []).map(e => ({
+    value: String(e.id),
+    label: `${e.name} (${e.entity_type})`,
+  }))
+
+  // Handle link entity
+  const handleLinkEntity = async () => {
+    if (!selectedEntityId) return
+
+    await linkEntityToMemory.mutateAsync({
+      entityId: parseInt(selectedEntityId),
+      memoryId,
+    })
+    setSelectedEntityId(null)
+    closeLinkEntity()
+  }
 
   // Start editing
   const startEditing = () => {
@@ -435,11 +461,12 @@ export function MemoryDetail() {
               </Button>
               <Button
                 variant="light"
-                leftSection={<IconLink size={16} />}
+                leftSection={<IconBox size={16} />}
                 fullWidth
-                color="gray"
+                color="orange"
+                onClick={openLinkEntity}
               >
-                Add Link
+                Link Entity
               </Button>
             </Stack>
           </Paper>
@@ -474,6 +501,45 @@ export function MemoryDetail() {
               loading={deleteMemory.isPending}
             >
               Mark Obsolete
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* Link Entity Modal */}
+      <Modal
+        opened={linkEntityOpened}
+        onClose={closeLinkEntity}
+        title={
+          <Group gap="xs">
+            <IconBox size={20} color="var(--accent-entity)" />
+            <Text fw={600}>Link Entity to Memory</Text>
+          </Group>
+        }
+        centered
+      >
+        <Stack>
+          <Select
+            label="Select Entity"
+            placeholder="Search for an entity..."
+            data={entityOptions}
+            value={selectedEntityId}
+            onChange={setSelectedEntityId}
+            searchable
+            required
+          />
+          <Group justify="flex-end" mt="md">
+            <Button variant="light" color="gray" onClick={closeLinkEntity}>
+              Cancel
+            </Button>
+            <Button
+              color="orange"
+              leftSection={<IconLink size={16} />}
+              onClick={handleLinkEntity}
+              loading={linkEntityToMemory.isPending}
+              disabled={!selectedEntityId}
+            >
+              Link Entity
             </Button>
           </Group>
         </Stack>

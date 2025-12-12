@@ -109,11 +109,9 @@ export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
                 backgroundColor: 'var(--surface-primary)',
                 border: '1px solid var(--border-subtle)',
               },
-              option: {
-                '&[data-selected]': {
-                  backgroundColor: 'var(--accent-project)',
-                },
-              },
+            }}
+            classNames={{
+              option: classes.selectOption,
             }}
             comboboxProps={{ withinPortal: true }}
           />
