@@ -1,0 +1,1 @@
+export { QuickEditPanel } from './QuickEditPanel'
