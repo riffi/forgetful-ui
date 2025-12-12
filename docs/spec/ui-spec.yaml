@@ -245,37 +245,30 @@ screens:
 
   entity_detail:
     title: Entity Detail
-    purpose: "Full page for complex entity editing. INLINE EDITING throughout - no separate edit mode. Name uses contenteditable, entity_type is clickable dropdown, notes use contenteditable. Changes tracked locally, saved via 'Save Changes' button. Shows full relationship graph, all incoming/outgoing connections. Use for relationship management"
+    purpose: "Full page for complex entity editing. INLINE EDITING throughout - no separate edit mode. Name uses contenteditable, entity_type is clickable dropdown, notes use MarkdownEditor. Changes tracked locally, saved via 'Save Changes' button. Shows relationships in sidebar. Use for relationship management"
     blocks:
       - id: breadcrumb
         columns: 12
         purpose: "Breadcrumb: Entities > [Entity Name]"
       - id: header
         columns: 12
-        purpose: "Header row: name (h1, INLINE EDITABLE via contenteditable - shows subtle border-bottom on hover, accent-entity border on focus), entity_type badge (clickable dropdown, colored amber), actions: Delete, 'Save Changes' primary button"
+        purpose: "Header row: badges row (Entity badge, entity_type dropdown badge colored amber, custom_type input inline if type is Other), name below (h1, INLINE EDITABLE via contenteditable - shows subtle border-bottom on hover, accent-entity border on focus), actions: Delete, 'Save Changes' primary button"
       - id: main_content
         columns: 8
         purpose: "Main content area"
         blocks:
           - id: notes_field
-            purpose: "Content card with 'Notes' label. Editable content area: surface-secondary bg, border-subtle, rounded-8px, padding-16px. Content is INLINE EDITABLE via contenteditable. Shows border-hover on hover, accent-entity border + glow on focus. Min-height 100px"
-          - id: tags_field
-            purpose: "Tags section with TagsInput component. Editable inline"
-          - id: relationships_section
-            purpose: "Relationships section"
-            blocks:
-              - id: outgoing_relationships
-                purpose: "Outgoing relationships table: target entity (link), relationship_type, strength (progress bar), confidence, actions (edit, delete). 'Add Relationship' button"
-              - id: incoming_relationships
-                purpose: "Incoming relationships table: source entity (link), relationship_type, strength, confidence. Read-only (edit from source)"
+            purpose: "Content card with 'Notes' label. Uses MarkdownEditor with click-to-edit: shows rendered markdown preview, click to activate editor with toolbar, click outside to close. Supports markdown formatting. accent-entity color on focus. Min-height 250px"
       - id: sidebar
         columns: 4
-        purpose: "Right sidebar with metadata, relationships, and actions cards"
+        purpose: "Right sidebar with tags, metadata, relationships, and actions cards"
         blocks:
+          - id: tags_card
+            purpose: "Sidebar card with 'Tags' title. Tags displayed as gray pills (rgba white 0.1 bg, 12px font). Inline editable with '+ tag' input"
           - id: metadata_card
             purpose: "Sidebar card with 'Metadata' title. Read-only metadata list: ID (monospace), Created date, Updated date"
           - id: relationships_card
-            purpose: "Sidebar card with 'Relationships' title. Shows incoming/outgoing relationship items with entity name, type badge, direction arrow. 'View in Graph' action. Shows up to 5, 'Show more' link if needed"
+            purpose: "Sidebar card with 'Relationships' title. Shows incoming/outgoing relationship items with entity name, type badge, direction arrow. Shows up to 5, '+N more' text if exceeded. 'Add relationship' button at bottom"
           - id: actions_card
             purpose: "Sidebar card with 'Actions' title. Buttons: 'View in Graph', 'Add Relationship'"
 

@@ -31,7 +31,7 @@ import {
 } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useEntity, useUpdateEntity, useDeleteEntity, useEntityRelationships, useCreateEntityRelationship, useEntities } from '@/hooks'
-import { Breadcrumb, Card, Section, TagsEditor, MarkdownEditor } from '@/components/ui'
+import { Breadcrumb, Card, TagsEditor, MarkdownEditor } from '@/components/ui'
 import type { EntityType, EntityRelationship } from '@/types'
 import classes from './EntityDetail.module.css'
 
@@ -315,6 +315,15 @@ export function EntityDetail() {
               type={editedType}
               onChange={setEditedType}
             />
+            {editedType === 'Other' && (
+              <TextInput
+                value={editedCustomType}
+                onChange={(e) => setEditedCustomType(e.target.value)}
+                placeholder="Custom type..."
+                size="xs"
+                className={classes.customTypeInline}
+              />
+            )}
           </Group>
 
           {/* Title row - inline editable */}
@@ -349,20 +358,8 @@ export function EntityDetail() {
       <div className={classes.grid}>
         {/* Left Column - Content */}
         <div className={classes.mainColumn}>
-          {/* Custom Type (if Other) */}
-          {editedType === 'Other' && (
-            <Section title="Custom Type">
-              <TextInput
-                value={editedCustomType}
-                onChange={(e) => setEditedCustomType(e.target.value)}
-                placeholder="Enter custom entity type..."
-                className={classes.customTypeInput}
-              />
-            </Section>
-          )}
-
           {/* Notes - markdown editor (click to edit) */}
-          <Paper className={classes.contentCard} mb="md">
+          <Paper className={classes.contentCard}>
             <Text className={classes.cardLabel}>Notes</Text>
             <MarkdownEditor
               value={editedNotes}
@@ -373,21 +370,20 @@ export function EntityDetail() {
               inlineEdit
             />
           </Paper>
-
-          {/* Tags */}
-          <Section title="Tags">
-            <TagsEditor
-              value={editedTags}
-              onChange={setEditedTags}
-              placeholder="Add tags..."
-              variant="entity"
-              accentColor="entity"
-            />
-          </Section>
         </div>
 
         {/* Right Column - Sidebar */}
         <div className={classes.sidebar}>
+          {/* Tags */}
+          <Card title="Tags">
+            <TagsEditor
+              value={editedTags}
+              onChange={setEditedTags}
+              variant="entity"
+              accentColor="entity"
+            />
+          </Card>
+
           {/* Metadata */}
           <Card title="Metadata">
             <div className={classes.metadataRow}>

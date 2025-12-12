@@ -272,9 +272,20 @@
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
 }
 
-/* Custom Type Input */
-.customTypeInput {
+/* Custom Type Input - Inline in header */
+.customTypeInline {
+  max-width: 160px;
+}
+
+.customTypeInline input {
   background: var(--surface-secondary);
+  border-color: var(--border-subtle);
+  font-size: 13px;
+  height: 28px;
+}
+
+.customTypeInline input:focus {
+  border-color: var(--accent-entity);
 }
 
 /* Error State */

@@ -65,7 +65,7 @@ export function TagsEditor({
   value,
   onChange,
   variant = 'default',
-  placeholder = 'Add tag...',
+  placeholder = '+ tag',
   accentColor = 'memory',
 }: TagsEditorProps) {
   const [inputValue, setInputValue] = useState('')
@@ -138,7 +138,7 @@ export function TagsEditor({
             handleAdd(inputValue)
           }
         }}
-        placeholder={value.length === 0 ? placeholder : ''}
+        placeholder={placeholder}
       />
     </div>
   )
