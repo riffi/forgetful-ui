@@ -258,6 +258,34 @@
   opacity: 1;
 }
 
+.tagMore {
+  color: var(--text-dimmed);
+  font-size: 11px;
+  padding: 4px 6px;
+}
+
+.addTagInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-dimmed);
+  font-size: 12px;
+  width: 60px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.addTagInput::placeholder {
+  color: var(--text-dimmed);
+}
+
+.addTagInput:focus {
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  width: 80px;
+}
+
 .addTagBtn {
   background: var(--surface-secondary);
   border: 1px dashed var(--border-hover);

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   Title,
   Group,
@@ -26,6 +26,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useDocuments, useDeleteDocument } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
+import { useQuickEdit } from '@/context/QuickEditContext'
 import type { Document, DocumentFilters } from '@/types'
 import classes from './Documents.module.css'
 
@@ -87,6 +88,7 @@ function formatFileSize(bytes?: number) {
 export function Documents() {
   const navigate = useNavigate()
   const { selectedProjectId } = useProjectContext()
+  const { openPanel } = useQuickEdit()
 
   // Filters state
   const [search, setSearch] = useState('')
@@ -155,10 +157,15 @@ export function Documents() {
     return sorted
   }, [filteredData, sortStatus])
 
-  // Handle row click
-  const handleRowClick = (document: Document) => {
+  // Handle row click - opens quick edit panel
+  const handleRowClick = useCallback((document: Document) => {
+    openPanel({ type: 'document', id: document.id })
+  }, [openPanel])
+
+  // Handle double click - navigates to full detail page
+  const handleRowDoubleClick = useCallback((document: Document) => {
     navigate(`/documents/${document.id}`)
-  }
+  }, [navigate])
 
   // Handle delete
   const handleDelete = async (document: Document) => {
@@ -321,6 +328,7 @@ export function Documents() {
           noRecordsText="No documents found"
           highlightOnHover
           onRowClick={({ record }) => handleRowClick(record)}
+          onRowDoubleClick={({ record }) => handleRowDoubleClick(record)}
           sortStatus={sortStatus}
           onSortStatusChange={setSortStatus}
           selectedRecords={selectedRecords}

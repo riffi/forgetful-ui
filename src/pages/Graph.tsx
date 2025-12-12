@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d'
-import { Tooltip, ActionIcon, Menu } from '@mantine/core'
+import { Tooltip, ActionIcon, Menu, SegmentedControl } from '@mantine/core'
 import {
   IconZoomIn,
   IconZoomOut,
@@ -14,6 +14,9 @@ import {
   IconDownload,
   IconMaximize,
   IconMinimize,
+  IconHierarchy,
+  IconCircleDot,
+  IconVectorSpline,
 } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useGraphData } from '@/hooks'
@@ -53,12 +56,15 @@ interface GraphLinkData {
   type: string
 }
 
+type LayoutType = 'force' | 'hierarchical' | 'radial'
+
 export function Graph() {
   const navigate = useNavigate()
   const { selectedProjectId } = useProjectContext()
   const graphRef = useRef<ForceGraphMethods<GraphNodeData, GraphLinkData>>()
 
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [layoutType, setLayoutType] = useState<LayoutType>('force')
   const [nodeFilters, setNodeFilters] = useState<Record<string, boolean>>({
     memory: true,
     entity: true,
@@ -139,6 +145,139 @@ export function Graph() {
       setIsFullscreen(false)
     }
   }, [])
+
+  // Export functions
+  const exportToPNG = useCallback(() => {
+    const canvas = containerRef.current?.querySelector('canvas')
+    if (!canvas) return
+
+    const link = document.createElement('a')
+    link.download = `knowledge-graph-${Date.now()}.png`
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+  }, [])
+
+  const exportToSVG = useCallback(() => {
+    const nodesWithPos = filteredData.nodes.filter(
+      (n): n is GraphNodeData & { x: number; y: number } =>
+        (n as GraphNodeData).x !== undefined && (n as GraphNodeData).y !== undefined
+    )
+
+    if (nodesWithPos.length === 0) return
+
+    const xs = nodesWithPos.map(n => n.x)
+    const ys = nodesWithPos.map(n => n.y)
+    const minX = Math.min(...xs) - 50
+    const maxX = Math.max(...xs) + 50
+    const minY = Math.min(...ys) - 50
+    const maxY = Math.max(...ys) + 50
+
+    const width = maxX - minX
+    const height = maxY - minY
+
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX} ${minY} ${width} ${height}" width="${width}" height="${height}">`
+    svg += `<rect x="${minX}" y="${minY}" width="${width}" height="${height}" fill="#0f172a"/>`
+
+    // Draw links
+    filteredData.links.forEach(link => {
+      const source = typeof link.source === 'string'
+        ? nodesWithPos.find(n => n.id === link.source)
+        : link.source as GraphNodeData
+      const target = typeof link.target === 'string'
+        ? nodesWithPos.find(n => n.id === link.target)
+        : link.target as GraphNodeData
+
+      if (source?.x !== undefined && source?.y !== undefined &&
+          target?.x !== undefined && target?.y !== undefined) {
+        svg += `<line x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>`
+      }
+    })
+
+    // Draw nodes
+    nodesWithPos.forEach(node => {
+      const color = NODE_COLORS[node.type] || '#666'
+      svg += `<circle cx="${node.x}" cy="${node.y}" r="12" fill="${color}"/>`
+      svg += `<text x="${node.x}" y="${node.y + 22}" text-anchor="middle" fill="white" font-size="10" font-family="system-ui">${node.label}</text>`
+    })
+
+    svg += '</svg>'
+
+    const blob = new Blob([svg], { type: 'image/svg+xml' })
+    const link = document.createElement('a')
+    link.download = `knowledge-graph-${Date.now()}.svg`
+    link.href = URL.createObjectURL(blob)
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }, [filteredData])
+
+  // Apply layout based on layoutType
+  const applyLayout = useCallback(() => {
+    if (!graphRef.current || !filteredData.nodes.length) return
+
+    const nodes = filteredData.nodes as GraphNodeData[]
+    const centerX = dimensions.width / 2
+    const centerY = dimensions.height / 2
+
+    if (layoutType === 'hierarchical') {
+      // Group nodes by type for hierarchical layout
+      const typeOrder = ['project', 'document', 'memory', 'entity', 'code_artifact']
+      const nodesByType: Record<string, GraphNodeData[]> = {}
+
+      nodes.forEach(node => {
+        if (!nodesByType[node.type]) nodesByType[node.type] = []
+        nodesByType[node.type].push(node)
+      })
+
+      let y = 50
+      typeOrder.forEach(type => {
+        const typeNodes = nodesByType[type] || []
+        const spacing = dimensions.width / (typeNodes.length + 1)
+        typeNodes.forEach((node, i) => {
+          node.fx = spacing * (i + 1)
+          node.fy = y
+        })
+        if (typeNodes.length > 0) y += 120
+      })
+
+      graphRef.current.d3ReheatSimulation()
+    } else if (layoutType === 'radial') {
+      // Radial layout - place nodes in concentric circles by type
+      const typeOrder = ['memory', 'entity', 'document', 'code_artifact', 'project']
+      const nodesByType: Record<string, GraphNodeData[]> = {}
+
+      nodes.forEach(node => {
+        if (!nodesByType[node.type]) nodesByType[node.type] = []
+        nodesByType[node.type].push(node)
+      })
+
+      let radius = 80
+      typeOrder.forEach(type => {
+        const typeNodes = nodesByType[type] || []
+        if (typeNodes.length === 0) return
+
+        const angleStep = (2 * Math.PI) / typeNodes.length
+        typeNodes.forEach((node, i) => {
+          node.fx = centerX + radius * Math.cos(angleStep * i - Math.PI / 2)
+          node.fy = centerY + radius * Math.sin(angleStep * i - Math.PI / 2)
+        })
+        radius += 100
+      })
+
+      graphRef.current.d3ReheatSimulation()
+    } else {
+      // Force layout - release all fixed positions
+      nodes.forEach(node => {
+        node.fx = undefined
+        node.fy = undefined
+      })
+      graphRef.current.d3ReheatSimulation()
+    }
+  }, [layoutType, filteredData.nodes, dimensions])
+
+  // Apply layout when layout type changes
+  useEffect(() => {
+    applyLayout()
+  }, [layoutType, applyLayout])
 
   const handleNodeClick = useCallback((node: GraphNodeData) => {
     setSelectedNode(node)
@@ -258,6 +397,21 @@ export function Graph() {
 
         <div className={classes.toolbarDivider} />
 
+        {/* Layout Switcher */}
+        <SegmentedControl
+          size="xs"
+          value={layoutType}
+          onChange={(value) => setLayoutType(value as LayoutType)}
+          className={classes.layoutSwitcher}
+          data={[
+            { value: 'force', label: <Tooltip label="Force Layout"><IconVectorSpline size={16} /></Tooltip> },
+            { value: 'hierarchical', label: <Tooltip label="Hierarchical"><IconHierarchy size={16} /></Tooltip> },
+            { value: 'radial', label: <Tooltip label="Radial"><IconCircleDot size={16} /></Tooltip> },
+          ]}
+        />
+
+        <div className={classes.toolbarDivider} />
+
         <div className={classes.toolbarGroup}>
           {Object.entries(NODE_ICONS).map(([type, Icon]) => (
             <Tooltip key={type} label={type.replace('_', ' ')}>
@@ -285,13 +439,15 @@ export function Graph() {
           </Tooltip>
           <Menu shadow="md" width={120}>
             <Menu.Target>
-              <ActionIcon variant="subtle" color="gray">
-                <IconDownload size={20} />
-              </ActionIcon>
+              <Tooltip label="Export">
+                <ActionIcon variant="subtle" color="gray">
+                  <IconDownload size={20} />
+                </ActionIcon>
+              </Tooltip>
             </Menu.Target>
             <Menu.Dropdown>
-              <Menu.Item>Export PNG</Menu.Item>
-              <Menu.Item>Export SVG</Menu.Item>
+              <Menu.Item onClick={exportToPNG}>Export PNG</Menu.Item>
+              <Menu.Item onClick={exportToSVG}>Export SVG</Menu.Item>
             </Menu.Dropdown>
           </Menu>
           <Tooltip label={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}>

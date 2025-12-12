@@ -14,6 +14,9 @@ import {
   Anchor,
   Skeleton,
   Modal,
+  Tabs,
+  Table,
+  Loader,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import {
@@ -27,9 +30,12 @@ import {
   IconHash,
   IconBrain,
   IconBrandGithub,
+  IconFile,
+  IconCode,
+  IconCube,
 } from '@tabler/icons-react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { useProject, useUpdateProject, useDeleteProject } from '@/hooks'
+import { useProject, useUpdateProject, useDeleteProject, useMemories, useDocuments, useCodeArtifacts, useEntities } from '@/hooks'
 import type { ProjectType, ProjectStatus } from '@/types'
 import classes from './ProjectDetail.module.css'
 
@@ -77,6 +83,12 @@ export function ProjectDetail() {
   const { data: project, isLoading, isError } = useProject(projectId)
   const updateProject = useUpdateProject()
   const deleteProject = useDeleteProject()
+
+  // Related content queries
+  const { data: memoriesData, isLoading: isLoadingMemories } = useMemories({ project_id: projectId, limit: 10 })
+  const { data: documentsData, isLoading: isLoadingDocuments } = useDocuments({ project_id: projectId, limit: 10 })
+  const { data: codeArtifactsData, isLoading: isLoadingCodeArtifacts } = useCodeArtifacts({ project_id: projectId, limit: 10 })
+  const { data: entitiesData, isLoading: isLoadingEntities } = useEntities({ project_id: projectId, limit: 10 })
 
   // Edit state
   const [isEditing, setIsEditing] = useState(false)
@@ -389,6 +401,183 @@ export function ProjectDetail() {
           </Paper>
         </div>
       </div>
+
+      {/* Related Content Tabs */}
+      <Paper className={classes.tabsSection} mt="md">
+        <Tabs defaultValue="memories" classNames={{ root: classes.tabs, list: classes.tabsList, tab: classes.tab }}>
+          <Tabs.List>
+            <Tabs.Tab value="memories" leftSection={<IconBrain size={16} />}>
+              Memories ({memoriesData?.total ?? 0})
+            </Tabs.Tab>
+            <Tabs.Tab value="documents" leftSection={<IconFile size={16} />}>
+              Documents ({documentsData?.total ?? 0})
+            </Tabs.Tab>
+            <Tabs.Tab value="code" leftSection={<IconCode size={16} />}>
+              Code Artifacts ({codeArtifactsData?.total ?? 0})
+            </Tabs.Tab>
+            <Tabs.Tab value="entities" leftSection={<IconCube size={16} />}>
+              Entities ({entitiesData?.total ?? 0})
+            </Tabs.Tab>
+          </Tabs.List>
+
+          <Tabs.Panel value="memories" pt="md">
+            {isLoadingMemories ? (
+              <Group justify="center" py="xl"><Loader size="sm" /></Group>
+            ) : memoriesData?.memories?.length ? (
+              <>
+                <Table className={classes.relatedTable}>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Title</Table.Th>
+                      <Table.Th>Importance</Table.Th>
+                      <Table.Th>Tags</Table.Th>
+                      <Table.Th>Created</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {memoriesData.memories.map(memory => (
+                      <Table.Tr key={memory.id} className={classes.clickableRow} onClick={() => navigate(`/memories/${memory.id}`)}>
+                        <Table.Td>{memory.title}</Table.Td>
+                        <Table.Td>
+                          <Badge color={memory.importance >= 9 ? 'red' : memory.importance >= 7 ? 'yellow' : 'gray'}>
+                            {memory.importance}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          <Group gap={4}>
+                            {memory.tags?.slice(0, 2).map(tag => (
+                              <Badge key={tag} size="xs" variant="light" color="grape">{tag}</Badge>
+                            ))}
+                            {(memory.tags?.length ?? 0) > 2 && <Text size="xs" c="dimmed">+{memory.tags!.length - 2}</Text>}
+                          </Group>
+                        </Table.Td>
+                        <Table.Td><Text size="sm" c="dimmed">{new Date(memory.created_at).toLocaleDateString()}</Text></Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+                {memoriesData.total > 10 && (
+                  <Group justify="center" mt="md">
+                    <Button variant="light" size="xs" onClick={() => navigate(`/memories?project=${projectId}`)}>
+                      Show all {memoriesData.total} memories
+                    </Button>
+                  </Group>
+                )}
+              </>
+            ) : (
+              <Text c="dimmed" ta="center" py="xl">No memories in this project</Text>
+            )}
+          </Tabs.Panel>
+
+          <Tabs.Panel value="documents" pt="md">
+            {isLoadingDocuments ? (
+              <Group justify="center" py="xl"><Loader size="sm" /></Group>
+            ) : documentsData?.documents?.length ? (
+              <>
+                <Table className={classes.relatedTable}>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Title</Table.Th>
+                      <Table.Th>Type</Table.Th>
+                      <Table.Th>Created</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {documentsData.documents.map(doc => (
+                      <Table.Tr key={doc.id} className={classes.clickableRow} onClick={() => navigate(`/documents/${doc.id}`)}>
+                        <Table.Td>{doc.title}</Table.Td>
+                        <Table.Td><Badge variant="light">{doc.document_type}</Badge></Table.Td>
+                        <Table.Td><Text size="sm" c="dimmed">{new Date(doc.created_at).toLocaleDateString()}</Text></Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+                {documentsData.total > 10 && (
+                  <Group justify="center" mt="md">
+                    <Button variant="light" size="xs" onClick={() => navigate(`/documents?project=${projectId}`)}>
+                      Show all {documentsData.total} documents
+                    </Button>
+                  </Group>
+                )}
+              </>
+            ) : (
+              <Text c="dimmed" ta="center" py="xl">No documents in this project</Text>
+            )}
+          </Tabs.Panel>
+
+          <Tabs.Panel value="code" pt="md">
+            {isLoadingCodeArtifacts ? (
+              <Group justify="center" py="xl"><Loader size="sm" /></Group>
+            ) : codeArtifactsData?.code_artifacts?.length ? (
+              <>
+                <Table className={classes.relatedTable}>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Title</Table.Th>
+                      <Table.Th>Language</Table.Th>
+                      <Table.Th>Created</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {codeArtifactsData.code_artifacts.map(artifact => (
+                      <Table.Tr key={artifact.id} className={classes.clickableRow} onClick={() => navigate(`/code-artifacts/${artifact.id}`)}>
+                        <Table.Td>{artifact.title}</Table.Td>
+                        <Table.Td><Badge variant="light" color="blue">{artifact.language}</Badge></Table.Td>
+                        <Table.Td><Text size="sm" c="dimmed">{new Date(artifact.created_at).toLocaleDateString()}</Text></Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+                {codeArtifactsData.total > 10 && (
+                  <Group justify="center" mt="md">
+                    <Button variant="light" size="xs" onClick={() => navigate(`/code-artifacts?project=${projectId}`)}>
+                      Show all {codeArtifactsData.total} code artifacts
+                    </Button>
+                  </Group>
+                )}
+              </>
+            ) : (
+              <Text c="dimmed" ta="center" py="xl">No code artifacts in this project</Text>
+            )}
+          </Tabs.Panel>
+
+          <Tabs.Panel value="entities" pt="md">
+            {isLoadingEntities ? (
+              <Group justify="center" py="xl"><Loader size="sm" /></Group>
+            ) : entitiesData?.entities?.length ? (
+              <>
+                <Table className={classes.relatedTable}>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Name</Table.Th>
+                      <Table.Th>Type</Table.Th>
+                      <Table.Th>Created</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {entitiesData.entities.map(entity => (
+                      <Table.Tr key={entity.id} className={classes.clickableRow} onClick={() => navigate(`/entities/${entity.id}`)}>
+                        <Table.Td>{entity.name}</Table.Td>
+                        <Table.Td><Badge variant="light" color="cyan">{entity.entity_type}</Badge></Table.Td>
+                        <Table.Td><Text size="sm" c="dimmed">{new Date(entity.created_at).toLocaleDateString()}</Text></Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+                {entitiesData.total > 10 && (
+                  <Group justify="center" mt="md">
+                    <Button variant="light" size="xs" onClick={() => navigate(`/entities?project=${projectId}`)}>
+                      Show all {entitiesData.total} entities
+                    </Button>
+                  </Group>
+                )}
+              </>
+            ) : (
+              <Text c="dimmed" ta="center" py="xl">No entities in this project</Text>
+            )}
+          </Tabs.Panel>
+        </Tabs>
+      </Paper>
 
       {/* Delete Modal */}
       <Modal

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   Title,
   Group,
@@ -26,6 +26,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useCodeArtifacts, useDeleteCodeArtifact } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
+import { useQuickEdit } from '@/context/QuickEditContext'
 import type { CodeArtifact, CodeArtifactFilters } from '@/types'
 import classes from './CodeArtifacts.module.css'
 
@@ -102,6 +103,7 @@ function TagsList({ tags }: { tags: string[] }) {
 export function CodeArtifacts() {
   const navigate = useNavigate()
   const { selectedProjectId } = useProjectContext()
+  const { openPanel } = useQuickEdit()
 
   // Filters state
   const [search, setSearch] = useState('')
@@ -169,10 +171,15 @@ export function CodeArtifacts() {
     return sorted
   }, [filteredData, sortStatus])
 
-  // Handle row click
-  const handleRowClick = (artifact: CodeArtifact) => {
+  // Handle row click - opens quick edit panel
+  const handleRowClick = useCallback((artifact: CodeArtifact) => {
+    openPanel({ type: 'code_artifact', id: artifact.id })
+  }, [openPanel])
+
+  // Handle double click - navigates to full detail page
+  const handleRowDoubleClick = useCallback((artifact: CodeArtifact) => {
     navigate(`/code-artifacts/${artifact.id}`)
-  }
+  }, [navigate])
 
   // Handle delete
   const handleDelete = async (artifact: CodeArtifact) => {
@@ -325,6 +332,7 @@ export function CodeArtifacts() {
           noRecordsText="No code artifacts found"
           highlightOnHover
           onRowClick={({ record }) => handleRowClick(record)}
+          onRowDoubleClick={({ record }) => handleRowDoubleClick(record)}
           sortStatus={sortStatus}
           onSortStatusChange={setSortStatus}
           selectedRecords={selectedRecords}

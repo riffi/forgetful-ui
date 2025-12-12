@@ -75,3 +75,9 @@
   background: var(--surface-hover);
   color: var(--text-primary);
 }
+
+/* Adjust main content when panel is open */
+.mainWithPanel {
+  margin-right: 380px;
+  transition: margin-right 300ms ease;
+}

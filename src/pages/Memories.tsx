@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   Title,
   Group,
@@ -19,8 +19,9 @@ import {
   IconPower,
 } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
-import { useMemories, useDeleteMemory } from '@/hooks'
+import { useMemories, useDeleteMemory, useUpdateMemory } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
+import { useQuickEdit } from '@/context/QuickEditContext'
 import { CreateMemoryModal } from '@/components/modals'
 import type { Memory, MemoryFilters } from '@/types'
 import classes from './Memories.module.css'
@@ -36,6 +37,7 @@ function getImportanceClass(value: number): string {
 export function Memories() {
   const navigate = useNavigate()
   const { selectedProjectId } = useProjectContext()
+  const { openPanel } = useQuickEdit()
 
   // Create modal state
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
@@ -73,6 +75,7 @@ export function Memories() {
   // Fetch memories
   const { data, isLoading } = useMemories(filters)
   const deleteMemory = useDeleteMemory()
+  const updateMemory = useUpdateMemory()
 
   // Filtered data (client-side search for now)
   const filteredData = useMemo(() => {
@@ -108,10 +111,15 @@ export function Memories() {
     return sorted
   }, [filteredData, sortStatus])
 
-  // Handle row click
-  const handleRowClick = (memory: Memory) => {
+  // Handle row click - opens quick edit panel
+  const handleRowClick = useCallback((memory: Memory) => {
+    openPanel({ type: 'memory', id: memory.id })
+  }, [openPanel])
+
+  // Handle double click - navigates to full detail page
+  const handleRowDoubleClick = useCallback((memory: Memory) => {
     navigate(`/memories/${memory.id}`)
-  }
+  }, [navigate])
 
   // Handle delete
   const handleDelete = async (memory: Memory) => {
@@ -126,6 +134,27 @@ export function Memories() {
     data?.memories?.forEach((m) => m.tags?.forEach((t) => tags.add(t)))
     return Array.from(tags).map((t) => ({ value: t, label: t }))
   }, [data?.memories])
+
+  // Handle inline importance update
+  const handleImportanceUpdate = useCallback((memoryId: number, newImportance: number) => {
+    if (newImportance >= 1 && newImportance <= 10) {
+      updateMemory.mutate({ id: memoryId, data: { importance: newImportance } })
+    }
+  }, [updateMemory])
+
+  // Handle inline tag removal
+  const handleTagRemove = useCallback((memory: Memory, tagToRemove: string) => {
+    const newTags = memory.tags?.filter(t => t !== tagToRemove) || []
+    updateMemory.mutate({ id: memory.id, data: { tags: newTags } })
+  }, [updateMemory])
+
+  // Handle inline tag add
+  const handleTagAdd = useCallback((memory: Memory, newTag: string) => {
+    if (newTag.trim() && !memory.tags?.includes(newTag.trim())) {
+      const newTags = [...(memory.tags || []), newTag.trim()]
+      updateMemory.mutate({ id: memory.id, data: { tags: newTags } })
+    }
+  }, [updateMemory])
 
   return (
     <div className={classes.container}>
@@ -230,22 +259,28 @@ export function Memories() {
                 <input
                   type="number"
                   className={`${classes.importanceInput} ${getImportanceClass(memory.importance)}`}
-                  value={memory.importance}
+                  defaultValue={memory.importance}
                   min={1}
                   max={10}
                   onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => {
-                    // TODO: Implement inline importance update
-                    console.log('Update importance:', memory.id, e.target.value)
+                  onBlur={(e) => {
+                    const newValue = parseInt(e.target.value, 10)
+                    if (newValue !== memory.importance) {
+                      handleImportanceUpdate(memory.id, newValue)
+                    }
                   }}
-                  readOnly
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.currentTarget.blur()
+                    }
+                  }}
                 />
               ),
             },
             {
               accessor: 'tags',
               title: 'Tags',
-              width: 220,
+              width: 250,
               render: (memory) => (
                 <div className={classes.tagsCell}>
                   {memory.tags?.slice(0, 3).map((tag) => (
@@ -255,22 +290,34 @@ export function Memories() {
                         className={classes.tagRemove}
                         onClick={(e) => {
                           e.stopPropagation()
-                          // TODO: Implement tag removal
+                          handleTagRemove(memory, tag)
                         }}
                       >
                         ×
                       </span>
                     </span>
                   ))}
-                  <button
-                    className={classes.addTagBtn}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      // TODO: Implement add tag
+                  {(memory.tags?.length ?? 0) > 3 && (
+                    <span className={classes.tagMore}>+{memory.tags!.length - 3}</span>
+                  )}
+                  <input
+                    type="text"
+                    className={classes.addTagInput}
+                    placeholder="+ tag"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                        handleTagAdd(memory, e.currentTarget.value)
+                        e.currentTarget.value = ''
+                      }
                     }}
-                  >
-                    + Tag
-                  </button>
+                    onBlur={(e) => {
+                      if (e.currentTarget.value.trim()) {
+                        handleTagAdd(memory, e.currentTarget.value)
+                        e.currentTarget.value = ''
+                      }
+                    }}
+                  />
                 </div>
               ),
             },
@@ -326,6 +373,7 @@ export function Memories() {
           noRecordsText="No memories found"
           highlightOnHover
           onRowClick={({ record }) => handleRowClick(record)}
+          onRowDoubleClick={({ record }) => handleRowDoubleClick(record)}
           sortStatus={sortStatus}
           onSortStatusChange={setSortStatus}
           selectedRecords={selectedRecords}

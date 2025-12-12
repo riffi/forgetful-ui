@@ -7,6 +7,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { theme, cssVariablesResolver } from '@/styles/theme'
 import { AuthProvider } from '@/context/AuthContext'
 import { ProjectProvider } from '@/context/ProjectContext'
+import { QuickEditProvider } from '@/context/QuickEditContext'
 import App from './App'
 
 import '@mantine/core/styles.css'
@@ -29,7 +30,9 @@ createRoot(document.getElementById('root')!).render(
         <BrowserRouter>
           <AuthProvider>
             <ProjectProvider>
-              <App />
+              <QuickEditProvider>
+                <App />
+              </QuickEditProvider>
             </ProjectProvider>
           </AuthProvider>
         </BrowserRouter>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   Title,
   Group,
@@ -30,6 +30,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useEntities, useDeleteEntity } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
+import { useQuickEdit } from '@/context/QuickEditContext'
 import type { Entity, EntityFilters, EntityType } from '@/types'
 import classes from './Entities.module.css'
 
@@ -90,6 +91,7 @@ function TagsList({ tags }: { tags: string[] }) {
 export function Entities() {
   const navigate = useNavigate()
   const { selectedProjectId } = useProjectContext()
+  const { openPanel } = useQuickEdit()
 
   // Filters state
   const [search, setSearch] = useState('')
@@ -157,10 +159,15 @@ export function Entities() {
     return sorted
   }, [filteredData, sortStatus])
 
-  // Handle row click
-  const handleRowClick = (entity: Entity) => {
+  // Handle row click - opens quick edit panel
+  const handleRowClick = useCallback((entity: Entity) => {
+    openPanel({ type: 'entity', id: entity.id })
+  }, [openPanel])
+
+  // Handle double click - navigates to full detail page
+  const handleRowDoubleClick = useCallback((entity: Entity) => {
     navigate(`/entities/${entity.id}`)
-  }
+  }, [navigate])
 
   // Handle delete
   const handleDelete = async (entity: Entity) => {
@@ -312,6 +319,7 @@ export function Entities() {
           noRecordsText="No entities found"
           highlightOnHover
           onRowClick={({ record }) => handleRowClick(record)}
+          onRowDoubleClick={({ record }) => handleRowDoubleClick(record)}
           sortStatus={sortStatus}
           onSortStatusChange={setSortStatus}
           selectedRecords={selectedRecords}

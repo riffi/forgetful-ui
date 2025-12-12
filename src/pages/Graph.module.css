@@ -36,6 +36,29 @@
   margin: 0 4px;
 }
 
+.layoutSwitcher {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+}
+
+.layoutSwitcher :global(.mantine-SegmentedControl-label) {
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.layoutSwitcher :global(.mantine-SegmentedControl-label[data-active]) {
+  color: var(--text-primary);
+}
+
+.layoutSwitcher :global(.mantine-SegmentedControl-indicator) {
+  background: var(--accent-memory);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+}
+
 /* Canvas */
 .canvas {
   width: 100%;

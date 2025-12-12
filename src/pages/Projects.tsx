@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   Title,
   Group,
@@ -10,9 +10,11 @@ import {
   Paper,
   ActionIcon,
   Menu,
+  SimpleGrid,
+  Stack,
+  Loader,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { DataTable, type DataTableSortStatus } from 'mantine-datatable'
 import {
   IconSearch,
   IconPlus,
@@ -22,13 +24,14 @@ import {
   IconFolder,
   IconExternalLink,
   IconArchive,
+  IconBrain,
+  IconCalendar,
 } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useProjects, useDeleteProject } from '@/hooks'
+import { useQuickEdit } from '@/context/QuickEditContext'
 import type { Project, ProjectFilters, ProjectType, ProjectStatus } from '@/types'
 import classes from './Projects.module.css'
-
-const PAGE_SIZE = 20
 
 const PROJECT_TYPE_OPTIONS = [
   { value: 'personal', label: 'Personal' },
@@ -66,16 +69,109 @@ function StatusBadge({ status }: { status: ProjectStatus }) {
   )
 }
 
-function ProjectTypeBadge({ type }: { type: ProjectType }) {
+interface ProjectCardProps {
+  project: Project
+  onClick: () => void
+  onDoubleClick: () => void
+  onDelete: () => void
+}
+
+function ProjectCard({ project, onClick, onDoubleClick, onDelete }: ProjectCardProps) {
+  const navigate = useNavigate()
+
   return (
-    <Badge size="xs" variant="outline" color="gray">
-      {type.replace(/-/g, ' ')}
-    </Badge>
+    <Paper
+      className={classes.projectCard}
+      onClick={onClick}
+      onDoubleClick={onDoubleClick}
+    >
+      <div className={classes.cardHeader}>
+        <div className={classes.cardIcon}>
+          <IconFolder size={24} />
+        </div>
+        <Menu shadow="md" position="bottom-end">
+          <Menu.Target>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <IconDotsVertical size={16} />
+            </ActionIcon>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item
+              leftSection={<IconExternalLink size={14} />}
+              onClick={(e) => {
+                e.stopPropagation()
+                navigate(`/projects/${project.id}`)
+              }}
+            >
+              View Details
+            </Menu.Item>
+            <Menu.Item
+              leftSection={<IconArchive size={14} />}
+              onClick={(e) => {
+                e.stopPropagation()
+                // TODO: Archive project
+              }}
+            >
+              Archive
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item
+              color="red"
+              leftSection={<IconTrash size={14} />}
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete()
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+      </div>
+
+      <Text className={classes.cardTitle} lineClamp={1}>
+        {project.name}
+      </Text>
+
+      <Text className={classes.cardDescription} lineClamp={2}>
+        {project.description || 'No description'}
+      </Text>
+
+      <div className={classes.cardMeta}>
+        <Group gap={8}>
+          <StatusBadge status={project.status} />
+          <Badge size="xs" variant="outline" color="gray">
+            {project.project_type.replace(/-/g, ' ')}
+          </Badge>
+        </Group>
+      </div>
+
+      <div className={classes.cardFooter}>
+        <Group gap={16}>
+          <Group gap={4}>
+            <IconBrain size={14} color="var(--accent-memory)" />
+            <Text size="xs" c="dimmed">{project.memory_count}</Text>
+          </Group>
+          <Group gap={4}>
+            <IconCalendar size={14} color="var(--text-dimmed)" />
+            <Text size="xs" c="dimmed">
+              {new Date(project.updated_at).toLocaleDateString()}
+            </Text>
+          </Group>
+        </Group>
+      </div>
+    </Paper>
   )
 }
 
 export function Projects() {
   const navigate = useNavigate()
+  const { openPanel } = useQuickEdit()
 
   // Filters state
   const [search, setSearch] = useState('')
@@ -83,32 +179,22 @@ export function Projects() {
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
 
-  // Pagination & sorting
-  const [page, setPage] = useState(1)
-  const [sortStatus, setSortStatus] = useState<DataTableSortStatus<Project>>({
-    columnAccessor: 'updated_at',
-    direction: 'desc',
-  })
-
-  // Selected rows for bulk actions
-  const [selectedRecords, setSelectedRecords] = useState<Project[]>([])
-
   // Build filters
   const filters: ProjectFilters = useMemo(
     () => ({
-      limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
+      limit: 50,
+      offset: 0,
       project_type: typeFilter as ProjectType | undefined,
       status: statusFilter as ProjectStatus | undefined,
     }),
-    [page, typeFilter, statusFilter]
+    [typeFilter, statusFilter]
   )
 
   // Fetch projects
   const { data, isLoading } = useProjects(filters)
   const deleteProject = useDeleteProject()
 
-  // Filtered data (client-side search for now)
+  // Filtered data (client-side search)
   const filteredData = useMemo(() => {
     if (!data?.projects) return []
     if (!debouncedSearch) return data.projects
@@ -122,30 +208,15 @@ export function Projects() {
     )
   }, [data?.projects, debouncedSearch])
 
-  // Sorted data
-  const sortedData = useMemo(() => {
-    const sorted = [...filteredData]
-    const { columnAccessor, direction } = sortStatus
+  // Handle card click - opens quick edit panel
+  const handleCardClick = useCallback((project: Project) => {
+    openPanel({ type: 'project', id: project.id })
+  }, [openPanel])
 
-    sorted.sort((a, b) => {
-      const aVal = a[columnAccessor as keyof Project]
-      const bVal = b[columnAccessor as keyof Project]
-
-      if (aVal === bVal) return 0
-      if (aVal === null || aVal === undefined) return 1
-      if (bVal === null || bVal === undefined) return -1
-
-      const comparison = aVal < bVal ? -1 : 1
-      return direction === 'asc' ? comparison : -comparison
-    })
-
-    return sorted
-  }, [filteredData, sortStatus])
-
-  // Handle row click
-  const handleRowClick = (project: Project) => {
+  // Handle double click - navigates to full detail page
+  const handleCardDoubleClick = useCallback((project: Project) => {
     navigate(`/projects/${project.id}`)
-  }
+  }, [navigate])
 
   // Handle delete
   const handleDelete = async (project: Project) => {
@@ -200,172 +271,41 @@ export function Projects() {
         </Group>
       </Paper>
 
-      {/* Data Table */}
-      <Paper className={classes.tableWrapper}>
-        <DataTable
-          records={sortedData}
-          columns={[
-            {
-              accessor: 'name',
-              title: 'Name',
-              sortable: true,
-              render: (project) => (
-                <Group gap="xs" wrap="nowrap">
-                  <IconFolder size={16} color="var(--accent-project)" />
-                  <Text size="sm" fw={500} lineClamp={1}>
-                    {project.name}
-                  </Text>
-                </Group>
-              ),
-            },
-            {
-              accessor: 'project_type',
-              title: 'Type',
-              sortable: true,
-              width: 160,
-              render: (project) => <ProjectTypeBadge type={project.project_type} />,
-            },
-            {
-              accessor: 'status',
-              title: 'Status',
-              sortable: true,
-              width: 100,
-              render: (project) => <StatusBadge status={project.status} />,
-            },
-            {
-              accessor: 'memory_count',
-              title: 'Memories',
-              sortable: true,
-              width: 100,
-              textAlign: 'center',
-              render: (project) => (
-                <Text size="sm" c="dimmed">
-                  {project.memory_count}
-                </Text>
-              ),
-            },
-            {
-              accessor: 'updated_at',
-              title: 'Updated',
-              sortable: true,
-              width: 120,
-              render: (project) => (
-                <Text size="xs" c="dimmed">
-                  {new Date(project.updated_at).toLocaleDateString()}
-                </Text>
-              ),
-            },
-            {
-              accessor: 'actions',
-              title: '',
-              width: 60,
-              render: (project) => (
-                <Menu shadow="md" position="bottom-end">
-                  <Menu.Target>
-                    <ActionIcon
-                      variant="subtle"
-                      color="gray"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <IconDotsVertical size={16} />
-                    </ActionIcon>
-                  </Menu.Target>
-                  <Menu.Dropdown>
-                    <Menu.Item
-                      leftSection={<IconExternalLink size={14} />}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        navigate(`/projects/${project.id}`)
-                      }}
-                    >
-                      View Details
-                    </Menu.Item>
-                    <Menu.Item
-                      leftSection={<IconArchive size={14} />}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        // TODO: Archive project
-                      }}
-                    >
-                      Archive
-                    </Menu.Item>
-                    <Menu.Divider />
-                    <Menu.Item
-                      color="red"
-                      leftSection={<IconTrash size={14} />}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDelete(project)
-                      }}
-                    >
-                      Delete
-                    </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
-              ),
-            },
-          ]}
-          fetching={isLoading}
-          loaderType="dots"
-          loaderColor="green"
-          minHeight={400}
-          noRecordsText="No projects found"
-          highlightOnHover
-          onRowClick={({ record }) => handleRowClick(record)}
-          sortStatus={sortStatus}
-          onSortStatusChange={setSortStatus}
-          selectedRecords={selectedRecords}
-          onSelectedRecordsChange={setSelectedRecords}
-          totalRecords={data?.total ?? 0}
-          recordsPerPage={PAGE_SIZE}
-          page={page}
-          onPageChange={setPage}
-        />
-      </Paper>
-
-      {/* Bulk Actions Bar */}
-      {selectedRecords.length > 0 && (
-        <Paper className={classes.bulkActions}>
-          <Group justify="space-between">
-            <Text size="sm">
-              {selectedRecords.length} selected
-            </Text>
-            <Group gap="xs">
-              <Button
-                variant="light"
-                color="gray"
-                size="xs"
-                leftSection={<IconArchive size={14} />}
-                onClick={() => {
-                  // TODO: Bulk archive
-                }}
-              >
-                Archive
-              </Button>
-              <Button
-                variant="light"
-                color="red"
-                size="xs"
-                leftSection={<IconTrash size={14} />}
-                onClick={() => {
-                  if (
-                    confirm(
-                      `Delete ${selectedRecords.length} projects?`
-                    )
-                  ) {
-                    Promise.all(
-                      selectedRecords.map((p) =>
-                        deleteProject.mutateAsync(p.id)
-                      )
-                    ).then(() => setSelectedRecords([]))
-                  }
-                }}
-              >
-                Delete
-              </Button>
-            </Group>
-          </Group>
+      {/* Projects Grid */}
+      {isLoading ? (
+        <Stack align="center" py="xl">
+          <Loader color="green" />
+          <Text c="dimmed">Loading projects...</Text>
+        </Stack>
+      ) : filteredData.length === 0 ? (
+        <Paper className={classes.emptyState}>
+          <Stack align="center" gap="md">
+            <div className={classes.emptyIcon}>
+              <IconFolder size={48} />
+            </div>
+            <Title order={3}>No projects found</Title>
+            <Text c="dimmed">Create your first project to get started</Text>
+            <Button
+              leftSection={<IconPlus size={16} />}
+              color="green"
+              onClick={() => navigate('/projects?create=true')}
+            >
+              Create Project
+            </Button>
+          </Stack>
         </Paper>
+      ) : (
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+          {filteredData.map((project) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              onClick={() => handleCardClick(project)}
+              onDoubleClick={() => handleCardDoubleClick(project)}
+              onDelete={() => handleDelete(project)}
+            />
+          ))}
+        </SimpleGrid>
       )}
     </div>
   )
