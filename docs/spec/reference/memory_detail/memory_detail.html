@@ -570,14 +570,42 @@
         }
 
         .field-label {
-            font-size: 12px;
+            font-size: 11px;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: var(--text-secondary);
+            color: var(--text-dimmed);
             margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        }
+
+        /* Editable Content - INLINE EDITING */
+        .editable-content {
+            min-height: 100px;
+            padding: 16px;
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.7;
+            cursor: text;
+            transition: all 0.2s;
+            outline: none;
+            white-space: pre-wrap;
+        }
+
+        .editable-content:hover {
+            border-color: var(--border-hover);
+        }
+
+        .editable-content:focus {
+            border-color: var(--accent-memory);
+            box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+        }
+
+        .editable-content:empty::before {
+            content: attr(data-placeholder);
+            color: var(--text-dimmed);
         }
 
         .field-content {
@@ -592,26 +620,6 @@
 
         .field-content p:last-child {
             margin-bottom: 0;
-        }
-
-        .field-textarea {
-            width: 100%;
-            min-height: 150px;
-            background: var(--surface-secondary);
-            border: 1px solid var(--border-subtle);
-            border-radius: 8px;
-            padding: 16px;
-            color: var(--text-primary);
-            font-size: 15px;
-            line-height: 1.7;
-            resize: vertical;
-            font-family: inherit;
-        }
-
-        .field-textarea:focus {
-            outline: none;
-            border-color: var(--accent-memory);
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
         }
 
         /* Tags */
@@ -1325,38 +1333,45 @@
                     <span class="breadcrumb-current">API Integration Architecture</span>
                 </nav>
 
-                <!-- Header -->
+                <!-- Header - INLINE EDITING throughout -->
                 <header class="page-header" ui-spec-block-id="header">
                     <div class="header-left">
-                        <h1 class="page-title" contenteditable="true" spellcheck="false">API Integration Architecture</h1>
-                        <div class="header-badges">
-                            <span class="importance-badge high" onclick="openImportanceModal()">Importance: 9</span>
+                        <!-- Badges row above title -->
+                        <div class="header-badges" style="margin-bottom: 8px;">
+                            <span class="importance-badge high" onclick="openImportanceModal()" style="display: inline-flex; align-items: center; gap: 4px;">
+                                Importance: 9 (Critical)
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="m6 9 6 6 6-6"/>
+                                </svg>
+                            </span>
                             <span class="obsolete-badge" style="display: none;">Obsolete</span>
                         </div>
+                        <!-- Title - INLINE EDITABLE via contenteditable -->
+                        <h1 class="page-title" contenteditable="true" spellcheck="false">API Integration Architecture</h1>
                     </div>
                     <div class="header-actions">
-                        <button class="btn btn-danger" onclick="markObsolete()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"/>
-                                <line x1="15" y1="9" x2="9" y2="15"/>
-                                <line x1="9" y1="9" x2="15" y2="15"/>
-                            </svg>
-                            Mark Obsolete
-                        </button>
-                        <button class="btn btn-secondary" onclick="deleteMemory()">
+                        <button class="btn btn-danger" onclick="deleteMemory()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                             </svg>
                             Delete
                         </button>
-                        <button class="btn btn-primary" onclick="saveMemory()">
+                        <button class="btn btn-secondary" onclick="markObsolete()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            Mark Obsolete
+                        </button>
+                        <button class="btn btn-primary" onclick="saveMemory()" id="save-btn" disabled>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
                                 <polyline points="17 21 17 13 7 13 7 21"/>
                                 <polyline points="7 3 7 8 15 8"/>
                             </svg>
-                            Save
+                            Save Changes
                         </button>
                     </div>
                 </header>
@@ -1365,48 +1380,22 @@
                 <div class="main-grid">
                     <!-- Main Content Column -->
                     <div class="main-column" ui-spec-block-id="main_content">
-                        <!-- Content Field -->
+                        <!-- Content Field - INLINE EDITABLE -->
                         <div class="card content-field" ui-spec-block-id="content_field">
-                            <div class="card-header">
-                                <span class="card-title">Content</span>
-                                <button class="card-action" onclick="toggleContentEdit(this)">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="field-content" id="content-display">
-                                <p>The API integration follows a layered architecture pattern with clear separation between transport, serialization, and business logic layers.</p>
-                                <p>Key components include:</p>
-                                <p>• <strong>Transport Layer:</strong> Handles HTTP/HTTPS communication with retry logic and circuit breaker patterns</p>
-                                <p>• <strong>Serialization Layer:</strong> JSON/Protocol Buffers conversion with schema validation</p>
-                                <p>• <strong>Business Logic Layer:</strong> Domain-specific operations and data transformations</p>
-                            </div>
-                            <textarea class="field-textarea" id="content-edit" style="display: none;" onblur="saveContentEdit()">The API integration follows a layered architecture pattern with clear separation between transport, serialization, and business logic layers.
+                            <span class="field-label">Content</span>
+                            <div class="editable-content" contenteditable="true" spellcheck="false" data-placeholder="Add memory content..." id="content-editor">The API integration follows a layered architecture pattern with clear separation between transport, serialization, and business logic layers.
 
 Key components include:
 
-- Transport Layer: Handles HTTP/HTTPS communication with retry logic and circuit breaker patterns
-- Serialization Layer: JSON/Protocol Buffers conversion with schema validation
-- Business Logic Layer: Domain-specific operations and data transformations</textarea>
+• Transport Layer: Handles HTTP/HTTPS communication with retry logic and circuit breaker patterns
+• Serialization Layer: JSON/Protocol Buffers conversion with schema validation
+• Business Logic Layer: Domain-specific operations and data transformations</div>
                         </div>
 
-                        <!-- Context Field -->
+                        <!-- Context Field - INLINE EDITABLE -->
                         <div class="card content-field" ui-spec-block-id="context_field">
-                            <div class="card-header">
-                                <span class="card-title">Context</span>
-                                <button class="card-action" onclick="toggleContextEdit(this)">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="field-content" id="context-display">
-                                <p>This architecture was designed during the Q3 2024 system redesign initiative to improve API reliability and maintainability. It addresses previous issues with tight coupling and lack of proper error handling.</p>
-                            </div>
-                            <textarea class="field-textarea" id="context-edit" style="display: none;" onblur="saveContextEdit()">This architecture was designed during the Q3 2024 system redesign initiative to improve API reliability and maintainability. It addresses previous issues with tight coupling and lack of proper error handling.</textarea>
+                            <span class="field-label">Context</span>
+                            <div class="editable-content" contenteditable="true" spellcheck="false" data-placeholder="Add context about this memory..." id="context-editor" style="min-height: 80px;">This architecture was designed during the Q3 2024 system redesign initiative to improve API reliability and maintainability. It addresses previous issues with tight coupling and lack of proper error handling.</div>
                         </div>
 
                         <!-- Keywords Field -->
@@ -1763,50 +1752,35 @@ Key components include:
             });
         });
 
-        // Content editing
-        function toggleContentEdit(btn) {
-            const display = document.getElementById('content-display');
-            const edit = document.getElementById('content-edit');
-            
-            if (display.style.display !== 'none') {
-                display.style.display = 'none';
-                edit.style.display = 'block';
-                edit.focus();
-            }
+        // INLINE EDITING - Track original values and changes
+        const originalValues = {
+            title: document.querySelector('.page-title').textContent,
+            content: document.getElementById('content-editor').innerText,
+            context: document.getElementById('context-editor').innerText,
+            importance: 9
+        };
+
+        // Check for changes and enable/disable Save button
+        function checkForChanges() {
+            const currentTitle = document.querySelector('.page-title').textContent;
+            const currentContent = document.getElementById('content-editor').innerText;
+            const currentContext = document.getElementById('context-editor').innerText;
+            const currentImportance = parseInt(document.getElementById('importance-slider')?.value || '9');
+
+            const hasChanges =
+                currentTitle !== originalValues.title ||
+                currentContent !== originalValues.content ||
+                currentContext !== originalValues.context ||
+                currentImportance !== originalValues.importance;
+
+            const saveBtn = document.getElementById('save-btn');
+            saveBtn.disabled = !hasChanges;
         }
 
-        function saveContentEdit() {
-            const display = document.getElementById('content-display');
-            const edit = document.getElementById('content-edit');
-            
-            // Convert textarea content to HTML
-            const content = edit.value.split('\n\n').map(p => `<p>${p}</p>`).join('');
-            display.innerHTML = content;
-            
-            display.style.display = 'block';
-            edit.style.display = 'none';
-        }
-
-        function toggleContextEdit(btn) {
-            const display = document.getElementById('context-display');
-            const edit = document.getElementById('context-edit');
-            
-            if (display.style.display !== 'none') {
-                display.style.display = 'none';
-                edit.style.display = 'block';
-                edit.focus();
-            }
-        }
-
-        function saveContextEdit() {
-            const display = document.getElementById('context-display');
-            const edit = document.getElementById('context-edit');
-            
-            display.innerHTML = `<p>${edit.value}</p>`;
-            
-            display.style.display = 'block';
-            edit.style.display = 'none';
-        }
+        // Add change listeners to all editable elements
+        document.querySelector('.page-title').addEventListener('input', checkForChanges);
+        document.getElementById('content-editor').addEventListener('input', checkForChanges);
+        document.getElementById('context-editor').addEventListener('input', checkForChanges);
 
         // Tags
         function addTag(event, type) {
@@ -1854,10 +1828,13 @@ Key components include:
         }
 
         function saveImportance() {
-            const value = document.getElementById('importance-slider').value;
+            const value = parseInt(document.getElementById('importance-slider').value);
             const badge = document.querySelector('.importance-badge');
-            badge.textContent = `Importance: ${value}`;
-            
+
+            // Update badge text with label
+            const label = value >= 9 ? 'Critical' : value >= 7 ? 'Important' : 'Low Priority';
+            badge.innerHTML = `Importance: ${value} (${label}) <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>`;
+
             // Update badge color class
             badge.classList.remove('high', 'medium', 'low');
             if (value >= 9) {
@@ -1867,8 +1844,9 @@ Key components include:
             } else {
                 badge.classList.add('low');
             }
-            
+
             closeImportanceModal();
+            checkForChanges(); // Check if there are now unsaved changes
         }
 
         // Detail panel
@@ -1900,7 +1878,28 @@ Key components include:
         // Actions
         function saveMemory() {
             console.log('Saving memory...');
+
+            // Collect all inline edited values
+            const data = {
+                title: document.querySelector('.page-title').textContent,
+                content: document.getElementById('content-editor').innerText,
+                context: document.getElementById('context-editor').innerText,
+                importance: parseInt(document.getElementById('importance-slider')?.value || '9')
+            };
+
+            console.log('Saving data:', data);
+
+            // After successful save, update original values to reset change tracking
+            originalValues.title = data.title;
+            originalValues.content = data.content;
+            originalValues.context = data.context;
+            originalValues.importance = data.importance;
+
+            // Disable Save button (no more unsaved changes)
+            document.getElementById('save-btn').disabled = true;
+
             // Show save feedback
+            alert('Memory saved successfully!');
         }
 
         function deleteMemory() {

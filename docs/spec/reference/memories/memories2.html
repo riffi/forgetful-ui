@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forgetful MCP - Memories</title>
+    <style>
+        /* --- CSS VARIABLES & THEME SETUP --- */
+        :root {
+            /* Palette - Slate-ish darks */
+            --bg-base: #020617; /* slate-950 */
+            --bg-sidebar: rgba(15, 23, 42, 0.95); /* slate-900/95 */
+            --surface-primary: rgba(15, 23, 42, 0.8); /* slate-900/80 */
+            --surface-secondary: rgba(30, 41, 59, 0.6); /* slate-800/60 */
+            --surface-hover: rgba(51, 65, 85, 0.4); /* slate-700/40 */
+            
+            /* Accents */
+            --accent-memory: #a855f7; /* purple-500 */
+            --accent-entity: #f59e0b; /* amber-500 */
+            --accent-document: #3b82f6; /* blue-500 */
+            --accent-project: #22c55e; /* green-500 */
+            
+            /* Text & Borders */
+            --text-primary: rgba(255, 255, 255, 0.9);
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --text-dimmed: rgba(255, 255, 255, 0.4);
+            --border-subtle: rgba(255, 255, 255, 0.05);
+            --border-hover: rgba(255, 255, 255, 0.1);
+            
+            /* Utils */
+            --glass-blur: blur(8px);
+            --transition-speed: 0.3s;
+            --sidebar-width: 260px;
+            --sidebar-collapsed-width: 70px;
+            --panel-width: 380px;
+        }
+
+        /* --- GLOBAL RESET & TYPOGRAPHY --- */
+        * { box-sizing: border-box; outline: none; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* --- LAYOUT UTILITIES --- */
+        .flex { display: flex; }
+        .flex-col { display: flex; flexDirection: column; }
+        .flex-1 { flex: 1; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 8px; }
+        .gap-4 { gap: 16px; }
+        .hidden { display: none !important; }
+        
+        /* Icons (Mocked via CSS for standalone usage) */
+        .icon { width: 18px; height: 18px; fill: currentColor; display: inline-block; }
+        
+        /* --- SIDEBAR --- */
+        #sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-subtle);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            transition: width var(--transition-speed) ease;
+            z-index: 20;
+            flex-shrink: 0;
+        }
+        #sidebar.collapsed { width: var(--sidebar-collapsed-width); }
+        #sidebar.collapsed .logo-text, 
+        #sidebar.collapsed .nav-label, 
+        #sidebar.collapsed .search-placeholder,
+        #sidebar.collapsed .collapse-text { display: none; }
+        #sidebar.collapsed .search-container { padding: 10px; justify-content: center; }
+        #sidebar.collapsed .search-input { display: none; }
+        
+        /* Logo Block */
+        .logo-block {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+        .logo-icon {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #c084fc, #ec4899);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        .logo-text { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.5px; }
+
+        /* Global Search Block */
+        .search-block { padding: 0 16px 16px; }
+        .search-container {
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            color: var(--text-dimmed);
+            font-size: 0.9rem;
+        }
+        .search-input {
+            background: transparent; border: none; color: white; width: 100%; margin-left: 8px;
+        }
+
+        /* Nav Block */
+        .nav-list { list-style: none; padding: 0 12px; margin: 0; flex: 1; overflow-y: auto; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 12px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .nav-item:hover { background: var(--surface-hover); color: var(--text-primary); }
+        .nav-item.active {
+            background: rgba(168, 85, 247, 0.15);
+            color: white;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        /* Collapse Toggle Block */
+        .collapse-block {
+            padding: 16px;
+            border-top: 1px solid var(--border-subtle);
+            cursor: pointer;
+            color: var(--text-dimmed);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .collapse-block:hover { color: var(--text-primary); }
+
+        /* --- MAIN CONTENT --- */
+        #content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: radial-gradient(circle at center, rgba(30,41,59,0.3) 0%, var(--bg-base) 100%);
+            overflow-y: auto;
+        }
+
+        /* Auth Warning Block */
+        .auth-warning {
+            background: rgba(234, 179, 8, 0.15);
+            border-bottom: 1px solid rgba(234, 179, 8, 0.2);
+            color: #fcd34d;
+            font-size: 0.85rem;
+            padding: 6px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .close-btn { cursor: pointer; opacity: 0.7; }
+        .close-btn:hover { opacity: 1; }
+
+        /* Page Content Padding */
+        .page-container { padding: 24px; max-width: 1400px; margin: 0 auto; width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+        /* Header Block */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        h1 { margin: 0; font-size: 1.8rem; font-weight: 600; }
+        
+        .header-controls { display: flex; gap: 12px; }
+        
+        /* Inputs & Buttons */
+        .glass-input {
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            backdrop-filter: var(--glass-blur);
+        }
+        .glass-btn {
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: var(--glass-blur);
+        }
+        .glass-btn:hover { background: var(--surface-hover); border-color: var(--border-hover); }
+        .btn-primary {
+            background: var(--accent-memory);
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+        .btn-primary:hover { filter: brightness(1.1); }
+
+        /* Table Block */
+        .data-table-container {
+            background: var(--surface-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            overflow: hidden;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        .data-table th {
+            background: rgba(0,0,0,0.2);
+            padding: 12px 16px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            vertical-align: middle;
+        }
+        .data-table tbody tr {
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .data-table tbody tr:hover { background: var(--surface-hover); }
+        .data-table tbody tr.selected { background: rgba(168, 85, 247, 0.1); }
+
+        /* Badges & Pills */
+        .badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .badge-project { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .badge-memory { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.3); }
+        
+        /* Importance bar */
+        .importance-indicator {
+            height: 4px; width: 60px; background: #334155; border-radius: 2px; overflow: hidden;
+        }
+        .importance-fill { height: 100%; }
+
+        /* Bulk Actions Bar */
+        #bulk_actions_bar {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px); /* Hidden */
+            background: #1e293b;
+            border: 1px solid var(--accent-memory);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            padding: 12px 24px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 50;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #bulk_actions_bar.active { transform: translateX(-50%) translateY(0); }
+        .bulk-count { font-weight: 600; color: white; padding-right: 12px; border-right: 1px solid var(--border-subtle); }
+
+        /* --- DETAIL PANEL --- */
+        #detail_panel {
+            width: var(--panel-width);
+            background: var(--surface-primary);
+            border-left: 1px solid var(--border-subtle);
+            height: 100%;
+            position: fixed;
+            right: calc(var(--panel-width) * -1); /* Hidden */
+            top: 0;
+            z-index: 30;
+            transition: right var(--transition-speed) ease-in-out;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: var(--glass-blur);
+        }
+        #detail_panel.open { right: 0; }
+
+        .panel-scroll { overflow-y: auto; flex: 1; padding: 0 20px 20px; }
+
+        /* Detail Header */
+        .detail-header-block {
+            padding: 20px 20px 0;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .detail-close {
+            position: absolute; top: 20px; right: 20px;
+            color: var(--text-secondary); cursor: pointer;
+        }
+        .detail-close:hover { color: white; }
+        .detail-title {
+            font-size: 1.4rem; font-weight: 600; margin: 10px 0 0;
+            border-bottom: 1px solid transparent;
+        }
+        .detail-title:hover { border-bottom: 1px dashed var(--text-dimmed); }
+
+        /* Detail Quick Edit */
+        .section-label {
+            text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);
+            font-size: 0.7rem; margin-bottom: 12px; display: block; font-weight: 600;
+        }
+        .edit-row { margin-bottom: 20px; }
+        .range-slider {
+            width: 100%; height: 6px; background: var(--surface-secondary);
+            outline: none; -webkit-appearance: none; border-radius: 3px;
+        }
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 16px; height: 16px; background: var(--accent-memory); border-radius: 50%; cursor: pointer;
+        }
+        .tag-pill {
+            background: var(--surface-secondary); padding: 4px 10px; border-radius: 12px;
+            font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; margin-right: 6px;
+        }
+
+        /* Detail Content Preview */
+        .content-preview {
+            background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px;
+            color: var(--text-primary); line-height: 1.5; font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        /* Detail Footer */
+        .detail-footer-block {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.2);
+        }
+        .meta-info { font-size: 0.75rem; color: var(--text-dimmed); }
+        .action-row { display: flex; gap: 8px; }
+
+        /* Utilities for SVG icons */
+        svg { pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <aside id="sidebar" ui-spec-block-id="sidebar">
+        <div class="logo-block" ui-spec-block-id="logo" onclick="window.location.reload()">
+            <div class="logo-icon"></div>
+            <span class="logo-text">Forgetful</span>
+        </div>
+
+        <div class="search-block" ui-spec-block-id="global_search">
+            <div class="search-container">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <input type="text" class="search-input" placeholder="Search...">
+            </div>
+        </div>
+
+        <ul class="nav-list" ui-spec-block-id="nav">
+            <li class="nav-item"><svg class="icon" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg><span class="nav-label">Dashboard</span></li>
+            <li class="nav-item active"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg><span class="nav-label">Memories</span></li>
+            <li class="nav-item"><svg class="icon" viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg><span class="nav-label">Entities</span></li>
+            <li class="nav-item"><svg class="icon" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg><span class="nav-label">Projects</span></li>
+        </ul>
+
+        <div class="collapse-block" ui-spec-block-id="collapse_toggle" id="toggleSidebar">
+            <svg class="icon" viewBox="0 0 24 24" style="transform: rotate(180deg)"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+            <span class="collapse-text">Collapse</span>
+        </div>
+    </aside>
+
+    <main id="content" ui-spec-block-id="content">
+        <div class="auth-warning" ui-spec-block-id="auth_warning" id="authWarning">
+            <div class="flex items-center gap-2">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+                <span>Auth disabled — Server running without authentication</span>
+            </div>
+            <div class="close-btn" onclick="document.getElementById('authWarning').style.display='none'">✕</div>
+        </div>
+
+        <div class="page-container">
+            <div class="page-header" ui-spec-block-id="header">
+                <div class="flex flex-col">
+                    <h1>Memories</h1>
+                    <span style="color:var(--text-dimmed); font-size: 0.9rem;">Manage and retrieve stored knowledge</span>
+                </div>
+                <div class="header-controls">
+                    <input type="text" class="glass-input" placeholder="Filter by keyword..." style="width: 200px;">
+                    <select class="glass-input">
+                        <option>All Importance</option>
+                        <option>High (8-10)</option>
+                        <option>Medium (5-7)</option>
+                    </select>
+                    <button class="glass-btn btn-primary">+ Create Memory</button>
+                </div>
+            </div>
+
+            <div class="data-table-container" ui-spec-block-id="memories_table">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;"><input type="checkbox" id="selectAll"></th>
+                            <th>Title</th>
+                            <th style="width: 120px;">Importance</th>
+                            <th>Tags</th>
+                            <th>Project</th>
+                            <th>Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="memoryRows">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="bulk_actions_bar" ui-spec-block-id="bulk_actions_bar">
+            <span class="bulk-count">0 Selected</span>
+            <button class="glass-btn" style="color: #ef4444; border-color: rgba(239,68,68,0.3);">Delete</button>
+            <button class="glass-btn">Mark Obsolete</button>
+            <button class="glass-btn">Add to Project</button>
+        </div>
+    </main>
+
+    <aside id="detail_panel" ui-spec-block-id="detail_panel">
+        <div class="detail-header-block" ui-spec-block-id="detail_header">
+            <div class="badge badge-memory">Memory</div>
+            <div class="detail-close" id="closeDetail">✕</div>
+            <h2 class="detail-title" contenteditable="true">Postgres Config</h2>
+        </div>
+
+        <div class="panel-scroll">
+            <div class="edit-row" ui-spec-block-id="detail_quick_edit" style="margin-top:20px;">
+                <span class="section-label">Importance: <span id="impValue">8</span></span>
+                <input type="range" min="1" max="10" value="8" class="range-slider" oninput="document.getElementById('impValue').innerText = this.value">
+            </div>
+
+            <div class="edit-row">
+                <span class="section-label">Tags</span>
+                <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                    <div class="tag-pill">database <span style="cursor:pointer; opacity:0.5;">×</span></div>
+                    <div class="tag-pill">config <span style="cursor:pointer; opacity:0.5;">×</span></div>
+                    <div class="tag-pill" style="border: 1px dashed var(--text-dimmed); background:transparent;">+ Add</div>
+                </div>
+            </div>
+
+            <div ui-spec-block-id="detail_content_preview">
+                <span class="section-label">Content Preview</span>
+                <div class="content-preview">
+                    The PostgreSQL configuration for the production environment needs max_connections set to 200. Ensure shared_buffers is at least 25% of RAM.
+                    <br><br>
+                    <a href="#" style="color:var(--text-secondary); font-size:0.8rem;">Show more</a>
+                </div>
+            </div>
+
+            <div ui-spec-block-id="detail_related_items">
+                <span class="section-label">Related Items</span>
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between items-center" style="font-size:0.9rem;">
+                        <div class="flex items-center gap-2">
+                            <div style="width:6px; height:6px; border-radius:50%; background:var(--accent-entity);"></div>
+                            <span>Production DB</span>
+                        </div>
+                        <span style="font-size:0.8rem; color:var(--text-dimmed); cursor:pointer;">Unlink</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-footer-block" ui-spec-block-id="detail_footer">
+            <div class="flex flex-col">
+                <span class="meta-info">ID: mem_8291</span>
+                <span class="meta-info">Created: Oct 24</span>
+            </div>
+            <div class="action-row" ui-spec-block-id="detail_actions">
+                <button class="glass-btn" style="padding: 6px 10px;">Graph</button>
+                <button class="glass-btn btn-primary" style="padding: 6px 12px;">Edit Full</button>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        // --- DATA & STATE ---
+        const memories = [
+            { id: 1, title: "Postgres Config Optimization", importance: 9, tags: ["db", "ops"], project: "Backend V2", updated: "2m ago" },
+            { id: 2, title: "User Auth Flow Requirements", importance: 8, tags: ["auth", "security"], project: "Backend V2", updated: "1h ago" },
+            { id: 3, title: "Frontend Color Palette", importance: 4, tags: ["ui", "design"], project: "Dashboard", updated: "3d ago" },
+            { id: 4, title: "API Rate Limiting Logic", importance: 7, tags: ["api", "middleware"], project: "Backend V2", updated: "1w ago" },
+            { id: 5, title: "Deployment Script Notes", importance: 6, tags: ["devops"], project: "Infra", updated: "2w ago" },
+        ];
+
+        let selectedIds = new Set();
+
+        // --- DOM ELEMENTS ---
+        const tableBody = document.getElementById('memoryRows');
+        const detailPanel = document.getElementById('detail_panel');
+        const bulkBar = document.getElementById('bulk_actions_bar');
+        const bulkCount = document.querySelector('.bulk-count');
+        const selectAll = document.getElementById('selectAll');
+        const sidebar = document.getElementById('sidebar');
+
+        // --- RENDER TABLE ---
+        function renderTable() {
+            tableBody.innerHTML = memories.map(m => `
+                <tr data-id="${m.id}" onclick="handleRowClick(event, ${m.id})">
+                    <td onclick="event.stopPropagation()">
+                        <input type="checkbox" class="row-checkbox" 
+                            onchange="handleCheck(event, ${m.id})" 
+                            ${selectedIds.has(m.id) ? 'checked' : ''}>
+                    </td>
+                    <td style="font-weight:500;">${m.title}</td>
+                    <td>
+                        <div class="importance-indicator">
+                            <div class="importance-fill" style="width: ${m.importance * 10}%; background: ${getImportanceColor(m.importance)}"></div>
+                        </div>
+                    </td>
+                    <td>${m.tags.map(t => `<span class="badge" style="background:rgba(255,255,255,0.1); margin-right:4px;">${t}</span>`).join('')}</td>
+                    <td><span class="badge badge-project">${m.project}</span></td>
+                    <td style="color:var(--text-dimmed); font-size:0.8rem;">${m.updated}</td>
+                </tr>
+            `).join('');
+            updateBulkBar();
+        }
+
+        function getImportanceColor(val) {
+            if (val >= 9) return 'linear-gradient(135deg, #ef4444, #f97316)';
+            if (val >= 7) return '#eab308';
+            return '#6b7280';
+        }
+
+        // --- INTERACTION HANDLERS ---
+        
+        // Toggle Sidebar
+        document.getElementById('toggleSidebar').addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+        });
+
+        // Row Click -> Open Detail Panel
+        window.handleRowClick = (e, id) => {
+            // If clicking inputs/buttons inside row, don't open panel
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+            
+            // Highlight row
+            document.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+            e.currentTarget.classList.add('selected');
+
+            // Open Panel
+            detailPanel.classList.add('open');
+            
+            // (Mock) Update Panel Content based on ID could go here
+            const mem = memories.find(m => m.id === id);
+            if(mem) {
+                document.querySelector('.detail-title').innerText = mem.title;
+                document.querySelector('.badge-memory').innerText = "Memory"; 
+            }
+        };
+
+        // Close Detail Panel
+        document.getElementById('closeDetail').addEventListener('click', () => {
+            detailPanel.classList.remove('open');
+            document.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+        });
+
+        // Checkbox Logic
+        window.handleCheck = (e, id) => {
+            if (e.target.checked) selectedIds.add(id);
+            else selectedIds.delete(id);
+            updateBulkBar();
+        };
+
+        selectAll.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                memories.forEach(m => selectedIds.add(m.id));
+            } else {
+                selectedIds.clear();
+            }
+            renderTable();
+        });
+
+        function updateBulkBar() {
+            if (selectedIds.size > 0) {
+                bulkBar.classList.add('active');
+                bulkCount.innerText = `${selectedIds.size} Selected`;
+            } else {
+                bulkBar.classList.remove('active');
+            }
+        }
+
+        // --- INIT ---
+        renderTable();
+
+    </script>
+</body>
+</html>

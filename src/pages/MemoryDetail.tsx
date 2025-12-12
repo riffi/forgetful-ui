@@ -1,47 +1,140 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
-  Title,
   Text,
   Group,
   Stack,
   Paper,
   Badge,
   Button,
-  TextInput,
-  Textarea,
-  Slider,
   Skeleton,
   TagsInput,
   Modal,
   Box,
   Select,
+  Menu,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import {
   IconBrain,
-  IconPencil,
   IconTrash,
   IconDeviceFloppy,
-  IconX,
-  IconLink,
   IconArrowLeft,
   IconBox,
   IconPlus,
+  IconChevronDown,
+  IconAlertCircle,
 } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMemory, useUpdateMemory, useDeleteMemory, useMemoryLinks, useEntities, useLinkEntityToMemory } from '@/hooks'
 import { Breadcrumb, Card, Section } from '@/components/ui'
 import classes from './MemoryDetail.module.css'
 
-function ImportanceBadge({ importance }: { importance: number }) {
-  let color = 'gray'
-  if (importance >= 9) color = 'red'
-  else if (importance >= 7) color = 'yellow'
+// Importance badge with dropdown
+function ImportanceBadgeDropdown({ importance, onChange }: { importance: number; onChange: (value: number) => void }) {
+  const getBadgeClass = (val: number) => {
+    if (val >= 9) return classes.importanceBadgeHigh
+    if (val >= 7) return classes.importanceBadgeMedium
+    return classes.importanceBadgeLow
+  }
+
+  const getLabel = (val: number) => {
+    if (val >= 9) return 'Critical'
+    if (val >= 7) return 'Important'
+    return 'Low Priority'
+  }
 
   return (
-    <Badge size="lg" variant="light" color={color}>
-      Importance: {importance}
-    </Badge>
+    <Menu position="bottom-start" withinPortal>
+      <Menu.Target>
+        <Badge
+          className={getBadgeClass(importance)}
+          size="lg"
+          rightSection={<IconChevronDown size={10} />}
+          style={{ cursor: 'pointer' }}
+        >
+          Importance: {importance} ({getLabel(importance)})
+        </Badge>
+      </Menu.Target>
+      <Menu.Dropdown>
+        <Menu.Label>Select Importance</Menu.Label>
+        {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(val => (
+          <Menu.Item
+            key={val}
+            onClick={() => onChange(val)}
+            className={val === importance ? classes.menuItemActive : undefined}
+          >
+            {val} - {val >= 9 ? 'Critical' : val >= 7 ? 'Important' : 'Low Priority'}
+          </Menu.Item>
+        ))}
+      </Menu.Dropdown>
+    </Menu>
+  )
+}
+
+// Inline editable title component
+function EditableTitle({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const ref = useRef<HTMLHeadingElement>(null)
+
+  const handleBlur = () => {
+    if (ref.current) {
+      const newValue = ref.current.textContent ?? ''
+      if (newValue !== value) {
+        onChange(newValue)
+      }
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      ref.current?.blur()
+    }
+  }
+
+  return (
+    <h1
+      ref={ref}
+      className={classes.editableTitle}
+      contentEditable
+      suppressContentEditableWarning
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+    >
+      {value}
+    </h1>
+  )
+}
+
+// Inline editable content area
+function EditableContent({ value, onChange, placeholder, minHeight }: {
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  minHeight?: number
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  const handleBlur = () => {
+    if (ref.current) {
+      const newValue = ref.current.innerText ?? ''
+      if (newValue !== value) {
+        onChange(newValue)
+      }
+    }
+  }
+
+  return (
+    <div
+      ref={ref}
+      className={classes.editableContent}
+      contentEditable
+      suppressContentEditableWarning
+      onBlur={handleBlur}
+      data-placeholder={placeholder}
+      style={minHeight ? { minHeight } : undefined}
+    >
+      {value || ''}
+    </div>
   )
 }
 
@@ -55,8 +148,7 @@ export function MemoryDetail() {
   const updateMemory = useUpdateMemory()
   const deleteMemory = useDeleteMemory()
 
-  // Edit state
-  const [isEditing, setIsEditing] = useState(false)
+  // Local edit state (inline editing - no separate edit mode)
   const [editedTitle, setEditedTitle] = useState('')
   const [editedContent, setEditedContent] = useState('')
   const [editedContext, setEditedContext] = useState('')
@@ -73,6 +165,28 @@ export function MemoryDetail() {
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null)
   const { data: entitiesData } = useEntities({ limit: 100 })
   const linkEntityToMemory = useLinkEntityToMemory()
+
+  // Initialize edit state from memory data
+  useEffect(() => {
+    if (memory) {
+      setEditedTitle(memory.title)
+      setEditedContent(memory.content)
+      setEditedContext(memory.context)
+      setEditedKeywords(memory.keywords ?? [])
+      setEditedTags(memory.tags ?? [])
+      setEditedImportance(memory.importance)
+    }
+  }, [memory])
+
+  // Check if there are unsaved changes
+  const hasChanges = memory && (
+    editedTitle !== memory.title ||
+    editedContent !== memory.content ||
+    editedContext !== memory.context ||
+    editedImportance !== memory.importance ||
+    JSON.stringify(editedKeywords) !== JSON.stringify(memory.keywords ?? []) ||
+    JSON.stringify(editedTags) !== JSON.stringify(memory.tags ?? [])
+  )
 
   // Get entity options for select
   const entityOptions = (entitiesData?.entities ?? []).map(e => ({
@@ -92,18 +206,6 @@ export function MemoryDetail() {
     closeLinkEntity()
   }
 
-  // Start editing
-  const startEditing = () => {
-    if (!memory) return
-    setEditedTitle(memory.title)
-    setEditedContent(memory.content)
-    setEditedContext(memory.context)
-    setEditedKeywords(memory.keywords ?? [])
-    setEditedTags(memory.tags ?? [])
-    setEditedImportance(memory.importance)
-    setIsEditing(true)
-  }
-
   // Save changes
   const handleSave = async () => {
     await updateMemory.mutateAsync({
@@ -117,12 +219,6 @@ export function MemoryDetail() {
         importance: editedImportance,
       },
     })
-    setIsEditing(false)
-  }
-
-  // Cancel editing
-  const handleCancel = () => {
-    setIsEditing(false)
   }
 
   // Handle delete
@@ -133,6 +229,14 @@ export function MemoryDetail() {
     })
     closeDelete()
     navigate('/memories')
+  }
+
+  // Handle mark obsolete
+  const handleMarkObsolete = async () => {
+    await updateMemory.mutateAsync({
+      id: memoryId,
+      data: { is_obsolete: true },
+    })
   }
 
   if (isLoading) {
@@ -151,7 +255,7 @@ export function MemoryDetail() {
         <Paper className={classes.errorState}>
           <Stack align="center" gap="md">
             <IconBrain size={48} color="var(--text-dimmed)" />
-            <Title order={3}>Memory not found</Title>
+            <Text size="xl" fw={600}>Memory not found</Text>
             <Text c="dimmed">The memory you're looking for doesn't exist.</Text>
             <Button
               leftSection={<IconArrowLeft size={16} />}
@@ -176,180 +280,106 @@ export function MemoryDetail() {
       <Breadcrumb items={breadcrumbItems} />
 
       {/* Header */}
-      <Paper className={classes.header} mb="md">
-        <Group justify="space-between" wrap="nowrap">
-          <Group gap="md" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-            <IconBrain size={32} color="var(--accent-memory)" />
-            {isEditing ? (
-              <TextInput
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                size="lg"
-                style={{ flex: 1 }}
-                placeholder="Memory title..."
-              />
-            ) : (
-              <Title order={2} lineClamp={1} style={{ flex: 1 }}>
-                {memory.title}
-              </Title>
-            )}
-          </Group>
-          <Group gap="xs">
+      <div className={classes.pageHeader}>
+        <div className={classes.headerMain}>
+          {/* Badges row */}
+          <Group gap="xs" mb="xs">
+            <Badge variant="light" color="purple" size="lg" leftSection={<IconBrain size={12} />}>
+              Memory
+            </Badge>
+            <ImportanceBadgeDropdown
+              importance={editedImportance}
+              onChange={setEditedImportance}
+            />
             {memory.is_obsolete && (
               <Badge color="gray" variant="outline" size="lg">
                 Obsolete
               </Badge>
             )}
-            {isEditing ? (
-              <>
-                <Button
-                  variant="light"
-                  color="gray"
-                  leftSection={<IconX size={16} />}
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  color="purple"
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  onClick={handleSave}
-                  loading={updateMemory.isPending}
-                >
-                  Save
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="light"
-                  leftSection={<IconPencil size={16} />}
-                  onClick={startEditing}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="light"
-                  color="red"
-                  leftSection={<IconTrash size={16} />}
-                  onClick={openDelete}
-                >
-                  Delete
-                </Button>
-              </>
-            )}
           </Group>
+
+          {/* Title row - inline editable */}
+          <EditableTitle value={editedTitle} onChange={setEditedTitle} />
+        </div>
+
+        {/* Header actions */}
+        <Group gap="xs" className={classes.headerActions}>
+          <Button
+            variant="subtle"
+            color="gray"
+            leftSection={<IconTrash size={16} />}
+            onClick={openDelete}
+            className={classes.btnDanger}
+          >
+            Delete
+          </Button>
+          <Button
+            variant="default"
+            leftSection={<IconAlertCircle size={16} />}
+            onClick={handleMarkObsolete}
+            disabled={memory.is_obsolete}
+          >
+            Mark Obsolete
+          </Button>
+          <Button
+            color="purple"
+            leftSection={<IconDeviceFloppy size={16} />}
+            onClick={handleSave}
+            loading={updateMemory.isPending}
+            disabled={!hasChanges}
+            className={classes.btnPrimary}
+          >
+            Save Changes
+          </Button>
         </Group>
-      </Paper>
+      </div>
 
       {/* Main Content Grid */}
       <div className={classes.grid}>
         {/* Left Column - Content */}
         <div className={classes.mainColumn}>
-          {/* Importance */}
-          <Section title="Importance">
-            {isEditing ? (
-              <Stack gap="xs">
-                <Slider
-                  value={editedImportance}
-                  onChange={setEditedImportance}
-                  min={1}
-                  max={10}
-                  step={1}
-                  marks={[
-                    { value: 1, label: '1' },
-                    { value: 5, label: '5' },
-                    { value: 10, label: '10' },
-                  ]}
-                  color={
-                    editedImportance >= 9
-                      ? 'red'
-                      : editedImportance >= 7
-                      ? 'yellow'
-                      : 'gray'
-                  }
-                />
-                <Text size="sm" c="dimmed" ta="center">
-                  {editedImportance >= 9
-                    ? 'Critical / Foundational'
-                    : editedImportance >= 7
-                    ? 'Important / Useful'
-                    : 'Lower Priority'}
-                </Text>
-              </Stack>
-            ) : (
-              <ImportanceBadge importance={memory.importance} />
-            )}
-          </Section>
+          {/* Content - inline editable */}
+          <Paper className={classes.contentCard} mb="md">
+            <Text className={classes.cardLabel}>Content</Text>
+            <EditableContent
+              value={editedContent}
+              onChange={setEditedContent}
+              placeholder="Add memory content..."
+              minHeight={150}
+            />
+          </Paper>
 
-          {/* Content */}
-          <Section title="Content">
-            {isEditing ? (
-              <Textarea
-                value={editedContent}
-                onChange={(e) => setEditedContent(e.target.value)}
-                minRows={6}
-                autosize
-                placeholder="Memory content..."
-              />
-            ) : (
-              <Text className={classes.contentText}>{memory.content}</Text>
-            )}
-          </Section>
-
-          {/* Context */}
-          <Section title="Context">
-            {isEditing ? (
-              <Textarea
-                value={editedContext}
-                onChange={(e) => setEditedContext(e.target.value)}
-                minRows={3}
-                autosize
-                placeholder="Why this matters, how it relates to other concepts..."
-              />
-            ) : (
-              <Text className={classes.contentText}>{memory.context}</Text>
-            )}
-          </Section>
+          {/* Context - inline editable */}
+          <Paper className={classes.contentCard} mb="md">
+            <Text className={classes.cardLabel}>Context</Text>
+            <EditableContent
+              value={editedContext}
+              onChange={setEditedContext}
+              placeholder="Add context about this memory..."
+              minHeight={80}
+            />
+          </Paper>
 
           {/* Keywords & Tags */}
           <Section title="Keywords & Tags">
             <Group gap="xl">
               <Box style={{ flex: 1 }}>
                 <Text className={classes.fieldLabel}>Keywords</Text>
-                {isEditing ? (
-                  <TagsInput
-                    value={editedKeywords}
-                    onChange={setEditedKeywords}
-                    placeholder="Add keywords..."
-                  />
-                ) : (
-                  <Group gap="xs">
-                    {memory.keywords?.map((kw) => (
-                      <Badge key={kw} variant="outline" color="gray">
-                        {kw}
-                      </Badge>
-                    )) ?? <Text c="dimmed">No keywords</Text>}
-                  </Group>
-                )}
+                <TagsInput
+                  value={editedKeywords}
+                  onChange={setEditedKeywords}
+                  placeholder="Add keywords..."
+                  className={classes.tagsInput}
+                />
               </Box>
               <Box style={{ flex: 1 }}>
                 <Text className={classes.fieldLabel}>Tags</Text>
-                {isEditing ? (
-                  <TagsInput
-                    value={editedTags}
-                    onChange={setEditedTags}
-                    placeholder="Add tags..."
-                  />
-                ) : (
-                  <Group gap="xs">
-                    {memory.tags?.map((tag) => (
-                      <Badge key={tag} variant="dot" color="purple">
-                        {tag}
-                      </Badge>
-                    )) ?? <Text c="dimmed">No tags</Text>}
-                  </Group>
-                )}
+                <TagsInput
+                  value={editedTags}
+                  onChange={setEditedTags}
+                  placeholder="Add tags..."
+                  className={classes.tagsInput}
+                />
               </Box>
             </Group>
           </Section>
@@ -467,11 +497,18 @@ export function MemoryDetail() {
             Are you sure you want to mark "{memory.title}" as obsolete? This
             won't delete it permanently.
           </Text>
-          <Textarea
+          <Select
             label="Reason (optional)"
             placeholder="Why is this memory obsolete?"
+            data={[
+              { value: 'outdated', label: 'Information is outdated' },
+              { value: 'incorrect', label: 'Information was incorrect' },
+              { value: 'superseded', label: 'Superseded by another memory' },
+              { value: 'no-longer-relevant', label: 'No longer relevant' },
+            ]}
             value={deleteReason}
-            onChange={(e) => setDeleteReason(e.target.value)}
+            onChange={(val) => setDeleteReason(val ?? '')}
+            clearable
           />
           <Group justify="flex-end" mt="md">
             <Button variant="light" color="gray" onClick={closeDelete}>
@@ -516,7 +553,7 @@ export function MemoryDetail() {
             </Button>
             <Button
               color="orange"
-              leftSection={<IconLink size={16} />}
+              leftSection={<IconPlus size={16} />}
               onClick={handleLinkEntity}
               loading={linkEntityToMemory.isPending}
               disabled={!selectedEntityId}

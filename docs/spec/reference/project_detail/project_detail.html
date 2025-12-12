@@ -1,0 +1,2303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Detail - Forgetful Dashboard</title>
+    <style>
+        /* CSS Reset & Base */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            /* Colors from palette */
+            --surface-primary-bg: rgba(15, 23, 42, 0.8);
+            --surface-secondary-bg: rgba(30, 41, 59, 0.6);
+            --surface-hover-bg: rgba(51, 65, 85, 0.4);
+            --accent-memory: #a855f7;
+            --accent-entity: #f59e0b;
+            --accent-document: #3b82f6;
+            --accent-code: #06b6d4;
+            --accent-project: #22c55e;
+            --text-primary: rgba(255, 255, 255, 0.9);
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --text-dimmed: rgba(255, 255, 255, 0.4);
+            --border-subtle: rgba(255, 255, 255, 0.05);
+            --border-hover: rgba(255, 255, 255, 0.1);
+            --bg-base: #020617;
+            --bg-sidebar: rgba(15, 23, 42, 0.95);
+            --importance-high: linear-gradient(135deg, #ef4444, #f97316);
+            --importance-medium: #eab308;
+            --importance-low: #6b7280;
+            --danger: #ef4444;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        /* Main Layout */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            min-width: 260px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease, min-width 0.3s ease;
+            z-index: 100;
+        }
+
+        .sidebar.collapsed {
+            width: 72px;
+            min-width: 72px;
+        }
+
+        .sidebar.collapsed .nav-label,
+        .sidebar.collapsed .logo-text,
+        .sidebar.collapsed .search-input,
+        .sidebar.collapsed .collapse-text,
+        .sidebar.collapsed .project-filter-text {
+            display: none;
+        }
+
+        .sidebar.collapsed .logo {
+            justify-content: center;
+            padding: 20px 12px;
+        }
+
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding: 12px;
+        }
+
+        .sidebar.collapsed .global-search {
+            padding: 12px;
+        }
+
+        .sidebar.collapsed .search-wrapper {
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .collapse-toggle {
+            justify-content: center;
+        }
+
+        /* Logo */
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-memory), #ec4899);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .logo-icon svg {
+            width: 22px;
+            height: 22px;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-memory), #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Global Search */
+        .global-search {
+            padding: 0 16px 16px;
+        }
+
+        .search-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface-secondary-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-hover);
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: text;
+        }
+
+        .search-wrapper:focus-within {
+            border-color: var(--accent-memory);
+            box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+        }
+
+        .search-wrapper svg {
+            width: 16px;
+            height: 16px;
+            color: var(--text-dimmed);
+            flex-shrink: 0;
+        }
+
+        .search-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-dimmed);
+        }
+
+        /* Project Filter */
+        .project-filter {
+            padding: 0 16px 16px;
+        }
+
+        .project-filter-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            background: var(--surface-secondary-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .project-filter-btn:hover {
+            background: var(--surface-hover-bg);
+            border-color: var(--border-hover);
+        }
+
+        .project-filter-btn.active {
+            border-color: var(--accent-project);
+            color: var(--accent-project);
+        }
+
+        .project-filter-btn svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .project-filter-text {
+            flex: 1;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Navigation */
+        .nav {
+            flex: 1;
+            padding: 0 12px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+        }
+
+        .nav-item:hover {
+            background: var(--surface-hover-bg);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: rgba(168, 85, 247, 0.15);
+            color: white;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        /* Collapse Toggle */
+        .collapse-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+            color: var(--text-dimmed);
+            font-size: 13px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .collapse-toggle:hover {
+            color: var(--text-secondary);
+        }
+
+        .collapse-toggle svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.3s;
+        }
+
+        .sidebar.collapsed .collapse-toggle svg {
+            transform: rotate(180deg);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, rgba(30, 41, 59, 0.3) 0%, transparent 70%);
+        }
+
+        /* Auth Warning Bar */
+        .auth-warning {
+            background: rgba(234, 179, 8, 0.15);
+            border-bottom: 1px solid rgba(234, 179, 8, 0.3);
+            padding: 6px 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--importance-medium);
+        }
+
+        .auth-warning.hidden {
+            display: none;
+        }
+
+        .auth-warning svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        .auth-warning-text {
+            flex: 1;
+        }
+
+        .auth-warning-close {
+            background: none;
+            border: none;
+            color: var(--importance-medium);
+            cursor: pointer;
+            padding: 4px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .auth-warning-close:hover {
+            opacity: 1;
+        }
+
+        /* Project Context Bar */
+        .project-context-bar {
+            background: rgba(34, 197, 94, 0.1);
+            border-bottom: 1px solid rgba(34, 197, 94, 0.2);
+            padding: 8px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+        }
+
+        .project-context-bar.hidden {
+            display: none;
+        }
+
+        .project-context-name {
+            color: var(--accent-project);
+            font-weight: 600;
+        }
+
+        .project-context-counts {
+            color: var(--text-secondary);
+        }
+
+        .project-context-clear {
+            margin-left: auto;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .project-context-clear:hover {
+            color: var(--text-primary);
+            text-decoration: underline;
+        }
+
+        /* Content Scroll Area */
+        .content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        /* Page Content Grid */
+        .page-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .col-12 { grid-column: span 12; }
+        .col-8 { grid-column: span 8; }
+        .col-4 { grid-column: span 4; }
+
+        @media (max-width: 1200px) {
+            .col-8, .col-4 {
+                grid-column: span 12;
+            }
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .breadcrumb a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--text-primary);
+        }
+
+        .breadcrumb-separator {
+            color: var(--text-dimmed);
+        }
+
+        .breadcrumb-current {
+            color: var(--text-primary);
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .header-main {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .header-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .badge-project-type {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--accent-project);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .badge-project-type:hover {
+            background: rgba(34, 197, 94, 0.25);
+        }
+
+        .badge-status {
+            background: var(--surface-secondary-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-hover);
+        }
+
+        .badge-status.active {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--accent-project);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .badge-status.archived {
+            background: rgba(107, 114, 128, 0.15);
+            color: var(--importance-low);
+            border-color: rgba(107, 114, 128, 0.3);
+        }
+
+        .badge svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-title-text {
+            outline: none;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 2px;
+            transition: border-color 0.2s;
+        }
+
+        .page-title-text:hover {
+            border-bottom-color: var(--border-hover);
+        }
+
+        .page-title-text:focus {
+            border-bottom-color: var(--accent-project);
+        }
+
+        .repo-link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--surface-secondary-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .repo-link-btn:hover {
+            background: var(--surface-hover-bg);
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+        }
+
+        .repo-link-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Header Actions */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .btn-primary {
+            background: var(--accent-project);
+            color: white;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #16a34a;
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--surface-secondary-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-hover-bg);
+            border-color: var(--border-hover);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-ghost:hover {
+            background: var(--surface-hover-bg);
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: var(--text-dimmed);
+            border: 1px solid transparent;
+        }
+
+        .btn-danger:hover {
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Content Cards */
+        .content-card {
+            background: var(--surface-primary-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-dimmed);
+            margin-bottom: 12px;
+        }
+
+        /* Editable Field */
+        .editable-field {
+            position: relative;
+        }
+
+        .editable-content {
+            min-height: 100px;
+            padding: 16px;
+            background: var(--surface-secondary-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.7;
+            cursor: text;
+            transition: all 0.2s;
+        }
+
+        .editable-content:hover {
+            border-color: var(--border-hover);
+        }
+
+        .editable-content:focus {
+            outline: none;
+            border-color: var(--accent-project);
+            box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+        }
+
+        .editable-content p {
+            margin-bottom: 12px;
+        }
+
+        .editable-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .editable-content code {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent-code);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 13px;
+        }
+
+        .editable-content ul, .editable-content ol {
+            margin: 12px 0;
+            padding-left: 24px;
+        }
+
+        .editable-content li {
+            margin-bottom: 6px;
+        }
+
+        /* Tabs */
+        .tabs-container {
+            margin-top: 24px;
+        }
+
+        .tabs-header {
+            display: flex;
+            gap: 4px;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-project);
+        }
+
+        .tab-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .tab-count {
+            background: var(--surface-secondary-bg);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            color: var(--text-dimmed);
+        }
+
+        .tab-btn.active .tab-count {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--accent-project);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Data Table */
+        .data-table-container {
+            background: var(--surface-secondary-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .table-search {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface-primary-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 6px 12px;
+        }
+
+        .table-search svg {
+            width: 14px;
+            height: 14px;
+            color: var(--text-dimmed);
+        }
+
+        .table-search input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 13px;
+            width: 200px;
+        }
+
+        .table-search input::placeholder {
+            color: var(--text-dimmed);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-dimmed);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .data-table td {
+            padding: 12px 16px;
+            font-size: 14px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover td {
+            background: var(--surface-hover-bg);
+        }
+
+        .table-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .type-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .type-dot.memory { background: var(--accent-memory); }
+        .type-dot.entity { background: var(--accent-entity); }
+        .type-dot.document { background: var(--accent-document); }
+        .type-dot.code { background: var(--accent-code); }
+
+        .table-link {
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .table-link:hover {
+            color: var(--accent-memory);
+        }
+
+        .table-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .tag-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: var(--surface-primary-bg);
+            border-radius: 12px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .action-link {
+            color: var(--text-dimmed);
+            font-size: 13px;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .action-link:hover {
+            color: var(--danger);
+        }
+
+        .empty-state {
+            padding: 40px;
+            text-align: center;
+            color: var(--text-dimmed);
+        }
+
+        .empty-state-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 16px;
+            opacity: 0.5;
+        }
+
+        /* Sidebar Cards */
+        .sidebar-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar-card {
+            background: var(--surface-primary-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .sidebar-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-card-title svg {
+            width: 16px;
+            height: 16px;
+            color: var(--text-secondary);
+        }
+
+        .metadata-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .metadata-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .metadata-label {
+            font-size: 13px;
+            color: var(--text-dimmed);
+        }
+
+        .metadata-value {
+            font-size: 13px;
+            color: var(--text-primary);
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        .repo-info {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .repo-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 12px;
+            background: var(--surface-secondary-bg);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .repo-name:hover {
+            background: var(--surface-hover-bg);
+        }
+
+        .repo-name svg {
+            width: 20px;
+            height: 20px;
+            color: var(--text-secondary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat-item {
+            background: var(--surface-secondary-bg);
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-value.memory { color: var(--accent-memory); }
+        .stat-value.document { color: var(--accent-document); }
+        .stat-value.code { color: var(--accent-code); }
+        .stat-value.entity { color: var(--accent-entity); }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-dimmed);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Detail Panel */
+        .detail-panel {
+            width: 380px;
+            min-width: 380px;
+            background: var(--surface-primary-bg);
+            backdrop-filter: blur(12px);
+            border-left: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            position: fixed;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 200;
+        }
+
+        .detail-panel.open {
+            transform: translateX(0);
+        }
+
+        .detail-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            position: relative;
+        }
+
+        .detail-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+
+        .detail-close:hover {
+            color: var(--text-primary);
+        }
+
+        .detail-close svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .detail-type-badge {
+            display: inline-flex;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .detail-type-badge.memory {
+            background: rgba(168, 85, 247, 0.15);
+            color: var(--accent-memory);
+        }
+
+        .detail-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            outline: none;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 2px;
+            transition: border-color 0.2s;
+        }
+
+        .detail-title:hover {
+            border-bottom-color: var(--border-hover);
+        }
+
+        .detail-title:focus {
+            border-bottom-color: var(--accent-memory);
+        }
+
+        .detail-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-section-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-dimmed);
+            margin-bottom: 12px;
+        }
+
+        /* Quick Edit */
+        .quick-edit-field {
+            margin-bottom: 16px;
+        }
+
+        .quick-edit-label {
+            font-size: 12px;
+            color: var(--text-dimmed);
+            margin-bottom: 8px;
+        }
+
+        .importance-slider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider-track {
+            flex: 1;
+            height: 6px;
+            background: var(--surface-secondary-bg);
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .slider-track input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .slider-track input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-memory);
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+            cursor: pointer;
+        }
+
+        .slider-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-memory);
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .tags-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .tag-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--surface-secondary-bg);
+            border-radius: 16px;
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        .tag-remove {
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            color: var(--text-dimmed);
+            cursor: pointer;
+            padding: 0;
+            transition: color 0.2s;
+        }
+
+        .tag-remove:hover {
+            color: var(--danger);
+        }
+
+        .tag-add {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: var(--surface-secondary-bg);
+            border: 1px dashed var(--border-hover);
+            border-radius: 50%;
+            color: var(--text-dimmed);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tag-add:hover {
+            color: var(--text-primary);
+            border-color: var(--text-dimmed);
+        }
+
+        /* Content Preview */
+        .content-preview-text {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .show-more-link {
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .show-more-link:hover {
+            color: var(--text-primary);
+            text-decoration: underline;
+        }
+
+        /* Related Items */
+        .related-items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .related-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--surface-secondary-bg);
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .related-item:hover {
+            background: var(--surface-hover-bg);
+        }
+
+        .related-item-title {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .related-item-title:hover {
+            color: var(--accent-memory);
+        }
+
+        .unlink-btn {
+            font-size: 12px;
+            color: var(--text-dimmed);
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .unlink-btn:hover {
+            color: var(--text-secondary);
+        }
+
+        /* Detail Footer */
+        .detail-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .detail-meta {
+            font-size: 12px;
+            color: var(--text-dimmed);
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Dropdown */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 180px;
+            background: var(--surface-primary-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-hover);
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 4px;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px);
+            transition: all 0.2s;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .dropdown.open .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: var(--surface-hover-bg);
+        }
+
+        .dropdown-item.selected {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--accent-project);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--surface-hover-bg);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -260px;
+                top: 0;
+                bottom: 0;
+                z-index: 300;
+            }
+
+            .sidebar.mobile-open {
+                left: 0;
+            }
+
+            .header-actions {
+                flex-wrap: wrap;
+            }
+
+            .page-title {
+                font-size: 24px;
+            }
+
+            .tabs-header {
+                overflow-x: auto;
+            }
+
+            .detail-panel {
+                width: 100%;
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" ui-spec-block-id="sidebar">
+            <!-- Logo -->
+            <a href="#" class="logo" ui-spec-block-id="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a8 8 0 0 1 8 8c0 5.5-8 12-8 12S4 15.5 4 10a8 8 0 0 1 8-8z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                        <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+                    </svg>
+                </div>
+                <span class="logo-text">Forgetful</span>
+            </a>
+
+            <!-- Global Search -->
+            <div class="global-search" ui-spec-block-id="global_search">
+                <div class="search-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" class="search-input" placeholder="Search memories, entities... (Ctrl+K)">
+                </div>
+            </div>
+
+            <!-- Project Filter -->
+            <div class="project-filter">
+                <button class="project-filter-btn" id="projectFilterBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="project-filter-text">All Projects</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px; margin-left: auto;">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="nav" ui-spec-block-id="nav">
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a10 10 0 0 1 10 10c0 5.5-10 12-10 12S2 17.5 2 12A10 10 0 0 1 12 2z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <span class="nav-label">Memories</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                    <span class="nav-label">Entities</span>
+                </a>
+                <a href="#" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="nav-label">Projects</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                    <span class="nav-label">Documents</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="16 18 22 12 16 6"/>
+                        <polyline points="8 6 2 12 8 18"/>
+                    </svg>
+                    <span class="nav-label">Code Artifacts</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="2"/>
+                        <circle cx="6" cy="6" r="2"/>
+                        <circle cx="18" cy="6" r="2"/>
+                        <circle cx="6" cy="18" r="2"/>
+                        <circle cx="18" cy="18" r="2"/>
+                        <line x1="12" y1="10" x2="12" y2="2"/>
+                        <line x1="10.5" y1="11" x2="7" y2="7"/>
+                        <line x1="13.5" y1="11" x2="17" y2="7"/>
+                        <line x1="10.5" y1="13" x2="7" y2="17"/>
+                        <line x1="13.5" y1="13" x2="17" y2="17"/>
+                    </svg>
+                    <span class="nav-label">Graph</span>
+                </a>
+            </nav>
+
+            <!-- Collapse Toggle -->
+            <div class="collapse-toggle" ui-spec-block-id="collapse_toggle" onclick="toggleSidebar()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                <span class="collapse-text">Collapse</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Auth Warning -->
+            <div class="auth-warning" ui-spec-block-id="auth_warning" id="authWarning">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span class="auth-warning-text">Auth disabled — Server running without authentication</span>
+                <button class="auth-warning-close" onclick="dismissAuthWarning()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Project Context Bar -->
+            <div class="project-context-bar hidden" ui-spec-block-id="project_context_bar" id="projectContextBar">
+                <span class="project-context-name">API Development</span>
+                <span class="project-context-counts">12 memories • 5 documents • 8 code artifacts</span>
+                <a href="#" class="project-context-clear" onclick="clearProjectFilter()">Clear filter</a>
+            </div>
+
+            <!-- Content Scroll Area -->
+            <div class="content-scroll">
+                <div class="page-grid">
+                    <!-- Breadcrumb -->
+                    <div class="col-12" ui-spec-block-id="breadcrumb">
+                        <nav class="breadcrumb">
+                            <a href="#">Projects</a>
+                            <span class="breadcrumb-separator">›</span>
+                            <span class="breadcrumb-current">API Development</span>
+                        </nav>
+                    </div>
+
+                    <!-- Header -->
+                    <div class="col-12" ui-spec-block-id="header">
+                        <div class="page-header">
+                            <div class="header-main">
+                                <div class="header-badges">
+                                    <div class="dropdown" id="typeDropdown">
+                                        <span class="badge badge-project-type" onclick="toggleDropdown('typeDropdown')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                            </svg>
+                                            Development
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 10px; height: 10px;">
+                                                <path d="M6 9l6 6 6-6"/>
+                                            </svg>
+                                        </span>
+                                        <div class="dropdown-menu">
+                                            <div class="dropdown-item selected">Development</div>
+                                            <div class="dropdown-item">Research</div>
+                                            <div class="dropdown-item">Documentation</div>
+                                            <div class="dropdown-item">Personal</div>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown" id="statusDropdown">
+                                        <span class="badge badge-status active" onclick="toggleDropdown('statusDropdown')">
+                                            Active
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 10px; height: 10px;">
+                                                <path d="M6 9l6 6 6-6"/>
+                                            </svg>
+                                        </span>
+                                        <div class="dropdown-menu">
+                                            <div class="dropdown-item selected">Active</div>
+                                            <div class="dropdown-item">Paused</div>
+                                            <div class="dropdown-item">Completed</div>
+                                            <div class="dropdown-item">Archived</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h1 class="page-title">
+                                    <span class="page-title-text" contenteditable="true">API Development</span>
+                                    <a href="https://github.com/example/api-dev" class="repo-link-btn" target="_blank">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                                        </svg>
+                                        View Repository
+                                    </a>
+                                </h1>
+                            </div>
+                            <div class="header-actions">
+                                <button class="btn btn-danger">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6"/>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    </svg>
+                                    Delete
+                                </button>
+                                <button class="btn btn-ghost">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 8v13H3V8"/>
+                                        <path d="M1 3h22v5H1z"/>
+                                        <path d="M10 12h4"/>
+                                    </svg>
+                                    Archive
+                                </button>
+                                <button class="btn btn-primary">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                        <polyline points="17 21 17 13 7 13 7 21"/>
+                                        <polyline points="7 3 7 8 15 8"/>
+                                    </svg>
+                                    Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Content Column -->
+                    <div class="col-8" ui-spec-block-id="main_content">
+                        <!-- Description Field -->
+                        <div class="content-card" ui-spec-block-id="description_field" style="margin-bottom: 20px;">
+                            <div class="card-label">Description</div>
+                            <div class="editable-field">
+                                <div class="editable-content" contenteditable="true">
+                                    <p>A comprehensive API development project for building RESTful services. This project encompasses the design, implementation, and documentation of our core API infrastructure.</p>
+                                    <p>Key objectives include:</p>
+                                    <ul>
+                                        <li>Building scalable microservices architecture</li>
+                                        <li>Implementing OAuth 2.0 authentication</li>
+                                        <li>Creating comprehensive API documentation</li>
+                                        <li>Setting up automated testing pipelines</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes Field -->
+                        <div class="content-card" ui-spec-block-id="notes_field" style="margin-bottom: 20px;">
+                            <div class="card-label">Notes</div>
+                            <div class="editable-field">
+                                <div class="editable-content" contenteditable="true">
+                                    <p>Remember to review the <code>authentication</code> module before the next sprint. There are some edge cases in the token refresh flow that need attention.</p>
+                                    <p>Meeting scheduled for Friday to discuss rate limiting implementation.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabs Section -->
+                        <div class="tabs-container" ui-spec-block-id="tabs_section">
+                            <div class="tabs-header">
+                                <button class="tab-btn active" data-tab="memories" onclick="switchTab('memories')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 2a10 10 0 0 1 10 10c0 5.5-10 12-10 12S2 17.5 2 12A10 10 0 0 1 12 2z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                    Memories
+                                    <span class="tab-count">12</span>
+                                </button>
+                                <button class="tab-btn" data-tab="documents" onclick="switchTab('documents')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                    </svg>
+                                    Documents
+                                    <span class="tab-count">5</span>
+                                </button>
+                                <button class="tab-btn" data-tab="code_artifacts" onclick="switchTab('code_artifacts')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="16 18 22 12 16 6"/>
+                                        <polyline points="8 6 2 12 8 18"/>
+                                    </svg>
+                                    Code Artifacts
+                                    <span class="tab-count">8</span>
+                                </button>
+                                <button class="tab-btn" data-tab="entities" onclick="switchTab('entities')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                    </svg>
+                                    Entities
+                                    <span class="tab-count">3</span>
+                                </button>
+                            </div>
+
+                            <!-- Memories Tab -->
+                            <div class="tab-content active" id="tab-memories" ui-spec-block-id="tab_memories">
+                                <div class="data-table-container">
+                                    <div class="table-toolbar">
+                                        <div class="table-search">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="11" cy="11" r="8"/>
+                                                <path d="M21 21l-4.35-4.35"/>
+                                            </svg>
+                                            <input type="text" placeholder="Search memories...">
+                                        </div>
+                                        <button class="btn btn-secondary btn-sm">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                                <line x1="5" y1="12" x2="19" y2="12"/>
+                                            </svg>
+                                            Link Memory
+                                        </button>
+                                    </div>
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Title</th>
+                                                <th>Tags</th>
+                                                <th>Importance</th>
+                                                <th>Created</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <div class="table-title">
+                                                        <span class="type-dot memory"></span>
+                                                        <a href="#" class="table-link" onclick="openDetailPanel()">API Authentication Flow Design</a>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="table-tags">
+                                                        <span class="tag-pill">auth</span>
+                                                        <span class="tag-pill">design</span>
+                                                    </div>
+                                                </td>
+                                                <td><span style="color: var(--importance-medium);">8</span></td>
+                                                <td style="color: var(--text-secondary);">Dec 10, 2024</td>
+                                                <td><a href="#" class="action-link">Unlink</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div class="table-title">
+                                                        <span class="type-dot memory"></span>
+                                                        <a href="#" class="table-link">Rate Limiting Strategy</a>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="table-tags">
+                                                        <span class="tag-pill">performance</span>
+                                                    </div>
+                                                </td>
+                                                <td><span style="color: var(--importance-low);">6</span></td>
+                                                <td style="color: var(--text-secondary);">Dec 8, 2024</td>
+                                                <td><a href="#" class="action-link">Unlink</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div class="table-title">
+                                                        <span class="type-dot memory"></span>
+                                                        <a href="#" class="table-link">Database Schema Changes</a>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="table-tags">
+                                                        <span class="tag-pill">database</span>
+                                                        <span class="tag-pill">migration</span>
+                                                    </div>
+                                                </td>
+                                                <td><span style="background: var(--importance-high); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">9</span></td>
+                                                <td style="color: var(--text-secondary);">Dec 5, 2024</td>
+                                                <td><a href="#" class="action-link">Unlink</a></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Documents Tab -->
+                            <div class="tab-content" id="tab-documents" ui-spec-block-id="tab_documents">
+                                <div class="data-table-container">
+                                    <div class="table-toolbar">
+                                        <div class="table-search">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="11" cy="11" r="8"/>
+                                                <path d="M21 21l-4.35-4.35"/>
+                                            </svg>
+                                            <input type="text" placeholder="Search documents...">
+                                        </div>
+                                        <button class="btn btn-secondary btn-sm">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                                <line x1="5" y1="12" x2="19" y2="12"/>
+                                            </svg>
+                                            Link Document
+                                        </button>
+                                    </div>
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Title</th>
+                                                <th>Type</th>
+                                                <th>Created</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <div class="table-title">
+                                                        <span class="type-dot document"></span>
+                                                        <a href="#" class="table-link">API Documentation v2.0</a>
+                                                    </div>
+                                                </td>
+                                                <td style="color: var(--text-secondary);">Markdown</td>
+                                                <td style="color: var(--text-secondary);">Dec 9, 2024</td>
+                                                <td><a href="#" class="action-link">Unlink</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div class="table-title">
+                                                        <span class="type-dot document"></span>
+                                                        <a href="#" class="table-link">Architecture Decision Records</a>
+                                                    </div>
+                                                </td>
+                                                <td style="color: var(--text-secondary);">Markdown</td>
+                                                <td style="color: var(--text-secondary);">Dec 3, 2024</td>
+                                                <td><a href="#" class="action-link">Unlink</a></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Code Artifacts Tab -->
+                            <div class="tab-content" id="tab-code_artifacts" ui-spec-block-id="tab_code_artifacts">
+                                <div class="data-table-container">
+                                    <div class="table-toolbar">
+                                        <div class="table-search">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="11" cy="11" r="8"/>
+                                                <path d="M21 21l-4.35-4.35"/>
+                                            </svg>
+                                            <input type="text" placeholder="Search code artifacts...">
+                                        </div>
+                                        <button class="btn btn-secondary btn-sm">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                                <line x1="5" y1="12" x2="19" y2="12"/>
+                                            </svg>
+                                            Link Code Artifact
+                                        </button>
+                                    </div>
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Title</th>
+                                                <th>Language</th>
+                                                <th>Created</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <div class="table-title">
+                                                        <span class="type-dot code"></span>
+                                                        <a href="#" class="table-link">JWT Token Validation</a>
+                                                    </div>
+                                                </td>
+                                                <td style="color: var(--accent-code);">Python</td>
+                                                <td style="color: var(--text-secondary);">Dec 11, 2024</td>
+                                                <td><a href="#" class="action-link">Unlink</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div class="table-title">
+                                                        <span class="type-dot code"></span>
+                                                        <a href="#" class="table-link">Rate Limiter Middleware</a>
+                                                    </div>
+                                                </td>
+                                                <td style="color: var(--accent-code);">TypeScript</td>
+                                                <td style="color: var(--text-secondary);">Dec 7, 2024</td>
+                                                <td><a href="#" class="action-link">Unlink</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div class="table-title">
+                                                        <span class="type-dot code"></span>
+                                                        <a href="#" class="table-link">Database Connection Pool</a>
+                                                    </div>
+                                                </td>
+                                                <td style="color: var(--accent-code);">Python</td>
+                                                <td style="color: var(--text-secondary);">Dec 4, 2024</td>
+                                                <td><a href="#" class="action-link">Unlink</a></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Entities Tab -->
+                            <div class="tab-content" id="tab-entities" ui-spec-block-id="tab_entities">
+                                <div class="data-table-container">
+                                    <div class="table-toolbar">
+                                        <div class="table-search">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="11" cy="11" r="8"/>
+                                                <path d="M21 21l-4.35-4.35"/>
+                                            </svg>
+                                            <input type="text" placeholder="Search entities...">
+                                        </div>
+                                        <button class="btn btn-secondary btn-sm">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                                <line x1="5" y1="12" x2="19" y2="12"/>
+                                            </svg>
+                                            Link Entity
+                                        </button>
+                                    </div>
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Type</th>
+                                                <th>Created</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <div class="table-title">
+                                                        <span class="type-dot entity"></span>
+                                                        <a href="#" class="table-link">AWS Lambda</a>
+                                                    </div>
+                                                </td>
+                                                <td style="color: var(--text-secondary);">Technology</td>
+                                                <td style="color: var(--text-secondary);">Dec 6, 2024</td>
+                                                <td><a href="#" class="action-link">Unlink</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div class="table-title">
+                                                        <span class="type-dot entity"></span>
+                                                        <a href="#" class="table-link">PostgreSQL</a>
+                                                    </div>
+                                                </td>
+                                                <td style="color: var(--text-secondary);">Technology</td>
+                                                <td style="color: var(--text-secondary);">Dec 4, 2024</td>
+                                                <td><a href="#" class="action-link">Unlink</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div class="table-title">
+                                                        <span class="type-dot entity"></span>
+                                                        <a href="#" class="table-link">John Smith</a>
+                                                    </div>
+                                                </td>
+                                                <td style="color: var(--text-secondary);">Person</td>
+                                                <td style="color: var(--text-secondary);">Dec 2, 2024</td>
+                                                <td><a href="#" class="action-link">Unlink</a></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Column -->
+                    <div class="col-4" ui-spec-block-id="sidebar">
+                        <div class="sidebar-stack">
+                            <!-- Metadata Card -->
+                            <div class="sidebar-card" ui-spec-block-id="metadata_card">
+                                <div class="sidebar-card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="16" x2="12" y2="12"/>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                    </svg>
+                                    Metadata
+                                </div>
+                                <div class="metadata-list">
+                                    <div class="metadata-item">
+                                        <span class="metadata-label">ID</span>
+                                        <span class="metadata-value">42</span>
+                                    </div>
+                                    <div class="metadata-item">
+                                        <span class="metadata-label">Created</span>
+                                        <span class="metadata-value">Nov 15, 2024</span>
+                                    </div>
+                                    <div class="metadata-item">
+                                        <span class="metadata-label">Updated</span>
+                                        <span class="metadata-value">Dec 12, 2024</span>
+                                    </div>
+                                    <div class="metadata-item">
+                                        <span class="metadata-label">Memory Count</span>
+                                        <span class="metadata-value">12</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Repository Card -->
+                            <div class="sidebar-card" ui-spec-block-id="repo_card">
+                                <div class="sidebar-card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                                    </svg>
+                                    Repository
+                                </div>
+                                <div class="repo-info">
+                                    <a href="https://github.com/example/api-dev" class="repo-name" target="_blank">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                                        </svg>
+                                        example/api-dev
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Stats Card -->
+                            <div class="sidebar-card" ui-spec-block-id="stats_card">
+                                <div class="sidebar-card-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="20" x2="18" y2="10"/>
+                                        <line x1="12" y1="20" x2="12" y2="4"/>
+                                        <line x1="6" y1="20" x2="6" y2="14"/>
+                                    </svg>
+                                    Quick Stats
+                                </div>
+                                <div class="stats-grid">
+                                    <div class="stat-item">
+                                        <div class="stat-value memory">12</div>
+                                        <div class="stat-label">Memories</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value document">5</div>
+                                        <div class="stat-label">Documents</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value code">8</div>
+                                        <div class="stat-label">Code Artifacts</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value entity">3</div>
+                                        <div class="stat-label">Entities</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Detail Panel -->
+        <aside class="detail-panel" id="detailPanel">
+            <!-- Detail Header -->
+            <div class="detail-header" ui-spec-block-id="detail_header">
+                <button class="detail-close" onclick="closeDetailPanel()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+                <span class="detail-type-badge memory">Memory</span>
+                <h2 class="detail-title" contenteditable="true">API Authentication Flow Design</h2>
+            </div>
+
+            <!-- Detail Body -->
+            <div class="detail-body">
+                <!-- Quick Edit Section -->
+                <div class="detail-section" ui-spec-block-id="detail_quick_edit">
+                    <div class="detail-section-label">Quick Edit</div>
+                    
+                    <div class="quick-edit-field">
+                        <div class="quick-edit-label">Importance</div>
+                        <div class="importance-slider">
+                            <div class="slider-track">
+                                <input type="range" min="1" max="10" value="8" id="importanceSlider" oninput="updateImportanceValue(this.value)">
+                            </div>
+                            <span class="slider-value" id="importanceValue">8</span>
+                        </div>
+                    </div>
+
+                    <div class="quick-edit-field">
+                        <div class="quick-edit-label">Tags</div>
+                        <div class="tags-row">
+                            <span class="tag-item">
+                                auth
+                                <button class="tag-remove">×</button>
+                            </span>
+                            <span class="tag-item">
+                                design
+                                <button class="tag-remove">×</button>
+                            </span>
+                            <button class="tag-add">+</button>
+                        </div>
+                    </div>
+
+                    <div class="quick-edit-field">
+                        <div class="quick-edit-label">Associated Projects</div>
+                        <div class="tags-row">
+                            <span class="tag-item" style="background: rgba(34, 197, 94, 0.15); color: var(--accent-project);">
+                                API Development
+                                <button class="tag-remove">×</button>
+                            </span>
+                            <button class="tag-add">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Preview -->
+                <div class="detail-section" ui-spec-block-id="detail_content_preview">
+                    <div class="detail-section-label">Content Preview</div>
+                    <p class="content-preview-text">
+                        The authentication flow follows OAuth 2.0 standards with JWT tokens. When a user logs in, they receive an access token (valid for 15 minutes) and a refresh token (valid for 7 days). The access token is included in all API requests...
+                    </p>
+                    <a href="#" class="show-more-link">Show more</a>
+                </div>
+
+                <!-- Related Items -->
+                <div class="detail-section" ui-spec-block-id="detail_related_items">
+                    <div class="detail-section-label">Related Items</div>
+                    <div class="related-items-list">
+                        <div class="related-item">
+                            <span class="type-dot code"></span>
+                            <a href="#" class="related-item-title">JWT Token Validation</a>
+                            <button class="unlink-btn">Unlink</button>
+                        </div>
+                        <div class="related-item">
+                            <span class="type-dot document"></span>
+                            <a href="#" class="related-item-title">API Documentation v2.0</a>
+                            <button class="unlink-btn">Unlink</button>
+                        </div>
+                        <div class="related-item">
+                            <span class="type-dot entity"></span>
+                            <a href="#" class="related-item-title">AWS Lambda</a>
+                            <button class="unlink-btn">Unlink</button>
+                        </div>
+                    </div>
+                    <a href="#" class="show-more-link">Show all 7 related items</a>
+                </div>
+            </div>
+
+            <!-- Detail Footer -->
+            <div class="detail-footer" ui-spec-block-id="detail_footer">
+                <div class="detail-meta">
+                    ID: 156 • Created: Dec 10, 2024
+                </div>
+                <div class="detail-actions" ui-spec-block-id="detail_actions">
+                    <button class="btn btn-danger btn-sm">Delete</button>
+                    <button class="btn btn-ghost btn-sm">View in Graph</button>
+                    <button class="btn btn-primary btn-sm" style="background: var(--accent-memory); box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);">Edit Full</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // Sidebar collapse toggle
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+
+        // Auth warning dismiss
+        function dismissAuthWarning() {
+            const warning = document.getElementById('authWarning');
+            warning.classList.add('hidden');
+            sessionStorage.setItem('authWarningDismissed', 'true');
+        }
+
+        // Check if auth warning was previously dismissed
+        if (sessionStorage.getItem('authWarningDismissed') === 'true') {
+            document.getElementById('authWarning').classList.add('hidden');
+        }
+
+        // Project context filter
+        function clearProjectFilter() {
+            document.getElementById('projectContextBar').classList.add('hidden');
+            document.getElementById('projectFilterBtn').classList.remove('active');
+            document.querySelector('.project-filter-text').textContent = 'All Projects';
+        }
+
+        // Tab switching
+        function switchTab(tabId) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.tab === tabId) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+
+        // Dropdown toggle
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            const wasOpen = dropdown.classList.contains('open');
+            
+            // Close all dropdowns
+            document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+            
+            // Toggle clicked dropdown
+            if (!wasOpen) {
+                dropdown.classList.add('open');
+            }
+        }
+
+        // Close dropdowns on outside click
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+            }
+        });
+
+        // Detail panel toggle
+        function openDetailPanel() {
+            document.getElementById('detailPanel').classList.add('open');
+        }
+
+        function closeDetailPanel() {
+            document.getElementById('detailPanel').classList.remove('open');
+        }
+
+        // Importance slider update
+        function updateImportanceValue(value) {
+            document.getElementById('importanceValue').textContent = value;
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+K for search
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                document.querySelector('.search-input').focus();
+            }
+            
+            // Ctrl+P for project filter
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                document.getElementById('projectFilterBtn').click();
+            }
+            
+            // Escape to close detail panel
+            if (e.key === 'Escape') {
+                closeDetailPanel();
+                document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+            }
+        });
+
+        // Dropdown item selection
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const dropdown = this.closest('.dropdown');
+                const badge = dropdown.querySelector('.badge');
+                
+                // Update selected state
+                dropdown.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // Update badge text (keep the icon and dropdown arrow)
+                const text = this.textContent;
+                if (dropdown.id === 'statusDropdown') {
+                    badge.classList.remove('active', 'archived');
+                    if (text === 'Active') badge.classList.add('active');
+                    if (text === 'Archived') badge.classList.add('archived');
+                }
+                
+                // Close dropdown
+                dropdown.classList.remove('open');
+            });
+        });
+    </script>
+</body>
+</html>

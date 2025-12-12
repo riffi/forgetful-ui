@@ -191,22 +191,22 @@ screens:
 
   memory_detail:
     title: Memory Detail
-    purpose: "Full page for complex memory editing. Use when drawer is insufficient: long content, managing many links, viewing full context. Accessible via double-click or 'Open Full Page' from drawer"
+    purpose: "Full page for complex memory editing. INLINE EDITING throughout - no separate edit mode. Title, content, context use contenteditable. Importance badge is clickable dropdown. Changes tracked locally, saved via 'Save Changes' button. Use when drawer is insufficient: long content, managing many links, viewing full context. Accessible via double-click or 'Open Full Page' from drawer"
     blocks:
       - id: breadcrumb
         columns: 12
         purpose: "Breadcrumb: Memories > [Memory Title]"
       - id: header
         columns: 12
-        purpose: "Header row: title (h1, editable inline on click), importance badge (editable), obsolete badge if applicable, actions: Save, Delete, Mark Obsolete"
+        purpose: "Header row: title (h1, INLINE EDITABLE via contenteditable - shows subtle border-bottom on hover, accent-memory border on focus), importance badge (clickable dropdown 1-10, colored by value), obsolete badge if applicable, actions: Delete, Mark Obsolete, 'Save Changes' primary button"
       - id: main_content
         columns: 8
         purpose: "Main content area"
         blocks:
           - id: content_field
-            purpose: "Content field: label, markdown-rendered content. Edit button switches to textarea. Auto-save on blur"
+            purpose: "Content card with 'Content' label. Editable content area: surface-secondary bg, border-subtle, rounded-8px, padding-16px. Content is INLINE EDITABLE via contenteditable - supports paragraphs, markdown rendering in view. Shows border-hover on hover, accent-memory border + glow on focus. Min-height 150px"
           - id: context_field
-            purpose: "Context field: label, text content. Edit button switches to textarea"
+            purpose: "Content card with 'Context' label. Same styling and inline editing behavior as content_field. For memory context and background information"
           - id: keywords_field
             purpose: "Keywords: horizontal tag list, editable. Click tag to search, x to remove, input to add"
           - id: tags_field
