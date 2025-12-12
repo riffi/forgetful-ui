@@ -1,0 +1,167 @@
+/* =============================================================================
+   TAGS COMPONENT STYLES
+   Unified tag styling across the application
+   ============================================================================= */
+
+/* Tags Container */
+.container {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Base Tag Pill */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.tag:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+}
+
+/* Tag variants by type */
+.tagMemory {
+  composes: tag;
+  background: rgba(168, 85, 247, 0.15);
+  border-color: rgba(168, 85, 247, 0.3);
+  color: #d8b4fe;
+}
+
+.tagEntity {
+  composes: tag;
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fcd34d;
+}
+
+.tagDocument {
+  composes: tag;
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+}
+
+.tagCode {
+  composes: tag;
+  background: rgba(6, 182, 212, 0.15);
+  border-color: rgba(6, 182, 212, 0.3);
+  color: #67e8f9;
+}
+
+.tagProject {
+  composes: tag;
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #86efac;
+}
+
+/* Keyword tag (slightly different style) */
+.tagKeyword {
+  composes: tag;
+  background: rgba(168, 85, 247, 0.1);
+  border-color: rgba(168, 85, 247, 0.2);
+  color: var(--text-secondary);
+}
+
+/* Remove button inside tag */
+.tagRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 -2px 0 0;
+  cursor: pointer;
+  color: var(--text-dimmed);
+  transition: color 0.2s;
+}
+
+.tagRemove:hover {
+  color: #f87171;
+}
+
+/* More count badge */
+.more {
+  font-size: 12px;
+  color: var(--text-dimmed);
+  padding: 0 4px;
+}
+
+/* Editor Container */
+.editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-height: 36px;
+  padding: 8px 12px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.editor:focus-within {
+  border-color: var(--accent-memory);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+}
+
+.editorEntity:focus-within {
+  border-color: var(--accent-entity);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+/* Input for adding new tags */
+.input {
+  flex: 1;
+  min-width: 100px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.input::placeholder {
+  color: var(--text-dimmed);
+}
+
+/* Add tag button (inline style) */
+.addTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px dashed var(--border-hover);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dimmed);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addTag:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent-memory);
+  color: var(--text-secondary);
+}
+
+/* Empty state */
+.empty {
+  font-size: 13px;
+  color: var(--text-dimmed);
+}

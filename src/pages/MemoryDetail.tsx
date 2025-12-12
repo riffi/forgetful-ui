@@ -7,9 +7,7 @@ import {
   Badge,
   Button,
   Skeleton,
-  TagsInput,
   Modal,
-  Box,
   Select,
   Menu,
 } from '@mantine/core'
@@ -26,7 +24,7 @@ import {
 } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMemory, useUpdateMemory, useDeleteMemory, useMemoryLinks, useEntities, useLinkEntityToMemory } from '@/hooks'
-import { Breadcrumb, Card, Section } from '@/components/ui'
+import { Breadcrumb, Card, Section, TagsEditor } from '@/components/ui'
 import classes from './MemoryDetail.module.css'
 
 // Importance badge with dropdown
@@ -362,25 +360,27 @@ export function MemoryDetail() {
 
           {/* Keywords & Tags */}
           <Section title="Keywords & Tags">
-            <Group gap="xl">
-              <Box style={{ flex: 1 }}>
+            <Group gap="xl" grow>
+              <div>
                 <Text className={classes.fieldLabel}>Keywords</Text>
-                <TagsInput
+                <TagsEditor
                   value={editedKeywords}
                   onChange={setEditedKeywords}
                   placeholder="Add keywords..."
-                  className={classes.tagsInput}
+                  variant="keyword"
+                  accentColor="memory"
                 />
-              </Box>
-              <Box style={{ flex: 1 }}>
+              </div>
+              <div>
                 <Text className={classes.fieldLabel}>Tags</Text>
-                <TagsInput
+                <TagsEditor
                   value={editedTags}
                   onChange={setEditedTags}
                   placeholder="Add tags..."
-                  className={classes.tagsInput}
+                  variant="memory"
+                  accentColor="memory"
                 />
-              </Box>
+              </div>
             </Group>
           </Section>
         </div>

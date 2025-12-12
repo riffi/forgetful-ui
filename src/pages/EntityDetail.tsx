@@ -1,46 +1,41 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
-  Title,
   Text,
   Group,
   Stack,
   Paper,
   Badge,
   Button,
-  ActionIcon,
-  TextInput,
-  Textarea,
-  Select,
   Skeleton,
-  TagsInput,
-  Tooltip,
   Modal,
+  Menu,
+  TextInput,
+  Select,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import {
-  IconUsers,
-  IconPencil,
+  IconCube,
   IconTrash,
-  IconShare3,
   IconDeviceFloppy,
-  IconX,
-  IconLink,
   IconArrowLeft,
-  IconCalendar,
-  IconHash,
   IconBuilding,
   IconUser,
+  IconUsers,
   IconDeviceDesktop,
   IconDevices,
   IconArrowRight,
+  IconChevronDown,
+  IconShare3,
+  IconLink,
+  IconPlus,
 } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useEntity, useUpdateEntity, useDeleteEntity, useEntityRelationships, useCreateEntityRelationship, useEntities } from '@/hooks'
-import { Breadcrumb } from '@/components/ui'
+import { Breadcrumb, Card, Section, TagsEditor, MarkdownEditor } from '@/components/ui'
 import type { EntityType, EntityRelationship } from '@/types'
 import classes from './EntityDetail.module.css'
 
-const ENTITY_TYPE_OPTIONS = [
+const ENTITY_TYPE_OPTIONS: { value: EntityType; label: string }[] = [
   { value: 'Organization', label: 'Organization' },
   { value: 'Individual', label: 'Individual' },
   { value: 'Team', label: 'Team' },
@@ -65,6 +60,73 @@ function EntityTypeIcon({ type, size = 16 }: { type: EntityType; size?: number }
   }
 }
 
+// Entity type badge with dropdown
+function EntityTypeBadgeDropdown({ type, onChange }: { type: EntityType; onChange: (type: EntityType) => void }) {
+  return (
+    <Menu position="bottom-start" withinPortal>
+      <Menu.Target>
+        <Badge
+          className={classes.clickableBadge}
+          variant="light"
+          color="orange"
+          size="lg"
+          leftSection={<EntityTypeIcon type={type} size={12} />}
+          rightSection={<IconChevronDown size={10} />}
+        >
+          {type}
+        </Badge>
+      </Menu.Target>
+      <Menu.Dropdown>
+        {ENTITY_TYPE_OPTIONS.map(opt => (
+          <Menu.Item
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={opt.value === type ? classes.menuItemActive : undefined}
+            leftSection={<EntityTypeIcon type={opt.value} size={14} />}
+          >
+            {opt.label}
+          </Menu.Item>
+        ))}
+      </Menu.Dropdown>
+    </Menu>
+  )
+}
+
+// Inline editable title component
+function EditableTitle({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const ref = useRef<HTMLHeadingElement>(null)
+
+  const handleBlur = () => {
+    if (ref.current) {
+      const newValue = ref.current.textContent ?? ''
+      if (newValue !== value) {
+        onChange(newValue)
+      }
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      ref.current?.blur()
+    }
+  }
+
+  return (
+    <h1
+      ref={ref}
+      className={classes.editableTitle}
+      contentEditable
+      suppressContentEditableWarning
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+    >
+      {value}
+    </h1>
+  )
+}
+
+// Relationship card component
 function RelationshipCard({ relationship, currentEntityId }: { relationship: EntityRelationship; currentEntityId: number }) {
   const navigate = useNavigate()
   const isOutgoing = relationship.source_entity_id === currentEntityId
@@ -77,35 +139,31 @@ function RelationshipCard({ relationship, currentEntityId }: { relationship: Ent
 
   if (!otherEntity) {
     return (
-      <Paper className={classes.relationshipItem}>
-        <Group gap="xs" wrap="nowrap">
-          <Skeleton height={14} width={14} circle />
-          <Skeleton height={14} style={{ flex: 1 }} />
-        </Group>
-      </Paper>
+      <div className={classes.linkedItem}>
+        <Skeleton height={14} width={14} circle />
+        <Skeleton height={14} style={{ flex: 1 }} />
+      </div>
     )
   }
 
   return (
-    <Paper
-      className={classes.relationshipItem}
+    <div
+      className={classes.linkedItem}
       onClick={() => navigate(`/entities/${otherEntity.id}`)}
     >
-      <Group gap="xs" wrap="nowrap">
-        <EntityTypeIcon type={otherEntity.entity_type} size={14} />
-        <Text size="sm" lineClamp={1} style={{ flex: 1 }}>
-          {otherEntity.name}
-        </Text>
-        <Badge size="xs" variant="light" color="gray">
-          {relationship.relationship_type}
-        </Badge>
-        {isOutgoing ? (
-          <IconArrowRight size={14} color="var(--text-dimmed)" />
-        ) : (
-          <IconArrowLeft size={14} color="var(--text-dimmed)" />
-        )}
-      </Group>
-    </Paper>
+      <div className={classes.linkedItemDot} style={{ background: 'var(--accent-entity)' }} />
+      <div className={classes.linkedItemContent}>
+        <div className={classes.linkedItemTitle}>{otherEntity.name}</div>
+        <div className={classes.linkedItemMeta}>
+          {relationship.relationship_type} • {otherEntity.entity_type}
+        </div>
+      </div>
+      {isOutgoing ? (
+        <IconArrowRight size={14} color="var(--text-dimmed)" />
+      ) : (
+        <IconArrowLeft size={14} color="var(--text-dimmed)" />
+      )}
+    </div>
   )
 }
 
@@ -119,8 +177,7 @@ export function EntityDetail() {
   const updateEntity = useUpdateEntity()
   const deleteEntity = useDeleteEntity()
 
-  // Edit state
-  const [isEditing, setIsEditing] = useState(false)
+  // Local edit state (inline editing - no separate edit mode)
   const [editedName, setEditedName] = useState('')
   const [editedType, setEditedType] = useState<EntityType>('Other')
   const [editedCustomType, setEditedCustomType] = useState('')
@@ -137,16 +194,33 @@ export function EntityDetail() {
   const createRelationship = useCreateEntityRelationship()
   const { data: entitiesData } = useEntities({ limit: 100 })
 
-  // Start editing
-  const startEditing = () => {
-    if (!entity) return
-    setEditedName(entity.name)
-    setEditedType(entity.entity_type)
-    setEditedCustomType(entity.custom_type ?? '')
-    setEditedNotes(entity.notes ?? '')
-    setEditedTags(entity.tags ?? [])
-    setIsEditing(true)
-  }
+  // Initialize edit state from entity data
+  useEffect(() => {
+    if (entity) {
+      setEditedName(entity.name)
+      setEditedType(entity.entity_type)
+      setEditedCustomType(entity.custom_type ?? '')
+      setEditedNotes(entity.notes ?? '')
+      setEditedTags(entity.tags ?? [])
+    }
+  }, [entity])
+
+  // Check if there are unsaved changes
+  const hasChanges = entity && (
+    editedName !== entity.name ||
+    editedType !== entity.entity_type ||
+    editedCustomType !== (entity.custom_type ?? '') ||
+    editedNotes !== (entity.notes ?? '') ||
+    JSON.stringify(editedTags) !== JSON.stringify(entity.tags ?? [])
+  )
+
+  // Get entities for select (exclude current entity)
+  const entitySelectOptions = (entitiesData?.entities ?? [])
+    .filter(e => e.id !== entityId)
+    .map(e => ({
+      value: String(e.id),
+      label: `${e.name} (${e.entity_type})`,
+    }))
 
   // Save changes
   const handleSave = async () => {
@@ -160,12 +234,6 @@ export function EntityDetail() {
         tags: editedTags,
       },
     })
-    setIsEditing(false)
-  }
-
-  // Cancel editing
-  const handleCancel = () => {
-    setIsEditing(false)
   }
 
   // Handle delete
@@ -191,14 +259,6 @@ export function EntityDetail() {
     closeAddRel()
   }
 
-  // Get entities for select (exclude current entity)
-  const entitySelectOptions = (entitiesData?.entities ?? [])
-    .filter(e => e.id !== entityId)
-    .map(e => ({
-      value: String(e.id),
-      label: `${e.name} (${e.entity_type})`,
-    }))
-
   if (isLoading) {
     return (
       <div className={classes.container}>
@@ -214,8 +274,8 @@ export function EntityDetail() {
       <div className={classes.container}>
         <Paper className={classes.errorState}>
           <Stack align="center" gap="md">
-            <IconUsers size={48} color="var(--text-dimmed)" />
-            <Title order={3}>Entity not found</Title>
+            <IconCube size={48} color="var(--text-dimmed)" />
+            <Text size="xl" fw={600}>Entity not found</Text>
             <Text c="dimmed">The entity you're looking for doesn't exist.</Text>
             <Button
               leftSection={<IconArrowLeft size={16} />}
@@ -244,192 +304,114 @@ export function EntityDetail() {
       <Breadcrumb items={breadcrumbItems} />
 
       {/* Header */}
-      <Paper className={classes.header} mb="md">
-        <Group justify="space-between" wrap="nowrap">
-          <Group gap="md" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-            <EntityTypeIcon type={entity.entity_type} size={32} />
-            {isEditing ? (
-              <TextInput
-                value={editedName}
-                onChange={(e) => setEditedName(e.target.value)}
-                size="lg"
-                style={{ flex: 1 }}
-                placeholder="Entity name..."
-              />
-            ) : (
-              <Title order={2} lineClamp={1} style={{ flex: 1 }}>
-                {entity.name}
-              </Title>
-            )}
-          </Group>
-          <Group gap="xs">
-            <Badge color="orange" variant="light" size="lg">
-              {entity.entity_type}
+      <div className={classes.pageHeader}>
+        <div className={classes.headerMain}>
+          {/* Badges row */}
+          <Group gap="xs" mb="xs">
+            <Badge variant="light" color="orange" size="lg" leftSection={<IconCube size={12} />}>
+              Entity
             </Badge>
-            {isEditing ? (
-              <>
-                <Button
-                  variant="light"
-                  color="gray"
-                  leftSection={<IconX size={16} />}
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  color="orange"
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  onClick={handleSave}
-                  loading={updateEntity.isPending}
-                >
-                  Save
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="light"
-                  leftSection={<IconPencil size={16} />}
-                  onClick={startEditing}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="light"
-                  color="red"
-                  leftSection={<IconTrash size={16} />}
-                  onClick={openDelete}
-                >
-                  Delete
-                </Button>
-              </>
-            )}
+            <EntityTypeBadgeDropdown
+              type={editedType}
+              onChange={setEditedType}
+            />
           </Group>
+
+          {/* Title row - inline editable */}
+          <EditableTitle value={editedName} onChange={setEditedName} />
+        </div>
+
+        {/* Header actions */}
+        <Group gap="xs" className={classes.headerActions}>
+          <Button
+            variant="subtle"
+            color="gray"
+            leftSection={<IconTrash size={16} />}
+            onClick={openDelete}
+            className={classes.btnDanger}
+          >
+            Delete
+          </Button>
+          <Button
+            color="orange"
+            leftSection={<IconDeviceFloppy size={16} />}
+            onClick={handleSave}
+            loading={updateEntity.isPending}
+            disabled={!hasChanges}
+            className={classes.btnPrimary}
+          >
+            Save Changes
+          </Button>
         </Group>
-      </Paper>
+      </div>
 
       {/* Main Content Grid */}
       <div className={classes.grid}>
         {/* Left Column - Content */}
         <div className={classes.mainColumn}>
-          {/* Entity Type */}
-          <Paper className={classes.section} mb="md">
-            <Text className={classes.sectionLabel}>Entity Type</Text>
-            {isEditing ? (
-              <Stack gap="xs">
-                <Select
-                  value={editedType}
-                  onChange={(val) => setEditedType(val as EntityType)}
-                  data={ENTITY_TYPE_OPTIONS}
-                />
-                {editedType === 'Other' && (
-                  <TextInput
-                    value={editedCustomType}
-                    onChange={(e) => setEditedCustomType(e.target.value)}
-                    placeholder="Custom type name..."
-                    label="Custom Type"
-                  />
-                )}
-              </Stack>
-            ) : (
-              <Group gap="xs">
-                <Badge color="orange" variant="light" size="lg">
-                  {entity.entity_type}
-                </Badge>
-                {entity.custom_type && (
-                  <Badge variant="outline" color="gray">
-                    {entity.custom_type}
-                  </Badge>
-                )}
-              </Group>
-            )}
-          </Paper>
-
-          {/* Notes */}
-          <Paper className={classes.section} mb="md">
-            <Text className={classes.sectionLabel}>Notes</Text>
-            {isEditing ? (
-              <Textarea
-                value={editedNotes}
-                onChange={(e) => setEditedNotes(e.target.value)}
-                minRows={4}
-                autosize
-                placeholder="Notes about this entity..."
+          {/* Custom Type (if Other) */}
+          {editedType === 'Other' && (
+            <Section title="Custom Type">
+              <TextInput
+                value={editedCustomType}
+                onChange={(e) => setEditedCustomType(e.target.value)}
+                placeholder="Enter custom entity type..."
+                className={classes.customTypeInput}
               />
-            ) : (
-              <Text className={classes.contentText}>
-                {entity.notes || <span style={{ color: 'var(--text-dimmed)' }}>No notes</span>}
-              </Text>
-            )}
+            </Section>
+          )}
+
+          {/* Notes - markdown editor (click to edit) */}
+          <Paper className={classes.contentCard} mb="md">
+            <Text className={classes.cardLabel}>Notes</Text>
+            <MarkdownEditor
+              value={editedNotes}
+              onChange={setEditedNotes}
+              placeholder="Add notes about this entity..."
+              minHeight={250}
+              accentColor="entity"
+              inlineEdit
+            />
           </Paper>
 
           {/* Tags */}
-          <Paper className={classes.section}>
-            <Text className={classes.sectionLabel}>Tags</Text>
-            {isEditing ? (
-              <TagsInput
-                value={editedTags}
-                onChange={setEditedTags}
-                placeholder="Add tags..."
-              />
-            ) : (
-              <Group gap="xs">
-                {entity.tags?.length ? (
-                  entity.tags.map((tag) => (
-                    <Badge key={tag} variant="dot" color="orange">
-                      {tag}
-                    </Badge>
-                  ))
-                ) : (
-                  <Text c="dimmed">No tags</Text>
-                )}
-              </Group>
-            )}
-          </Paper>
+          <Section title="Tags">
+            <TagsEditor
+              value={editedTags}
+              onChange={setEditedTags}
+              placeholder="Add tags..."
+              variant="entity"
+              accentColor="entity"
+            />
+          </Section>
         </div>
 
         {/* Right Column - Sidebar */}
         <div className={classes.sidebar}>
           {/* Metadata */}
-          <Paper className={classes.section} mb="md">
-            <Text className={classes.sectionLabel}>Metadata</Text>
-            <Stack gap="xs">
-              <Group gap="xs">
-                <IconHash size={14} color="var(--text-dimmed)" />
-                <Text size="sm" c="dimmed">
-                  ID: {entity.id}
-                </Text>
-              </Group>
-              <Group gap="xs">
-                <IconCalendar size={14} color="var(--text-dimmed)" />
-                <Text size="sm" c="dimmed">
-                  Created: {new Date(entity.created_at).toLocaleString()}
-                </Text>
-              </Group>
-              <Group gap="xs">
-                <IconCalendar size={14} color="var(--text-dimmed)" />
-                <Text size="sm" c="dimmed">
-                  Updated: {new Date(entity.updated_at).toLocaleString()}
-                </Text>
-              </Group>
-            </Stack>
-          </Paper>
+          <Card title="Metadata">
+            <div className={classes.metadataRow}>
+              <span className={classes.metadataLabel}>ID</span>
+              <span className={classes.metadataValue}>#{entity.id}</span>
+            </div>
+            <div className={classes.metadataRow}>
+              <span className={classes.metadataLabel}>Created</span>
+              <span className={classes.metadataValue}>
+                {new Date(entity.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            </div>
+            <div className={classes.metadataRow}>
+              <span className={classes.metadataLabel}>Updated</span>
+              <span className={classes.metadataValue}>
+                {new Date(entity.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            </div>
+          </Card>
 
           {/* Relationships */}
-          <Paper className={classes.section} mb="md">
-            <Group justify="space-between" mb="sm">
-              <Text className={classes.sectionLabel}>Relationships</Text>
-              <Tooltip label="View in Graph">
-                <ActionIcon
-                  variant="subtle"
-                  onClick={() => navigate(`/graph?entity=${entity.id}`)}
-                >
-                  <IconShare3 size={16} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
+          <Card title="Relationships">
             {allRelationships.length ? (
-              <Stack gap="xs">
+              <>
                 {allRelationships.slice(0, 5).map((rel) => (
                   <RelationshipCard
                     key={rel.id}
@@ -438,23 +420,22 @@ export function EntityDetail() {
                   />
                 ))}
                 {allRelationships.length > 5 && (
-                  <Text size="sm" c="dimmed" ta="center">
+                  <Text size="sm" c="dimmed" ta="center" mt="xs">
                     +{allRelationships.length - 5} more
                   </Text>
                 )}
-              </Stack>
+              </>
             ) : (
-              <Text size="sm" c="dimmed">
-                No relationships
-              </Text>
+              <Text size="sm" c="dimmed">No relationships</Text>
             )}
-          </Paper>
+            <button className={classes.addLinkBtn} onClick={openAddRel}>
+              <IconPlus size={14} />
+              Add relationship
+            </button>
+          </Card>
 
           {/* Actions */}
-          <Paper className={classes.section}>
-            <Text className={classes.sectionLabel} mb="sm">
-              Actions
-            </Text>
+          <Card title="Actions">
             <Stack gap="xs">
               <Button
                 variant="light"
@@ -474,7 +455,7 @@ export function EntityDetail() {
                 Add Relationship
               </Button>
             </Stack>
-          </Paper>
+          </Card>
         </div>
       </div>
 

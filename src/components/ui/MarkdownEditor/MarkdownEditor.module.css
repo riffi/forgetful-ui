@@ -1,0 +1,349 @@
+/* =============================================================================
+   MARKDOWN EDITOR STYLES
+   Customizes @uiw/react-md-editor for dark theme dashboard
+   ============================================================================= */
+
+.container {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Preview (read-only) mode */
+.preview {
+  background: transparent !important;
+  padding: 16px;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.preview:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-dimmed);
+}
+
+/* =============================================================================
+   INLINE EDIT MODE (click-to-edit)
+   ============================================================================= */
+
+.clickable {
+  cursor: pointer;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.clickable:hover {
+  border-color: var(--border-hover);
+  background: var(--surface-hover);
+}
+
+.previewClickable {
+  padding: 16px;
+}
+
+.previewEmpty {
+  color: var(--text-dimmed);
+}
+
+.previewEmpty :global(em) {
+  font-style: italic;
+}
+
+/* Accent color hover states for clickable */
+.memory.clickable:hover {
+  border-color: var(--accent-memory);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.1);
+}
+
+.entity.clickable:hover {
+  border-color: var(--accent-entity);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1);
+}
+
+.document.clickable:hover {
+  border-color: var(--accent-document);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.code.clickable:hover {
+  border-color: var(--accent-code);
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.1);
+}
+
+.project.clickable:hover {
+  border-color: var(--accent-project);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.1);
+}
+
+/* Editor overrides */
+.container :global(.w-md-editor) {
+  background: var(--surface-secondary) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 8px;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.container :global(.w-md-editor):focus-within {
+  border-color: var(--border-hover) !important;
+}
+
+.container :global(.w-md-editor-content) {
+  overflow: visible !important;
+}
+
+/* Toolbar */
+.container :global(.w-md-editor-toolbar) {
+  background: var(--surface-primary) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  padding: 8px 12px;
+  min-height: 44px;
+}
+
+.container :global(.w-md-editor-toolbar ul) {
+  gap: 2px;
+}
+
+.container :global(.w-md-editor-toolbar li > button) {
+  color: var(--text-secondary) !important;
+  height: 32px;
+  width: 32px;
+  padding: 6px;
+}
+
+.container :global(.w-md-editor-toolbar li > button svg) {
+  width: 16px;
+  height: 16px;
+}
+
+.container :global(.w-md-editor-toolbar li > button:hover) {
+  background: var(--surface-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Heading button icons */
+.container :global(.w-md-editor-toolbar li > button svg text) {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 700;
+}
+
+.container :global(.w-md-editor-toolbar li > button:disabled) {
+  color: var(--text-dimmed) !important;
+}
+
+/* Divider in toolbar */
+.container :global(.w-md-editor-toolbar li.w-md-editor-toolbar-divider) {
+  background: var(--border-subtle) !important;
+  height: 20px !important;
+  margin: 6px 4px !important;
+}
+
+/* Toolbar dropdown menu (for headings, etc.) */
+.container :global(.w-md-editor-toolbar-child) {
+  background: var(--surface-primary) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 4px;
+}
+
+.container :global(.w-md-editor-toolbar-child button) {
+  color: var(--text-secondary) !important;
+  height: 32px;
+  min-width: 32px;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+.container :global(.w-md-editor-toolbar-child button:hover) {
+  background: var(--surface-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Text area */
+.container :global(.w-md-editor-text-input),
+.container :global(.w-md-editor-text-pre) {
+  color: var(--text-primary) !important;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.container :global(.w-md-editor-text-input::placeholder) {
+  color: var(--text-dimmed) !important;
+}
+
+/* Preview pane */
+.container :global(.w-md-editor-preview) {
+  background: var(--surface-tertiary) !important;
+  border-left: 1px solid var(--border-subtle) !important;
+}
+
+.container :global(.wmde-markdown) {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* Markdown elements in preview */
+.container :global(.wmde-markdown h1),
+.container :global(.wmde-markdown h2),
+.container :global(.wmde-markdown h3),
+.container :global(.wmde-markdown h4),
+.container :global(.wmde-markdown h5),
+.container :global(.wmde-markdown h6) {
+  color: var(--text-primary);
+  border-bottom-color: var(--border-subtle);
+}
+
+.container :global(.wmde-markdown a) {
+  color: var(--accent-document);
+}
+
+.container :global(.wmde-markdown code) {
+  background: var(--surface-primary);
+  color: var(--accent-code);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.container :global(.wmde-markdown pre) {
+  background: var(--surface-primary) !important;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 16px !important;
+  overflow-x: auto;
+}
+
+.container :global(.wmde-markdown pre code) {
+  background: transparent;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.container :global(.wmde-markdown blockquote) {
+  border-left-color: var(--border-hover);
+  color: var(--text-secondary);
+  background: var(--surface-primary);
+  padding: 12px 16px;
+  margin: 16px 0;
+  border-radius: 0 8px 8px 0;
+}
+
+.container :global(.wmde-markdown table) {
+  border-color: var(--border-subtle);
+}
+
+.container :global(.wmde-markdown table th),
+.container :global(.wmde-markdown table td) {
+  border-color: var(--border-subtle);
+  padding: 8px 12px;
+}
+
+.container :global(.wmde-markdown table th) {
+  background: var(--surface-primary);
+}
+
+.container :global(.wmde-markdown table tr:nth-child(even)) {
+  background: var(--surface-primary);
+}
+
+.container :global(.wmde-markdown hr) {
+  border-color: var(--border-subtle);
+}
+
+.container :global(.wmde-markdown ul),
+.container :global(.wmde-markdown ol) {
+  padding-left: 24px;
+}
+
+.container :global(.wmde-markdown li) {
+  margin: 4px 0;
+}
+
+/* Checkbox list */
+.container :global(.wmde-markdown input[type="checkbox"]) {
+  accent-color: var(--accent-project);
+}
+
+/* =============================================================================
+   INLINE EDITOR MODE (when editing is active)
+   Auto-expanding editor without internal scroll
+   ============================================================================= */
+
+.inlineEditor {
+  min-height: var(--editor-min-height, 200px) !important;
+}
+
+.inlineEditor :global(.w-md-editor) {
+  min-height: var(--editor-min-height, 200px) !important;
+  height: auto !important;
+}
+
+.inlineEditor :global(.w-md-editor-content) {
+  min-height: calc(var(--editor-min-height, 200px) - 45px) !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.inlineEditor :global(.w-md-editor-area) {
+  min-height: calc(var(--editor-min-height, 200px) - 45px) !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.inlineEditor :global(.w-md-editor-text) {
+  min-height: calc(var(--editor-min-height, 200px) - 45px) !important;
+  height: auto !important;
+}
+
+.inlineEditor :global(.w-md-editor-text-pre),
+.inlineEditor :global(.w-md-editor-text-input) {
+  min-height: calc(var(--editor-min-height, 200px) - 65px) !important;
+  height: auto !important;
+}
+
+.inlineEditor :global(textarea) {
+  min-height: calc(var(--editor-min-height, 200px) - 65px) !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+
+/* =============================================================================
+   ACCENT COLOR VARIANTS
+   ============================================================================= */
+
+/* Memory (purple) */
+.memory :global(.w-md-editor):focus-within {
+  border-color: var(--accent-memory) !important;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2) !important;
+}
+
+/* Entity (amber) */
+.entity :global(.w-md-editor):focus-within {
+  border-color: var(--accent-entity) !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2) !important;
+}
+
+/* Document (blue) */
+.document :global(.w-md-editor):focus-within {
+  border-color: var(--accent-document) !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Code (cyan) */
+.code :global(.w-md-editor):focus-within {
+  border-color: var(--accent-code) !important;
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2) !important;
+}
+
+/* Project (green) */
+.project :global(.w-md-editor):focus-within {
+  border-color: var(--accent-project) !important;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2) !important;
+}

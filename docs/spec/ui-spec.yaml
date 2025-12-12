@@ -245,22 +245,22 @@ screens:
 
   entity_detail:
     title: Entity Detail
-    purpose: "Full page for complex entity editing. Shows full relationship graph, all incoming/outgoing connections. Use for relationship management"
+    purpose: "Full page for complex entity editing. INLINE EDITING throughout - no separate edit mode. Name uses contenteditable, entity_type is clickable dropdown, notes use contenteditable. Changes tracked locally, saved via 'Save Changes' button. Shows full relationship graph, all incoming/outgoing connections. Use for relationship management"
     blocks:
       - id: breadcrumb
         columns: 12
         purpose: "Breadcrumb: Entities > [Entity Name]"
       - id: header
         columns: 12
-        purpose: "Header: name (h1, editable), entity_type badge (editable dropdown), actions: Save, Delete"
+        purpose: "Header row: name (h1, INLINE EDITABLE via contenteditable - shows subtle border-bottom on hover, accent-entity border on focus), entity_type badge (clickable dropdown, colored amber), actions: Delete, 'Save Changes' primary button"
       - id: main_content
         columns: 8
-        purpose: "Main content"
+        purpose: "Main content area"
         blocks:
           - id: notes_field
-            purpose: "Notes textarea, markdown rendered. Edit mode on click"
+            purpose: "Content card with 'Notes' label. Editable content area: surface-secondary bg, border-subtle, rounded-8px, padding-16px. Content is INLINE EDITABLE via contenteditable. Shows border-hover on hover, accent-entity border + glow on focus. Min-height 100px"
           - id: tags_field
-            purpose: "Tags list, inline editable"
+            purpose: "Tags section with TagsInput component. Editable inline"
           - id: relationships_section
             purpose: "Relationships section"
             blocks:
@@ -270,14 +270,14 @@ screens:
                 purpose: "Incoming relationships table: source entity (link), relationship_type, strength, confidence. Read-only (edit from source)"
       - id: sidebar
         columns: 4
-        purpose: "Sidebar"
+        purpose: "Right sidebar with metadata, relationships, and actions cards"
         blocks:
           - id: metadata_card
-            purpose: "Metadata: ID, created_at, updated_at"
-          - id: projects_card
-            purpose: "Linked projects. Add/remove"
-          - id: mini_graph
-            purpose: "Mini graph visualization showing this entity and direct relationships. Click expands to full graph filtered by this entity"
+            purpose: "Sidebar card with 'Metadata' title. Read-only metadata list: ID (monospace), Created date, Updated date"
+          - id: relationships_card
+            purpose: "Sidebar card with 'Relationships' title. Shows incoming/outgoing relationship items with entity name, type badge, direction arrow. 'View in Graph' action. Shows up to 5, 'Show more' link if needed"
+          - id: actions_card
+            purpose: "Sidebar card with 'Actions' title. Buttons: 'View in Graph', 'Add Relationship'"
 
   # ---------------------------------------------------------------------------
   # PROJECTS
