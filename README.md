@@ -10,6 +10,8 @@ A modern web dashboard for managing your AI knowledge base powered by [Forgetful
 
 Browse memories, entities, projects, and visualize connections in an interactive knowledge graph.
 
+![Forgetful UI](github-big-logo.jpeg)
+
 ## ✨ Features
 
 - **Memories** - Create, edit, search and organize atomic knowledge units
