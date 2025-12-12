@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   SimpleGrid,
   Paper,
@@ -25,8 +26,11 @@ import {
 import { useNavigate, Link } from 'react-router-dom'
 import { useDashboardStats, useMemories } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
+import { UnifiedEditorModal } from '@/components/modals'
 import type { Memory } from '@/types'
 import classes from './Dashboard.module.css'
+
+type EditorType = 'memory' | 'entity' | 'document' | 'code_artifact'
 
 interface StatCardProps {
   title: string
@@ -136,21 +140,38 @@ function RecentMemories({ memories, isLoading }: RecentMemoriesProps) {
   )
 }
 
-function QuickActions() {
+interface QuickActionsProps {
+  onOpenEditor: (type: EditorType) => void
+}
+
+function QuickActions({ onOpenEditor }: QuickActionsProps) {
   const navigate = useNavigate()
 
-  const actions = [
-    { label: 'Memory', path: '/memories?create=true', hoverClass: classes.createBtnMemory },
-    { label: 'Entity', path: '/entities?create=true', hoverClass: classes.createBtnEntity },
+  const editorActions: { label: string; type: EditorType; hoverClass: string }[] = [
+    { label: 'Memory', type: 'memory', hoverClass: classes.createBtnMemory },
+    { label: 'Entity', type: 'entity', hoverClass: classes.createBtnEntity },
+    { label: 'Document', type: 'document', hoverClass: classes.createBtnDocument },
+    { label: 'Code', type: 'code_artifact', hoverClass: classes.createBtnCode },
+  ]
+
+  const navActions = [
     { label: 'Project', path: '/projects?create=true', hoverClass: classes.createBtnProject },
-    { label: 'Document', path: '/documents?create=true', hoverClass: classes.createBtnDocument },
-    { label: 'Code', path: '/code-artifacts?create=true', hoverClass: classes.createBtnCode },
     { label: 'Graph', path: '/graph', hoverClass: classes.createBtnGraph },
   ]
 
   return (
     <div className={classes.createButtonsGrid}>
-      {actions.map((action) => (
+      {editorActions.map((action) => (
+        <button
+          key={action.label}
+          className={`${classes.createBtn} ${action.hoverClass}`}
+          onClick={() => onOpenEditor(action.type)}
+        >
+          <IconPlus size={16} />
+          {action.label}
+        </button>
+      ))}
+      {navActions.map((action) => (
         <button
           key={action.label}
           className={`${classes.createBtn} ${action.hoverClass}`}
@@ -205,6 +226,15 @@ export function Dashboard() {
     limit: 10,
     project_id: selectedProjectId ?? undefined,
   })
+
+  // Editor modal state
+  const [editorOpened, setEditorOpened] = useState(false)
+  const [editorType, setEditorType] = useState<EditorType>('memory')
+
+  const handleOpenEditor = (type: EditorType) => {
+    setEditorType(type)
+    setEditorOpened(true)
+  }
 
   const statCards = [
     {
@@ -303,7 +333,7 @@ export function Dashboard() {
 
           <Paper className={classes.actionCard}>
             <h3 className={classes.actionCardTitle}>Quick Create</h3>
-            <QuickActions />
+            <QuickActions onOpenEditor={handleOpenEditor} />
           </Paper>
 
           <Paper className={classes.actionCard}>
@@ -312,6 +342,12 @@ export function Dashboard() {
           </Paper>
         </div>
       </div>
+
+      <UnifiedEditorModal
+        opened={editorOpened}
+        onClose={() => setEditorOpened(false)}
+        initialType={editorType}
+      />
     </div>
   )
 }
