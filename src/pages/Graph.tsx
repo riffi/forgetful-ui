@@ -21,6 +21,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useGraphData } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
+import { useQuickEdit, type QuickEditItemType } from '@/context/QuickEditContext'
 import type { GraphNode } from '@/api/graph'
 import classes from './Graph.module.css'
 
@@ -61,6 +62,7 @@ type LayoutType = 'force' | 'hierarchical' | 'radial'
 export function Graph() {
   const navigate = useNavigate()
   const { selectedProjectId } = useProjectContext()
+  const { openPanel } = useQuickEdit()
   const graphRef = useRef<ForceGraphMethods<GraphNodeData, GraphLinkData>>()
 
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -282,21 +284,16 @@ export function Graph() {
   const handleNodeClick = useCallback((node: GraphNodeData) => {
     setSelectedNode(node)
 
-    // Navigate to detail page based on type
-    const routes: Record<string, string> = {
-      memory: '/memories',
-      entity: '/entities',
-      document: '/documents',
-      code_artifact: '/code-artifacts',
-      project: '/projects',
-    }
+    // Extract numeric ID - try from data.id first, then parse from string id
+    const numericId = (node.data?.id as number) ?? parseInt(node.id.split('-')[1] || node.id, 10)
 
-    const baseRoute = routes[node.type]
-    if (baseRoute) {
-      const id = node.id.split('-')[1] // Extract numeric ID from "type-id" format
-      navigate(`${baseRoute}/${id}`)
+    if (!isNaN(numericId)) {
+      openPanel({
+        type: node.type as QuickEditItemType,
+        id: numericId,
+      })
     }
-  }, [navigate])
+  }, [openPanel])
 
   const nodeCanvasObject = useCallback((node: GraphNodeData, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const x = node.x ?? 0
