@@ -27,14 +27,10 @@ import {
   IconArrowLeft,
   IconBox,
   IconPlus,
-  IconFileText,
-  IconCode,
-  IconFolder,
 } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMemory, useUpdateMemory, useDeleteMemory, useMemoryLinks, useEntities, useLinkEntityToMemory } from '@/hooks'
 import { Breadcrumb, Card, Section } from '@/components/ui'
-import type { Memory } from '@/types'
 import classes from './MemoryDetail.module.css'
 
 function ImportanceBadge({ importance }: { importance: number }) {
@@ -46,25 +42,6 @@ function ImportanceBadge({ importance }: { importance: number }) {
     <Badge size="lg" variant="light" color={color}>
       Importance: {importance}
     </Badge>
-  )
-}
-
-function LinkedMemoryCard({ memory }: { memory: Memory }) {
-  const navigate = useNavigate()
-
-  return (
-    <Paper
-      className={classes.linkedItem}
-      onClick={() => navigate(`/memories/${memory.id}`)}
-    >
-      <Group gap="xs" wrap="nowrap">
-        <IconBrain size={14} color="var(--accent-memory)" />
-        <Text size="sm" lineClamp={1} style={{ flex: 1 }}>
-          {memory.title}
-        </Text>
-        <ImportanceBadge importance={memory.importance} />
-      </Group>
-    </Paper>
   )
 }
 
@@ -92,7 +69,7 @@ export function MemoryDetail() {
   const [deleteReason, setDeleteReason] = useState('')
 
   // Link entity modal
-  const [linkEntityOpened, { open: openLinkEntity, close: closeLinkEntity }] = useDisclosure(false)
+  const [linkEntityOpened, { close: closeLinkEntity }] = useDisclosure(false)
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null)
   const { data: entitiesData } = useEntities({ limit: 100 })
   const linkEntityToMemory = useLinkEntityToMemory()

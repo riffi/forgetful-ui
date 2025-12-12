@@ -17,41 +17,9 @@
   padding: 16px;
 }
 
+/* Table Container - uses global datatable-wrapper class */
 .tableWrapper {
-  background: var(--surface-primary);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.tableWrapper :global(.mantine-datatable) {
-  background: transparent;
-}
-
-.tableWrapper :global(.mantine-datatable-header) {
-  background: var(--surface-secondary);
-}
-
-.tableWrapper :global(.mantine-datatable-header-cell) {
-  color: var(--text-secondary);
-  font-weight: 500;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.tableWrapper :global(.mantine-datatable-row) {
-  cursor: pointer;
-  transition: background 150ms ease;
-}
-
-.tableWrapper :global(.mantine-datatable-row:hover) {
-  background: var(--surface-hover);
-}
-
-.tableWrapper :global(.mantine-datatable-row td) {
-  border-color: var(--border-subtle);
+  composes: datatable-wrapper from global;
 }
 
 .bulkActions {

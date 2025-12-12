@@ -384,30 +384,156 @@ body {
   border: 1px solid var(--border-subtle);
 }
 
-/* DataTable styling */
+/* === Mantine DataTable Global Styles === */
+
+/* Table wrapper - use this class on Paper wrapping DataTable */
+.datatable-wrapper {
+  background: var(--surface-primary);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Override Mantine DataTable CSS Variables */
 .mantine-datatable {
+  --mantine-datatable-background-color: transparent;
+  --mantine-datatable-border-color: var(--border-subtle);
+  --mantine-datatable-row-border-color: var(--border-subtle);
+  --mantine-datatable-highlight-on-hover-color: var(--surface-hover);
   background: transparent !important;
 }
 
-.mantine-datatable-header {
-  background: var(--surface-secondary) !important;
+.mantine-datatable-table {
+  background: transparent !important;
 }
 
+/* Table Header */
+.mantine-datatable-header {
+  background: rgba(30, 41, 59, 0.5) !important;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.mantine-datatable-header th,
 .mantine-datatable-header-cell {
+  padding: 14px 16px !important;
   color: var(--text-secondary) !important;
   font-weight: 600 !important;
-  text-transform: uppercase !important;
-  font-size: 11px !important;
-  letter-spacing: 0.5px !important;
-}
-
-.mantine-datatable-row {
+  font-size: 12px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   border-bottom: 1px solid var(--border-subtle) !important;
-  transition: all 0.2s ease !important;
+  border-color: var(--border-subtle) !important;
+  background: transparent !important;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
 }
 
-.mantine-datatable-row:hover {
+.mantine-datatable-header th:hover,
+.mantine-datatable-header-cell:hover {
+  color: var(--text-primary) !important;
+  background: rgba(30, 41, 59, 0.7) !important;
+}
+
+/* Table Rows */
+.mantine-datatable-row {
+  cursor: pointer;
+  transition: background 0.2s;
+  background: transparent !important;
+}
+
+.mantine-datatable-row:hover,
+.mantine-datatable-table[data-highlight-on-hover] tbody tr:hover {
   background: var(--surface-hover) !important;
+}
+
+.mantine-datatable-row td {
+  padding: 14px 16px !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  border-color: var(--border-subtle) !important;
+  font-size: 14px !important;
+  color: var(--text-primary) !important;
+  vertical-align: middle;
+  background: transparent !important;
+}
+
+/* Selected Row */
+.mantine-datatable-row[data-selected],
+.mantine-datatable-row[data-selected] td {
+  background: rgba(168, 85, 247, 0.1) !important;
+}
+
+/* Checkbox styling */
+.mantine-datatable-row-selector-cell {
+  background: transparent !important;
+}
+
+.mantine-datatable .mantine-Checkbox-input {
+  border-color: var(--text-dimmed);
+  background: transparent;
+}
+
+.mantine-datatable .mantine-Checkbox-input:checked {
+  background: var(--accent-memory);
+  border-color: var(--accent-memory);
+}
+
+/* Pagination */
+.mantine-datatable-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px !important;
+  border-top: 1px solid var(--border-subtle) !important;
+  background: rgba(30, 41, 59, 0.3) !important;
+  gap: 8px;
+}
+
+.mantine-datatable-pagination-text {
+  color: var(--text-secondary) !important;
+  font-size: 13px !important;
+}
+
+.mantine-datatable-pagination-pages-control {
+  background: var(--surface-secondary) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 6px !important;
+  color: var(--text-secondary) !important;
+  font-size: 13px !important;
+  transition: all 0.2s;
+}
+
+.mantine-datatable-pagination-pages-control:hover:not(:disabled) {
+  background: var(--surface-hover) !important;
+  border-color: var(--border-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+.mantine-datatable-pagination-pages-control:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mantine-datatable-pagination-pages-control[data-active] {
+  background: var(--accent-memory) !important;
+  border-color: var(--accent-memory) !important;
+  color: white !important;
+}
+
+/* Empty state */
+.mantine-datatable-empty-state {
+  color: var(--text-dimmed);
+}
+
+/* Loading state */
+.mantine-datatable-loader {
+  background: rgba(15, 23, 42, 0.5);
 }
 
 /* Input styling */

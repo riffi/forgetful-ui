@@ -91,100 +91,9 @@
   padding: 16px;
 }
 
-/* Table Container */
+/* Table Container - uses global datatable-wrapper class */
 .tableWrapper {
-  background: var(--surface-primary);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  overflow: hidden;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Override Mantine DataTable CSS Variables */
-.tableWrapper :global(.mantine-datatable) {
-  --mantine-datatable-background-color: transparent;
-  --mantine-datatable-border-color: var(--border-subtle);
-  --mantine-datatable-row-border-color: var(--border-subtle);
-  --mantine-datatable-highlight-on-hover-color: var(--surface-hover);
-  background: transparent !important;
-}
-
-.tableWrapper :global(.mantine-datatable-table) {
-  background: transparent !important;
-}
-
-/* Table Header */
-.tableWrapper :global(.mantine-datatable-header) {
-  background: rgba(30, 41, 59, 0.5) !important;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.tableWrapper :global(.mantine-datatable-header th) {
-  padding: 14px 16px !important;
-  color: var(--text-secondary) !important;
-  font-weight: 600 !important;
-  font-size: 12px !important;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid var(--border-subtle) !important;
-  border-color: var(--border-subtle) !important;
-  background: transparent !important;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-}
-
-.tableWrapper :global(.mantine-datatable-header th:hover) {
-  color: var(--text-primary) !important;
-  background: rgba(30, 41, 59, 0.7) !important;
-}
-
-/* Table Rows */
-.tableWrapper :global(.mantine-datatable-row) {
-  cursor: pointer;
-  transition: background 0.2s;
-  background: transparent !important;
-}
-
-.tableWrapper :global(.mantine-datatable-row:hover),
-.tableWrapper :global(.mantine-datatable-table[data-highlight-on-hover] tbody tr:hover) {
-  background: var(--surface-hover) !important;
-}
-
-.tableWrapper :global(.mantine-datatable-row td) {
-  padding: 14px 16px !important;
-  border-bottom: 1px solid var(--border-subtle) !important;
-  border-color: var(--border-subtle) !important;
-  font-size: 14px !important;
-  color: var(--text-primary) !important;
-  vertical-align: middle;
-  background: transparent !important;
-}
-
-/* Selected Row */
-.tableWrapper :global(.mantine-datatable-row[data-selected]),
-.tableWrapper :global(.mantine-datatable-row[data-selected] td) {
-  background: rgba(168, 85, 247, 0.1) !important;
-}
-
-/* Checkbox styling */
-.tableWrapper :global(.mantine-datatable-row-selector-cell) {
-  background: transparent !important;
-}
-
-.tableWrapper :global(.mantine-Checkbox-input) {
-  border-color: var(--text-dimmed);
-  background: transparent;
-}
-
-.tableWrapper :global(.mantine-Checkbox-input:checked) {
-  background: var(--accent-memory);
-  border-color: var(--accent-memory);
+  composes: datatable-wrapper from global;
 }
 
 /* Obsolete Row */
@@ -201,67 +110,71 @@
   white-space: nowrap;
 }
 
-/* Importance Input */
-.importanceInput {
-  width: 50px;
-  background: var(--surface-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  padding: 6px 10px;
-  color: var(--text-primary);
-  font-size: 14px;
-  text-align: center;
+/* Importance Indicator (Progress Bar) */
+.importanceIndicator {
+  height: 4px;
+  width: 70px;
+  background: #334155;
+  border-radius: 2px;
+  overflow: hidden;
 }
 
-.importanceInput:focus {
-  outline: none;
-  border-color: var(--accent-memory);
+.importanceFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.2s;
 }
 
-.importanceHigh {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(249, 115, 22, 0.2));
-  border-color: rgba(239, 68, 68, 0.5);
+.importanceFill[data-level="high"] {
+  background: linear-gradient(135deg, #ef4444, #f97316);
 }
 
-.importanceMedium {
-  background: rgba(234, 179, 8, 0.15);
-  border-color: rgba(234, 179, 8, 0.4);
+.importanceFill[data-level="medium"] {
+  background: #eab308;
+}
+
+.importanceFill[data-level="low"] {
+  background: #6b7280;
 }
 
 /* Tags Cell */
 .tagsCell {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  max-width: 200px;
+  align-items: center;
+  gap: 4px;
 }
 
 .tag {
-  background: rgba(168, 85, 247, 0.2);
-  color: var(--accent-memory);
-  padding: 4px 10px;
-  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  padding: 2px 8px;
+  border-radius: 12px;
   font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  font-weight: 500;
   white-space: nowrap;
-}
-
-.tagRemove {
-  cursor: pointer;
-  opacity: 0.6;
-  transition: opacity 0.2s;
-}
-
-.tagRemove:hover {
-  opacity: 1;
 }
 
 .tagMore {
   color: var(--text-dimmed);
   font-size: 11px;
-  padding: 4px 6px;
+  padding: 2px 4px;
+}
+
+/* Project Badge */
+.projectBadge {
+  background: rgba(34, 197, 94, 0.15);
+  color: rgba(134, 239, 172, 0.9);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.noProject {
+  color: var(--text-dimmed);
+  font-size: 13px;
 }
 
 .addTagInput {
@@ -349,52 +262,6 @@
   background: rgba(239, 68, 68, 0.1);
 }
 
-/* Pagination */
-.tableWrapper :global(.mantine-datatable-pagination) {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px !important;
-  border-top: 1px solid var(--border-subtle) !important;
-  background: rgba(30, 41, 59, 0.3) !important;
-  gap: 8px;
-}
-
-.tableWrapper :global(.mantine-datatable-pagination-text) {
-  color: var(--text-secondary) !important;
-  font-size: 13px !important;
-}
-
-.tableWrapper :global(.mantine-datatable-pagination-pages-control) {
-  background: var(--surface-secondary) !important;
-  border: 1px solid var(--border-subtle) !important;
-  border-radius: 6px !important;
-  color: var(--text-secondary) !important;
-  font-size: 13px !important;
-  transition: all 0.2s;
-}
-
-.tableWrapper :global(.mantine-datatable-pagination-pages-control:hover:not(:disabled)) {
-  background: var(--surface-hover) !important;
-  border-color: var(--border-hover) !important;
-  color: var(--text-primary) !important;
-}
-
-.tableWrapper :global(.mantine-datatable-pagination-pages-control:disabled) {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.tableWrapper :global(.mantine-datatable-pagination-pages-control[data-active]) {
-  background: var(--accent-memory) !important;
-  border-color: var(--accent-memory) !important;
-  color: white !important;
-}
-
-.paginationInfo {
-  color: var(--text-secondary);
-  font-size: 13px;
-}
 
 /* Bulk Actions Bar */
 .bulkActions {

@@ -19,7 +19,7 @@ import {
   IconPower,
 } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
-import { useMemories, useDeleteMemory, useUpdateMemory } from '@/hooks'
+import { useMemories, useDeleteMemory, useUpdateMemory, useProjects } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
 import { useQuickEdit } from '@/context/QuickEditContext'
 import { CreateMemoryModal } from '@/components/modals'
@@ -28,10 +28,27 @@ import classes from './Memories.module.css'
 
 const PAGE_SIZE = 20
 
-function getImportanceClass(value: number): string {
-  if (value >= 9) return classes.importanceHigh
-  if (value >= 7) return classes.importanceMedium
-  return ''
+function formatRelativeTime(dateInput: string | Date): string {
+  const now = Date.now()
+  // Ensure we parse the date correctly - if string doesn't have timezone, treat as UTC
+  const dateStr = typeof dateInput === 'string' ? dateInput : dateInput.toISOString()
+  const then = new Date(dateStr.endsWith('Z') || dateStr.includes('+') ? dateStr : dateStr + 'Z').getTime()
+
+  const diffMs = now - then
+  const diffSec = Math.floor(diffMs / 1000)
+  const diffMin = Math.floor(diffSec / 60)
+  const diffHour = Math.floor(diffMin / 60)
+  const diffDay = Math.floor(diffHour / 24)
+  const diffWeek = Math.floor(diffDay / 7)
+  const diffMonth = Math.floor(diffDay / 30)
+
+  if (diffSec < 0) return 'just now' // future date protection
+  if (diffMin < 1) return 'just now'
+  if (diffMin < 60) return `${diffMin}m ago`
+  if (diffHour < 24) return `${diffHour}h ago`
+  if (diffDay < 7) return `${diffDay}d ago`
+  if (diffWeek < 4) return `${diffWeek}w ago`
+  return `${diffMonth}mo ago`
 }
 
 export function Memories() {
@@ -76,6 +93,14 @@ export function Memories() {
   const { data, isLoading } = useMemories(filters)
   const deleteMemory = useDeleteMemory()
   const updateMemory = useUpdateMemory()
+
+  // Fetch projects for displaying project names
+  const { data: projectsData } = useProjects({ limit: 100 })
+  const projectsMap = useMemo(() => {
+    const map = new Map<number, string>()
+    projectsData?.projects?.forEach((p) => map.set(p.id, p.name))
+    return map
+  }, [projectsData?.projects])
 
   // Filtered data (client-side search for now)
   const filteredData = useMemo(() => {
@@ -134,19 +159,6 @@ export function Memories() {
     data?.memories?.forEach((m) => m.tags?.forEach((t) => tags.add(t)))
     return Array.from(tags).map((t) => ({ value: t, label: t }))
   }, [data?.memories])
-
-  // Handle inline importance update
-  const handleImportanceUpdate = useCallback((memoryId: number, newImportance: number) => {
-    if (newImportance >= 1 && newImportance <= 10) {
-      updateMemory.mutate({ id: memoryId, data: { importance: newImportance } })
-    }
-  }, [updateMemory])
-
-  // Handle inline tag removal
-  const handleTagRemove = useCallback((memory: Memory, tagToRemove: string) => {
-    const newTags = memory.tags?.filter(t => t !== tagToRemove) || []
-    updateMemory.mutate({ id: memory.id, data: { tags: newTags } })
-  }, [updateMemory])
 
   // Handle inline tag add
   const handleTagAdd = useCallback((memory: Memory, newTag: string) => {
@@ -254,47 +266,28 @@ export function Memories() {
               accessor: 'importance',
               title: 'Importance',
               sortable: true,
-              width: 100,
+              width: 120,
               render: (memory) => (
-                <input
-                  type="number"
-                  className={`${classes.importanceInput} ${getImportanceClass(memory.importance)}`}
-                  defaultValue={memory.importance}
-                  min={1}
-                  max={10}
-                  onClick={(e) => e.stopPropagation()}
-                  onBlur={(e) => {
-                    const newValue = parseInt(e.target.value, 10)
-                    if (newValue !== memory.importance) {
-                      handleImportanceUpdate(memory.id, newValue)
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.currentTarget.blur()
-                    }
-                  }}
-                />
+                <div className={classes.importanceIndicator}>
+                  <div
+                    className={classes.importanceFill}
+                    style={{
+                      width: `${memory.importance * 10}%`,
+                    }}
+                    data-level={memory.importance >= 9 ? 'high' : memory.importance >= 7 ? 'medium' : 'low'}
+                  />
+                </div>
               ),
             },
             {
               accessor: 'tags',
               title: 'Tags',
-              width: 250,
+              width: 220,
               render: (memory) => (
                 <div className={classes.tagsCell}>
                   {memory.tags?.slice(0, 3).map((tag) => (
                     <span key={tag} className={classes.tag}>
                       {tag}
-                      <span
-                        className={classes.tagRemove}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleTagRemove(memory, tag)
-                        }}
-                      >
-                        ×
-                      </span>
                     </span>
                   ))}
                   {(memory.tags?.length ?? 0) > 3 && (
@@ -322,17 +315,29 @@ export function Memories() {
               ),
             },
             {
+              accessor: 'project_ids',
+              title: 'Project',
+              width: 140,
+              render: (memory) => {
+                const projectId = memory.project_ids?.[0]
+                const projectName = projectId ? projectsMap.get(projectId) : null
+                return projectName ? (
+                  <span className={classes.projectBadge}>
+                    {projectName}
+                  </span>
+                ) : (
+                  <span className={classes.noProject}>—</span>
+                )
+              },
+            },
+            {
               accessor: 'updated_at',
               title: 'Updated',
               sortable: true,
-              width: 120,
+              width: 80,
               render: (memory) => (
                 <span className={classes.dateCell}>
-                  {new Date(memory.updated_at).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
+                  {formatRelativeTime(memory.updated_at)}
                 </span>
               ),
             },

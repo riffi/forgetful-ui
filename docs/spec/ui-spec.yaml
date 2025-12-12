@@ -295,43 +295,52 @@ screens:
 
   project_detail:
     title: Project Detail
-    purpose: "Full page for project management. Shows all linked content (memories, documents, artifacts, entities) in tabs. Use for bulk linking/unlinking operations"
+    purpose: "Full page for project management. Shows all linked content in tabs. INLINE EDITING throughout - no separate edit mode. Title, description, notes use contenteditable. Type/status badges are clickable dropdowns. Changes tracked locally, saved via 'Save Changes' button"
     blocks:
       - id: breadcrumb
         columns: 12
-        purpose: "Breadcrumb: Projects > [Project Name]"
+        purpose: "Breadcrumb navigation: 'Projects' link > current project name (text-secondary for link, text-primary for current)"
       - id: header
         columns: 12
-        purpose: "Header: name (h1, editable), project_type badge (editable), status badge (editable dropdown), repo link button (if set), actions: Save, Delete, Archive"
+        purpose: "Page header with inline editable elements and action buttons"
+        blocks:
+          - id: header_badges
+            purpose: "Row of badges above title. project_type badge (clickable dropdown: Development/Research/Documentation/Personal, shows current selection with folder icon and chevron), status badge (clickable dropdown: Active/Paused/Completed/Archived, colored by status - green for active, gray for archived)"
+          - id: header_title
+            purpose: "Project name as h1 (32px, font-weight-700). INLINE EDITABLE via contenteditable - shows subtle border-bottom on hover, accent-project border on focus. Next to title: repo link button (if repo_name set) - ghost style button with GitHub icon and 'View Repository' text, opens in new tab"
+          - id: header_actions
+            purpose: "Right-aligned action buttons row: 'Delete' button (btn-danger - transparent bg, text-dimmed, hover red with red bg), 'Archive' button (btn-ghost - border-subtle), 'Save Changes' primary button (btn-primary - accent-project bg with glow). Save button saves all pending inline edits"
       - id: main_content
         columns: 8
-        purpose: "Main content"
+        purpose: "Main content area with editable fields and tabbed linked content"
         blocks:
           - id: description_field
-            purpose: "Description field, markdown rendered, editable"
+            purpose: "Content card with 'Description' label (card-label style: 11px uppercase, text-dimmed, letter-spacing 0.5px). Editable content area below: surface-secondary bg, border-subtle, rounded-8px, padding-16px. Content is INLINE EDITABLE via contenteditable - supports paragraphs, lists, inline code. Shows border-hover on hover, accent-project border + glow on focus. Min-height 100px"
           - id: notes_field
-            purpose: "Notes field, markdown rendered, editable"
+            purpose: "Content card with 'Notes' label. Same styling and inline editing behavior as description_field. For project-specific notes and reminders"
           - id: tabs_section
-            purpose: "Tabs for linked content: Memories | Documents | Code Artifacts | Entities"
+            purpose: "Tabbed interface for linked content. Tab header with 4 tabs, each showing icon + label + count badge"
             blocks:
+              - id: tabs_header
+                purpose: "Horizontal tab buttons with bottom border. Each tab: icon (16px), label text, count badge (surface-secondary bg, rounded pill, text-dimmed). Active tab: text-primary, count badge accent-project bg, 2px accent-project bottom border. Inactive: text-secondary, hover text-primary"
               - id: tab_memories
-                purpose: "Tab content: memories table (simplified). Link/unlink actions"
+                purpose: "Memories tab content. Data table container (surface-secondary bg, border-subtle, rounded-8px). Table toolbar: search input (left), 'Link Memory' button (right, btn-secondary btn-sm). Table columns: Title (with purple type-dot, clickable link), Tags (tag pills), Importance (color-coded number), Created date, Unlink action. Row hover highlights. Click row opens detail_panel with memory quick edit"
               - id: tab_documents
-                purpose: "Tab content: documents table. Link/unlink actions"
+                purpose: "Documents tab. Same container styling. Toolbar: search, 'Link Document' button. Table columns: Title (blue type-dot, clickable), Type (e.g. Markdown), Created date, Unlink action"
               - id: tab_code_artifacts
-                purpose: "Tab content: code artifacts table. Link/unlink actions"
+                purpose: "Code Artifacts tab. Toolbar: search, 'Link Code Artifact' button. Table columns: Title (cyan type-dot, clickable), Language (accent-code color), Created date, Unlink action"
               - id: tab_entities
-                purpose: "Tab content: entities table. Link/unlink actions"
+                purpose: "Entities tab. Toolbar: search, 'Link Entity' button. Table columns: Name (amber type-dot, clickable), Type (e.g. Technology, Person), Created date, Unlink action"
       - id: sidebar
         columns: 4
-        purpose: "Sidebar"
+        purpose: "Right sidebar with metadata and quick stats cards"
         blocks:
           - id: metadata_card
-            purpose: "Metadata: ID, created_at, updated_at, memory_count"
+            purpose: "Sidebar card with 'Metadata' title (with info icon). Read-only metadata list: ID (monospace), Created date, Updated date, Memory Count. Each row: label (text-dimmed) left, value (text-primary, monospace) right"
           - id: repo_card
-            purpose: "Repository info if repo_name set. Link to GitHub"
+            purpose: "Sidebar card with 'Repository' title (with GitHub icon). Shows only if repo_name set. Contains: clickable repo link (surface-secondary bg, rounded, padding, shows GitHub icon + 'owner/repo' text, hover darkens bg)"
           - id: stats_card
-            purpose: "Quick stats: memories count, documents count, code artifacts count, entities count"
+            purpose: "Sidebar card with 'Quick Stats' title (with bar-chart icon). 2x2 grid of stat items. Each stat: large number (24px, font-weight-700, colored by type - purple/blue/cyan/amber), small label below (11px uppercase text-dimmed). Stats: Memories, Documents, Code Artifacts, Entities"
 
   # ---------------------------------------------------------------------------
   # DOCUMENTS
