@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Modal,
   TextInput,
@@ -21,8 +22,8 @@ import {
 } from '@tabler/icons-react'
 import { useSearchMemories } from '@/hooks/queries/useMemories'
 import { useSearchEntities } from '@/hooks/queries/useEntities'
-import { useQuickEdit } from '@/context/QuickEditContext'
 import { useProjectContext } from '@/context/ProjectContext'
+import { useSearch } from '@/context/SearchContext'
 import type { Memory, Entity } from '@/types'
 import classes from './GlobalSearch.module.css'
 
@@ -42,12 +43,20 @@ const typeConfig = {
   project: { icon: IconFolder, color: 'var(--accent-project)', label: 'Projects' },
 }
 
+const typeToRoute: Record<string, string> = {
+  memory: 'memories',
+  entity: 'entities',
+  document: 'documents',
+  code_artifact: 'code-artifacts',
+  project: 'projects',
+}
+
 export function GlobalSearch() {
-  const { openPanel } = useQuickEdit()
+  const navigate = useNavigate()
   const { selectedProjectId } = useProjectContext()
+  const { isOpen: opened, openSearch, closeSearch } = useSearch()
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const [opened, setOpened] = useState(false)
   const [query, setQuery] = useState('')
   const [debouncedQuery] = useDebouncedValue(query, 300)
   const [results, setResults] = useState<SearchResult[]>([])
@@ -57,9 +66,17 @@ export function GlobalSearch() {
   const searchMemories = useSearchMemories()
   const searchEntities = useSearchEntities()
 
-  // Keyboard shortcut to open
+  // Keyboard shortcut to open (/ like GitHub, Slack, Notion)
   useHotkeys([
-    ['mod+k', () => setOpened(true)],
+    ['/', (e) => {
+      // Don't trigger if user is typing in an input
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return
+      }
+      e.preventDefault()
+      openSearch()
+    }],
   ])
 
   // Focus input when opened
@@ -89,6 +106,7 @@ export function GlobalSearch() {
         const memoriesResult = await searchMemories.mutateAsync({
           query: debouncedQuery,
           options: {
+            context: debouncedQuery,
             k: 5,
             projectIds: selectedProjectId ? [selectedProjectId] : undefined,
           },
@@ -131,11 +149,12 @@ export function GlobalSearch() {
     performSearch()
   }, [debouncedQuery, selectedProjectId])
 
-  // Handle result selection
+  // Handle result selection - navigate to detail page
   const handleSelect = useCallback((result: SearchResult) => {
-    setOpened(false)
-    openPanel({ type: result.type, id: result.id })
-  }, [openPanel])
+    closeSearch()
+    const route = typeToRoute[result.type]
+    navigate(`/${route}/${result.id}`)
+  }, [navigate, closeSearch])
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -149,9 +168,9 @@ export function GlobalSearch() {
       e.preventDefault()
       handleSelect(results[selectedIndex])
     } else if (e.key === 'Escape') {
-      setOpened(false)
+      closeSearch()
     }
-  }, [results, selectedIndex, handleSelect])
+  }, [results, selectedIndex, handleSelect, closeSearch])
 
   // Group results by type
   const groupedResults = results.reduce((acc, result) => {
@@ -172,7 +191,7 @@ export function GlobalSearch() {
   return (
     <Modal
       opened={opened}
-      onClose={() => setOpened(false)}
+      onClose={closeSearch}
       size="lg"
       padding={0}
       withCloseButton={false}

@@ -8,6 +8,7 @@ import { theme, cssVariablesResolver } from '@/styles/theme'
 import { AuthProvider } from '@/context/AuthContext'
 import { ProjectProvider } from '@/context/ProjectContext'
 import { QuickEditProvider } from '@/context/QuickEditContext'
+import { SearchProvider } from '@/context/SearchContext'
 import App from './App'
 
 import '@mantine/core/styles.css'
@@ -31,7 +32,9 @@ createRoot(document.getElementById('root')!).render(
           <AuthProvider>
             <ProjectProvider>
               <QuickEditProvider>
-                <App />
+                <SearchProvider>
+                  <App />
+                </SearchProvider>
               </QuickEditProvider>
             </ProjectProvider>
           </AuthProvider>

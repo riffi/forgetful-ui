@@ -15,6 +15,7 @@ import {
   IconX,
 } from '@tabler/icons-react'
 import { useProjectContext } from '@/context/ProjectContext'
+import { useSearch } from '@/context/SearchContext'
 import { useProjects } from '@/hooks/queries/useProjects'
 import classes from './Sidebar.module.css'
 
@@ -36,6 +37,7 @@ const navItems = [
 export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
   const location = useLocation()
   const { selectedProjectId, setSelectedProject, clearProject } = useProjectContext()
+  const { openSearch } = useSearch()
   const { data: projectsData } = useProjects({ limit: 100 })
 
   const projectOptions = [
@@ -72,10 +74,15 @@ export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
 
       {/* Quick Search */}
       {!collapsed && (
-        <div className={classes.searchBox}>
+        <div
+          className={classes.searchBox}
+          onClick={openSearch}
+          role="button"
+          tabIndex={0}
+        >
           <IconSearch size={18} className={classes.searchIcon} />
           <span className={classes.searchText}>Quick search...</span>
-          <kbd className={classes.searchKbd}>⌘K</kbd>
+          <kbd className={classes.searchKbd}>/</kbd>
         </div>
       )}
 

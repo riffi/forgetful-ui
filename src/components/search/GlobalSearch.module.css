@@ -29,6 +29,7 @@
 .searchInput input {
   font-size: 16px;
   color: var(--text-primary);
+  padding: 0 8px;
 }
 
 .searchInput input::placeholder {
