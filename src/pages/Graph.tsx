@@ -388,8 +388,8 @@ export function Graph() {
       focusOnNode(node.id)
     }
 
-    // Extract numeric ID - try from data.id first, then parse from string id
-    const numericId = (node.data?.id as number) ?? parseInt(node.id.split('-')[1] || node.id, 10)
+    // Extract numeric ID - try from data.id first, then parse from string id (format: entity_123)
+    const numericId = (node.data?.id as number) ?? parseInt(node.id.split('_')[1] || node.id, 10)
 
     if (!isNaN(numericId)) {
       openPanel({
@@ -466,6 +466,19 @@ export function Graph() {
       ctx.fillText(node.label, x, y + size + 4)
     }
   }, [selectedNode, focusedNodeId])
+
+  // Define clickable area for nodes (matches visual size)
+  const nodePointerAreaPaint = useCallback((node: GraphNodeData, color: string, ctx: CanvasRenderingContext2D) => {
+    const x = node.x ?? 0
+    const y = node.y ?? 0
+    const isFocused = node.id === focusedNodeId
+    const size = isFocused ? 18 : 12
+
+    ctx.beginPath()
+    ctx.arc(x, y, size + 4, 0, 2 * Math.PI) // slightly larger for easier clicking
+    ctx.fillStyle = color
+    ctx.fill()
+  }, [focusedNodeId])
 
   // Empty state - no data at all
   if (!isLoading && (!data || data.nodes.length === 0)) {
@@ -688,6 +701,7 @@ export function Graph() {
               height={dimensions.height}
               backgroundColor="transparent"
               nodeCanvasObject={nodeCanvasObject}
+              nodePointerAreaPaint={nodePointerAreaPaint}
               linkColor={() => 'rgba(255,255,255,0.4)'}
               linkWidth={2}
               onNodeClick={handleNodeClick}
