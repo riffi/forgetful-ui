@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Tooltip, Select } from '@mantine/core'
 import {
   IconLayoutDashboard,
@@ -36,6 +36,7 @@ const navItems = [
 
 export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
   const location = useLocation()
+  const navigate = useNavigate()
   const { selectedProjectId, setSelectedProject, clearProject } = useProjectContext()
   const { openSearch } = useSearch()
   const { data: projectsData } = useProjects({ limit: 100 })
@@ -65,7 +66,7 @@ export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
   return (
     <div className={classes.sidebar}>
       {/* Logo */}
-      <div className={classes.logo}>
+      <div className={classes.logo} onClick={() => navigate('/')} role="button" tabIndex={0}>
         <div className={classes.logoIcon}>
           <IconBrain size={22} stroke={1.5} />
         </div>
