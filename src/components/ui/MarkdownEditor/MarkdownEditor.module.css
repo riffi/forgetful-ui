@@ -347,3 +347,218 @@
   border-color: var(--accent-project) !important;
   box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2) !important;
 }
+
+/* =============================================================================
+   CODE PREVIEW (Syntax Highlighted - YAML, JSON, CSS, JS, etc.)
+   ============================================================================= */
+
+/* Code Preview with syntax highlighting */
+.codePreview {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 0;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  overflow-x: auto;
+}
+
+.placeholderText {
+  color: var(--text-dimmed);
+  font-style: italic;
+}
+
+/* Shiki syntax highlighter wrapper */
+.shikiWrapper {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.shikiWrapper pre {
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  overflow-x: auto;
+}
+
+.shikiWrapper code {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* YAML Editor Wrapper */
+.yamlEditorWrapper {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.yamlEditorWrapper:focus-within {
+  border-color: var(--border-hover);
+}
+
+/* YAML Editor Header */
+.yamlEditorHeader {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--surface-primary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.yamlBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: rgba(125, 211, 252, 0.15);
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+}
+
+/* YAML Textarea */
+.yamlTextarea {
+  width: 100%;
+  padding: 16px;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: vertical;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.yamlTextarea::placeholder {
+  color: var(--text-dimmed);
+}
+
+/* Accent color focus states for YAML editor */
+.memory .yamlEditorWrapper:focus-within {
+  border-color: var(--accent-memory);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+}
+
+.entity .yamlEditorWrapper:focus-within {
+  border-color: var(--accent-entity);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.document .yamlEditorWrapper:focus-within {
+  border-color: var(--accent-document);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.code .yamlEditorWrapper:focus-within {
+  border-color: var(--accent-code);
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+}
+
+.project .yamlEditorWrapper:focus-within {
+  border-color: var(--accent-project);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+/* Clickable code preview hover */
+.clickable .codePreview {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clickable .codePreview:hover {
+  border-color: var(--border-hover);
+  background: var(--surface-hover);
+}
+
+.memory.clickable .codePreview:hover {
+  border-color: var(--accent-memory);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.1);
+}
+
+.entity.clickable .codePreview:hover {
+  border-color: var(--accent-entity);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1);
+}
+
+.document.clickable .codePreview:hover {
+  border-color: var(--accent-document);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.code.clickable .codePreview:hover {
+  border-color: var(--accent-code);
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.1);
+}
+
+.project.clickable .codePreview:hover {
+  border-color: var(--accent-project);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.1);
+}
+
+/* =============================================================================
+   EDITOR STYLES (textarea for code editing)
+   ============================================================================= */
+
+/* Other Editor Wrapper */
+.otherEditorWrapper {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.otherEditorWrapper:focus-within {
+  border-color: var(--border-hover);
+}
+
+/* Other Textarea */
+.otherTextarea {
+  width: 100%;
+  padding: 16px;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: vertical;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.otherTextarea::placeholder {
+  color: var(--text-dimmed);
+}
+
+/* Accent color focus states for Other editor */
+.memory .otherEditorWrapper:focus-within {
+  border-color: var(--accent-memory);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+}
+
+.entity .otherEditorWrapper:focus-within {
+  border-color: var(--accent-entity);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.document .otherEditorWrapper:focus-within {
+  border-color: var(--accent-document);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.code .otherEditorWrapper:focus-within {
+  border-color: var(--accent-code);
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+}
+
+.project .otherEditorWrapper:focus-within {
+  border-color: var(--accent-project);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+

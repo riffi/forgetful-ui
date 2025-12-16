@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d'
-import { Tooltip, ActionIcon, Menu, SegmentedControl } from '@mantine/core'
+import * as d3 from 'd3-force'
+import { Tooltip, ActionIcon, Menu, SegmentedControl, TextInput, Select, Badge } from '@mantine/core'
 import {
   IconZoomIn,
   IconZoomOut,
@@ -17,8 +18,9 @@ import {
   IconHierarchy,
   IconCircleDot,
   IconVectorSpline,
+  IconX,
 } from '@tabler/icons-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useGraphData } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
 import { useQuickEdit, type QuickEditItemType } from '@/context/QuickEditContext'
@@ -61,6 +63,7 @@ type LayoutType = 'force' | 'hierarchical' | 'radial'
 
 export function Graph() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { selectedProjectId } = useProjectContext()
   const { openPanel } = useQuickEdit()
   const graphRef = useRef<ForceGraphMethods<GraphNodeData, GraphLinkData>>()
@@ -78,6 +81,13 @@ export function Graph() {
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
   const [minimapTick, setMinimapTick] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Ego-centric graph state
+  const [focusedNodeId, setFocusedNodeId] = useState<string | null>(
+    searchParams.get('focus')
+  )
+  const [depth, setDepth] = useState<number>(2)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const { data, isLoading } = useGraphData({
     projectId: selectedProjectId ?? undefined,
@@ -98,11 +108,63 @@ export function Graph() {
     return () => window.removeEventListener('resize', updateDimensions)
   }, [])
 
-  // Filter graph data based on node filters
+  // Get neighbors at N levels depth
+  const getNeighborsAtDepth = useCallback((
+    startNodeId: string,
+    maxDepth: number,
+    edges: typeof data.edges
+  ): Set<string> => {
+    const visited = new Set<string>([startNodeId])
+    let currentLevel = new Set<string>([startNodeId])
+
+    for (let d = 0; d < maxDepth; d++) {
+      const nextLevel = new Set<string>()
+      for (const nodeId of currentLevel) {
+        for (const edge of edges) {
+          const sourceId = typeof edge.source === 'string' ? edge.source : (edge.source as { id: string }).id
+          const targetId = typeof edge.target === 'string' ? edge.target : (edge.target as { id: string }).id
+
+          if (sourceId === nodeId && !visited.has(targetId)) {
+            nextLevel.add(targetId)
+            visited.add(targetId)
+          }
+          if (targetId === nodeId && !visited.has(sourceId)) {
+            nextLevel.add(sourceId)
+            visited.add(sourceId)
+          }
+        }
+      }
+      currentLevel = nextLevel
+    }
+
+    return visited
+  }, [])
+
+  // Search results - filtered nodes matching query
+  const searchResults = useMemo(() => {
+    if (!data || !searchQuery.trim()) return []
+    const q = searchQuery.toLowerCase()
+    return data.nodes
+      .filter(node => node.label.toLowerCase().includes(q))
+      .slice(0, 10)
+  }, [data, searchQuery])
+
+  // Filter graph data based on focused node + depth + node type filters
   const filteredData = useMemo(() => {
     if (!data) return { nodes: [], links: [] }
 
-    const filteredNodes = data.nodes.filter(node => nodeFilters[node.type])
+    // If no focused node, show empty graph
+    if (!focusedNodeId) {
+      return { nodes: [], links: [] }
+    }
+
+    // Get all nodes within depth levels from focused node
+    const visibleNodeIds = getNeighborsAtDepth(focusedNodeId, depth, data.edges)
+
+    // Filter by both visible nodes and type filters
+    const filteredNodes = data.nodes.filter(
+      node => visibleNodeIds.has(node.id) && nodeFilters[node.type]
+    )
     const nodeIds = new Set(filteredNodes.map(n => n.id))
 
     const filteredLinks = data.edges
@@ -120,7 +182,7 @@ export function Graph() {
       }))
 
     return { nodes: filteredNodes, links: filteredLinks }
-  }, [data, nodeFilters])
+  }, [data, nodeFilters, focusedNodeId, depth, getNeighborsAtDepth])
 
   const handleZoomIn = useCallback(() => {
     graphRef.current?.zoom(1.5, 400)
@@ -281,8 +343,42 @@ export function Graph() {
     applyLayout()
   }, [layoutType, applyLayout])
 
+  // Настройка сил графа для разреженного отображения
+  useEffect(() => {
+    if (!graphRef.current) return
+
+    const fg = graphRef.current
+    // Отталкивание - сильнее для разреженности
+    fg.d3Force('charge')?.strength(-200)
+    // Связи значительно дальше друг от друга
+    fg.d3Force('link')?.distance(200).strength(0.2)
+    // Коллизия - увеличенное минимальное расстояние между узлами
+    fg.d3Force('collision', d3.forceCollide(50).strength(1))
+    // Перезапустить симуляцию
+    fg.d3ReheatSimulation()
+  }, [filteredData])
+
+  // Focus on a specific node (ego-centric view)
+  const focusOnNode = useCallback((nodeId: string) => {
+    setFocusedNodeId(nodeId)
+    setSearchParams({ focus: nodeId })
+    setSearchQuery('')
+  }, [setSearchParams])
+
+  // Clear focus
+  const clearFocus = useCallback(() => {
+    setFocusedNodeId(null)
+    setSearchParams({})
+    setSelectedNode(null)
+  }, [setSearchParams])
+
   const handleNodeClick = useCallback((node: GraphNodeData) => {
     setSelectedNode(node)
+
+    // If clicking on a different node than the focused one, refocus on it
+    if (node.id !== focusedNodeId) {
+      focusOnNode(node.id)
+    }
 
     // Extract numeric ID - try from data.id first, then parse from string id
     const numericId = (node.data?.id as number) ?? parseInt(node.id.split('-')[1] || node.id, 10)
@@ -293,20 +389,37 @@ export function Graph() {
         id: numericId,
       })
     }
-  }, [openPanel])
+  }, [openPanel, focusedNodeId, focusOnNode])
 
   const nodeCanvasObject = useCallback((node: GraphNodeData, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const x = node.x ?? 0
     const y = node.y ?? 0
-    const size = 12
     const color = NODE_COLORS[node.type] || '#666'
     const isSelected = selectedNode?.id === node.id
+    const isFocused = node.id === focusedNodeId
+
+    // Focused node is larger
+    const size = isFocused ? 18 : 12
 
     // Skip rendering if position not yet calculated
     if (node.x === undefined || node.y === undefined) return
 
-    // Draw glow for selected node
-    if (isSelected) {
+    // Draw outer glow for focused node (strongest highlight)
+    if (isFocused) {
+      // Outer pulsing ring
+      ctx.beginPath()
+      ctx.arc(x, y, size + 12, 0, 2 * Math.PI)
+      ctx.fillStyle = `${color}22`
+      ctx.fill()
+
+      // Inner glow
+      ctx.beginPath()
+      ctx.arc(x, y, size + 6, 0, 2 * Math.PI)
+      ctx.fillStyle = `${color}44`
+      ctx.fill()
+    }
+    // Draw glow for selected node (but not focused)
+    else if (isSelected) {
       ctx.beginPath()
       ctx.arc(x, y, size + 6, 0, 2 * Math.PI)
       ctx.fillStyle = `${color}66`
@@ -326,22 +439,27 @@ export function Graph() {
     ctx.fillStyle = gradient
     ctx.fill()
 
-    // Draw border
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)'
-    ctx.lineWidth = 1
+    // Draw border - thicker and brighter for focused node
+    if (isFocused) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)'
+      ctx.lineWidth = 3
+    } else {
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)'
+      ctx.lineWidth = 1
+    }
     ctx.stroke()
 
-    // Draw label if zoomed in enough
-    if (globalScale > 0.8) {
-      ctx.font = `${10 / globalScale}px system-ui`
+    // Draw label - always show for focused node, otherwise only when zoomed
+    if (isFocused || globalScale > 0.8) {
+      ctx.font = `${(isFocused ? 12 : 10) / globalScale}px system-ui`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
-      ctx.fillStyle = 'rgba(255,255,255,0.9)'
+      ctx.fillStyle = isFocused ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.9)'
       ctx.fillText(node.label, x, y + size + 4)
     }
-  }, [selectedNode])
+  }, [selectedNode, focusedNodeId])
 
-  // Empty state
+  // Empty state - no data at all
   if (!isLoading && (!data || data.nodes.length === 0)) {
     return (
       <div className={classes.container}>
@@ -369,6 +487,9 @@ export function Graph() {
       </div>
     )
   }
+
+  // Get focused node label for display
+  const focusedNode = focusedNodeId ? data?.nodes.find(n => n.id === focusedNodeId) : null
 
   return (
     <div className={classes.container} ref={containerRef}>
@@ -428,12 +549,69 @@ export function Graph() {
 
         <div className={classes.toolbarDivider} />
 
+        {/* Ego-centric controls: Search + Depth */}
         <div className={classes.toolbarGroup}>
-          <Tooltip label="Search">
-            <ActionIcon variant="subtle" color="gray">
-              <IconSearch size={20} />
-            </ActionIcon>
-          </Tooltip>
+          <div style={{ position: 'relative' }}>
+            <TextInput
+              placeholder="Search nodes..."
+              size="xs"
+              leftSection={<IconSearch size={14} />}
+              rightSection={searchQuery ? (
+                <ActionIcon size="xs" variant="subtle" onClick={() => setSearchQuery('')}>
+                  <IconX size={12} />
+                </ActionIcon>
+              ) : null}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: 180 }}
+            />
+            {searchResults.length > 0 && (
+              <div className={classes.searchDropdown}>
+                {searchResults.map(node => (
+                  <div
+                    key={node.id}
+                    className={classes.searchResult}
+                    onClick={() => focusOnNode(node.id)}
+                  >
+                    <span
+                      className={classes.searchResultDot}
+                      style={{ backgroundColor: NODE_COLORS[node.type] }}
+                    />
+                    <span className={classes.searchResultLabel}>{node.label}</span>
+                    <Badge size="xs" variant="light" color="gray">
+                      {node.type}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <Select
+            size="xs"
+            value={String(depth)}
+            onChange={(val) => setDepth(Number(val) || 2)}
+            data={[
+              { value: '1', label: 'Depth 1' },
+              { value: '2', label: 'Depth 2' },
+              { value: '3', label: 'Depth 3' },
+            ]}
+            style={{ width: 100 }}
+            disabled={!focusedNodeId}
+          />
+
+          {focusedNodeId && (
+            <Tooltip label="Clear focus">
+              <ActionIcon variant="subtle" color="red" onClick={clearFocus}>
+                <IconX size={18} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </div>
+
+        <div className={classes.toolbarDivider} />
+
+        <div className={classes.toolbarGroup}>
           <Menu shadow="md" width={120}>
             <Menu.Target>
               <Tooltip label="Export">
@@ -459,31 +637,68 @@ export function Graph() {
       <div className={classes.canvas}>
         {isLoading ? (
           <div className={classes.loading}>Loading graph...</div>
+        ) : !focusedNodeId ? (
+          <div className={classes.noFocusState}>
+            <IconSearch size={48} stroke={1.5} style={{ opacity: 0.5 }} />
+            <p className={classes.noFocusText}>
+              Search for a memory or entity to explore its connections
+            </p>
+            <p className={classes.noFocusHint}>
+              {data?.nodes.length ?? 0} nodes available
+            </p>
+          </div>
         ) : (
-          <ForceGraph2D
-            ref={graphRef}
-            graphData={filteredData}
-            width={dimensions.width}
-            height={dimensions.height}
-            backgroundColor="transparent"
-            nodeCanvasObject={nodeCanvasObject}
-            linkColor={() => 'rgba(255,255,255,0.4)'}
-            linkWidth={2}
-            onNodeClick={handleNodeClick}
-            onNodeDragEnd={node => {
-              node.fx = node.x
-              node.fy = node.y
-            }}
-            onBackgroundClick={() => setSelectedNode(null)}
-            cooldownTicks={100}
-            d3AlphaDecay={0.02}
-            d3VelocityDecay={0.3}
-            nodeId="id"
-            linkSource="source"
-            linkTarget="target"
-            onEngineStop={() => setMinimapTick(t => t + 1)}
-            onNodeDrag={() => setMinimapTick(t => t + 1)}
-          />
+          <>
+            {focusedNode && (
+              <div className={classes.focusedLabel}>
+                <Badge
+                  size="lg"
+                  variant="light"
+                  color={NODE_COLORS[focusedNode.type]?.replace('#', '')}
+                  leftSection={
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        backgroundColor: NODE_COLORS[focusedNode.type],
+                      }}
+                    />
+                  }
+                >
+                  {focusedNode.label}
+                </Badge>
+                <span className={classes.focusedStats}>
+                  {filteredData.nodes.length} nodes · {filteredData.links.length} connections
+                </span>
+              </div>
+            )}
+            <ForceGraph2D
+              ref={graphRef}
+              graphData={filteredData}
+              width={dimensions.width}
+              height={dimensions.height}
+              backgroundColor="transparent"
+              nodeCanvasObject={nodeCanvasObject}
+              linkColor={() => 'rgba(255,255,255,0.4)'}
+              linkWidth={2}
+              onNodeClick={handleNodeClick}
+              onNodeDragEnd={node => {
+                node.fx = node.x
+                node.fy = node.y
+              }}
+              onBackgroundClick={() => setSelectedNode(null)}
+              cooldownTicks={100}
+              d3AlphaDecay={0.02}
+              d3VelocityDecay={0.3}
+              linkDistance={120}
+              nodeId="id"
+              linkSource="source"
+              linkTarget="target"
+              onEngineStop={() => setMinimapTick(t => t + 1)}
+              onNodeDrag={() => setMinimapTick(t => t + 1)}
+            />
+          </>
         )}
       </div>
 

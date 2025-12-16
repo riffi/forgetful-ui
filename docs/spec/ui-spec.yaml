@@ -430,23 +430,32 @@ screens:
   # ---------------------------------------------------------------------------
   graph:
     title: Knowledge Graph
-    purpose: "Interactive force-directed graph visualization. Respects global project context - shows only items linked to selected project. Full viewport canvas with floating controls"
+    purpose: "Ego-centric force-directed graph visualization. Shows focused node + neighbors within configurable depth (1-3 levels). No 'show all' mode - user must search/select a node to explore. Respects global project context. URL param ?focus=node-id for deep linking."
     container_max_width: "100%"
+    behavior:
+      ego_centric: "Graph centered on selected node. Click any node to refocus on it. Depth selector controls how many levels of neighbors to show (1/2/3)."
+      navigation: "Search nodes by name in toolbar. Select from dropdown to focus. Click node in graph to refocus. URL updates with ?focus=node-id for sharing/bookmarking."
+      force_layout: "Tuned for readability: charge -200, link distance 200, collision radius 50. Strongly connected nodes get adequate spacing."
     blocks:
       - id: toolbar
         columns: 12
-        purpose: "Floating toolbar (top-center, glass surface pill shape bg-slate-800/60 with border-subtle, horizontal layout, gap-2 padding-8). Icon-only controls with tooltips: zoom-in icon, zoom-out icon, fit-to-view icon | separator | force-layout icon (active), hierarchical-layout icon, radial-layout icon | separator | filter icons for each node type (colored when active): brain (purple), cube (amber), file (blue), code (cyan), folder (green) | separator | search icon (expands to input on click), export icon (dropdown: PNG, SVG), fullscreen toggle icon. Icons are 20px, text-secondary, hover white"
+        purpose: "Floating toolbar (top-center, glass surface pill shape). Controls: zoom-in/out/fit | layout switcher (force/hierarchical/radial) | node type filters (colored icons) | SEARCH INPUT (180px, shows dropdown with results on type, click result to focus) | DEPTH SELECTOR (dropdown 1/2/3, disabled when no focus) | CLEAR FOCUS button (red X, visible when focused) | export menu | fullscreen toggle"
       - id: graph_canvas
         columns: 12
-        purpose: "Full-height canvas (calc 100vh - toolbar). Nodes: circles with gradient fill matching type color, white icon silhouette center (brain/cube/file/code/folder), subtle drop shadow. Size varies by importance (24-48px). Selected node: bright glow ring in type color. Connected nodes on selection: subtle glow. Edges: curved lines, thickness 1-4px based on relationship strength, color white with opacity 0.2-0.4. Hover node: tooltip glass pill with title and type badge. Click: select and open detail_panel. Double-click: zoom and center. Drag: rearrange. Pan: click-drag background. Zoom: scroll wheel"
+        purpose: "Full-height canvas. Nodes: circles with gradient fill (type color), size 12px normal / 18px for focused node. FOCUSED NODE: double glow ring (outer 22% opacity, inner 44%), thick white border (3px), always shows label. Other nodes: thin border, label on zoom. Click node: refocus graph on it + open detail_panel. Drag: rearrange. Pan/zoom: mouse."
         blocks:
+          - id: focused_label
+            purpose: "Floating indicator below toolbar when node focused. Shows Badge with node type color + name, stats below (N nodes · M connections)"
           - id: graph_legend
-            purpose: "Floating panel (bottom-left, 16px margin, glass surface bg-slate-800/70, rounded-lg, padding 16px, min-width 180px). Header 'Node Types' (text-secondary, small, margin-bottom 12px). List of type indicators, each row: colored circle (10px, filled with type accent color), label text (text-primary, 14px). Items: Memory (purple), Entities (amber), Documents (blue), Code Artifacts (cyan), Projects (green). Divider line below. Footer section: 'Edge Thickness' label (text-secondary), '= Relationship Strength' (text-dimmed)"
+            purpose: "Floating panel (bottom-left). Node type legend with colored dots. Edge thickness = relationship strength."
           - id: graph_minimap
-            purpose: "Floating panel (bottom-right, 16px margin, glass surface bg-slate-800/70, rounded-lg, 160x120px). Contains miniature graph preview (nodes as tiny dots in type colors, edges as thin lines). White rectangle outline shows current viewport. Click anywhere to pan main view to that location. Subtle border"
+            purpose: "Floating panel (bottom-right, 160x120px). Miniature preview, click to pan."
+      - id: no_focus_state
+        columns: 12
+        purpose: "Centered message when no node focused (but data exists): search icon (48px, dimmed), 'Search for a memory or entity to explore its connections' text, 'N nodes available' hint below"
       - id: empty_state
         columns: 12
-        purpose: "Centered overlay when no data: abstract brain/network line illustration (purple-pink gradient strokes), 'Your knowledge graph is empty' heading (text-primary, h2), 'Create memories and entities to see connections' subtext (text-secondary), 'Create First Memory' primary button (accent-memory glow), 'Import Data' ghost button below"
+        purpose: "Centered overlay when NO DATA at all: brain illustration, 'Your knowledge graph is empty' heading, 'Create First Memory' button, 'Import Data' ghost button"
 
   # ---------------------------------------------------------------------------
   # SEARCH RESULTS (overlay)
