@@ -437,7 +437,7 @@ export function EntityDetail() {
                 variant="light"
                 leftSection={<IconShare3 size={16} />}
                 fullWidth
-                onClick={() => navigate(`/graph?entity=${entity.id}`)}
+                onClick={() => navigate(`/graph?focus=entity_${entity.id}`)}
               >
                 View in Graph
               </Button>

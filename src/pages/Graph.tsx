@@ -89,6 +89,14 @@ export function Graph() {
   const [depth, setDepth] = useState<number>(2)
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Sync focusedNodeId with URL search params (for navigation from other pages)
+  useEffect(() => {
+    const focusParam = searchParams.get('focus')
+    if (focusParam !== focusedNodeId) {
+      setFocusedNodeId(focusParam)
+    }
+  }, [searchParams])
+
   const { data, isLoading } = useGraphData({
     projectId: selectedProjectId ?? undefined,
     includeEntities: true,

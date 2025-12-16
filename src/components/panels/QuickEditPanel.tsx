@@ -326,7 +326,7 @@ function MemoryContent({ id }: { id: number }) {
           </button>
           <button
             className={classes.btnGhost}
-            onClick={() => navigate(`/graph?focus=memory-${id}`)}
+            onClick={() => navigate(`/graph?focus=memory_${id}`)}
           >
             <IconGraph size={14} />
             View in Graph
@@ -440,7 +440,7 @@ function EntityContent({ id }: { id: number }) {
           </button>
           <button
             className={classes.btnGhost}
-            onClick={() => navigate(`/graph?focus=entity-${id}`)}
+            onClick={() => navigate(`/graph?focus=entity_${id}`)}
           >
             <IconGraph size={14} />
             View in Graph
