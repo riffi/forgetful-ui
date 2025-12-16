@@ -17,6 +17,7 @@ import {
 import { useProjectContext } from '@/context/ProjectContext'
 import { useSearch } from '@/context/SearchContext'
 import { useProjects } from '@/hooks/queries/useProjects'
+import { UserProfileDropdown } from './UserProfileDropdown'
 import classes from './Sidebar.module.css'
 
 interface SidebarProps {
@@ -164,6 +165,9 @@ export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
           return navLink
         })}
       </nav>
+
+      {/* User Profile */}
+      <UserProfileDropdown collapsed={collapsed} />
 
       {/* Collapse toggle */}
       <button className={classes.collapseToggle} onClick={onToggleCollapse}>

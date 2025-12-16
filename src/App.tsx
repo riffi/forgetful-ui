@@ -1,8 +1,22 @@
 import { Routes, Route } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
-import { Dashboard, Memories, MemoryDetail, Entities, EntityDetail, Projects, ProjectDetail, Documents, DocumentDetail, CodeArtifacts, CodeArtifactDetail, Graph } from '@/pages'
+import { Dashboard, Memories, MemoryDetail, Entities, EntityDetail, Projects, ProjectDetail, Documents, DocumentDetail, CodeArtifacts, CodeArtifactDetail, Graph, Login, UserProfile } from '@/pages'
+import { useAuth } from '@/context/AuthContext'
 
 function App() {
+  const { isAuthenticated, isLoading, authMode } = useAuth()
+
+  // Show login page if auth is required and user is not authenticated
+  const showLogin = !isLoading && !isAuthenticated && authMode !== 'disabled'
+
+  if (showLogin) {
+    return (
+      <Routes>
+        <Route path="*" element={<Login />} />
+      </Routes>
+    )
+  }
+
   return (
     <Routes>
       <Route element={<MainLayout />}>
@@ -18,6 +32,7 @@ function App() {
         <Route path="/code-artifacts" element={<CodeArtifacts />} />
         <Route path="/code-artifacts/:id" element={<CodeArtifactDetail />} />
         <Route path="/graph" element={<Graph />} />
+        <Route path="/profile" element={<UserProfile />} />
       </Route>
     </Routes>
   )

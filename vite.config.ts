@@ -25,6 +25,30 @@ export default defineConfig({
         target: 'http://localhost:8020',
         changeOrigin: true,
       },
+      '/authorize': {
+        target: 'http://localhost:8020',
+        changeOrigin: true,
+      },
+      '/consent': {
+        target: 'http://localhost:8020',
+        changeOrigin: true,
+      },
+      '/auth': {
+        target: 'http://localhost:8020',
+        changeOrigin: true,
+      },
+      '/token': {
+        target: 'http://localhost:8020',
+        changeOrigin: true,
+      },
+      '/register': {
+        target: 'http://localhost:8020',
+        changeOrigin: true,
+      },
+      '/.well-known': {
+        target: 'http://localhost:8020',
+        changeOrigin: true,
+      },
     },
   },
 })

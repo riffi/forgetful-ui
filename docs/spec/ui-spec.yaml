@@ -50,6 +50,9 @@ templates:
           - id: nav
             type: main_navigation
             purpose: "Vertical navigation list with icons and labels. Items: Dashboard (grid icon), Memories (brain icon), Entities (cube icon), Projects (folder icon), Documents (file icon), Code Artifacts (code brackets icon), Graph (network icon). Active item: accent background glow, white text. Inactive: text-secondary. Hover: subtle highlight"
+          - id: user_profile
+            type: custom
+            purpose: "User profile section at bottom of sidebar (above collapse toggle). Visible when auth enabled. Shows: avatar (32px circle with user initials, gradient background), user name (text-primary, truncate if long), chevron icon. Click opens dropdown with 'Profile' and 'Sign out' options. When auth disabled: shows 'Guest' with muted icon styling. Dropdown items: 'Profile' navigates to user_profile screen, 'Sign out' triggers logout flow"
           - id: collapse_toggle
             purpose: "Bottom of sidebar: 'Collapse' text with chevron icon. Click collapses sidebar to icon-only mode"
       - id: content
@@ -81,6 +84,10 @@ templates:
             purpose: "Footer section (border-top border-subtle, padding 16px): Left side shows 'ID: N' and 'Created: date' in text-dimmed small text. Right side has action buttons row"
           - id: detail_actions
             purpose: "Action buttons (right-aligned): 'Delete' button (text-dimmed, hover red), 'View in Graph' button (ghost style, border-subtle), 'Edit Full' primary button (accent background with glow)"
+    auth_states:
+      authenticated: "Normal layout with sidebar and content. User profile shows current user info"
+      unauthenticated: "Redirect to login screen. No access to main layout"
+      auth_disabled: "Show auth_warning bar in content area, use default user context, user_profile block shows 'Guest'"
 
 default_template: main_layout
 
@@ -117,6 +124,8 @@ navigation:
 # =============================================================================
 
 screen_groups:
+  - id: auth
+    screens: [login, user_profile]
   - id: overview
     screens: [dashboard, graph]
   - id: data_management
@@ -129,6 +138,41 @@ screen_groups:
 # =============================================================================
 
 screens:
+  # ---------------------------------------------------------------------------
+  # AUTH
+  # ---------------------------------------------------------------------------
+  login:
+    title: Sign In
+    purpose: "OAuth login screen. Shown when user not authenticated and auth is enabled. Centered card on dark background, no sidebar. Full-screen dark gradient background (slate-950)"
+    template: null
+    blocks:
+      - id: login_card
+        columns: 12
+        purpose: "Centered glass card (400px max-width, surface-primary bg). Contains: Forgetful logo at top (brain icon gradient purple-pink, 48px), 'Forgetful' text below logo, heading 'Sign in to continue' (text-primary, 24px), subtext 'Choose your authentication method' (text-secondary)"
+      - id: provider_buttons
+        columns: 12
+        purpose: "Stack of OAuth provider buttons inside login_card. Each button: full width, surface-secondary bg, border-subtle, rounded-8px, padding 12px 16px. Content: provider icon (24px, left), 'Continue with {Provider}' text (text-primary). Hover: border-hover, subtle glow in provider brand color. Provider colors: GitHub (#333), Google (#4285f4). Buttons shown dynamically based on /api/v1/auth/info response"
+      - id: footer_text
+        columns: 12
+        purpose: "Footer inside login_card: lock icon (14px, text-dimmed) + 'Your data stays private' text (text-dimmed, 12px). Centered"
+
+  user_profile:
+    title: Profile
+    purpose: "User profile page. Shows user info from OAuth token claims, allows editing notes field. Only accessible when authenticated"
+    blocks:
+      - id: breadcrumb
+        columns: 12
+        purpose: "Breadcrumb: just 'Profile' (no parent)"
+      - id: header
+        columns: 12
+        purpose: "Page header: large avatar (80px circle, user initials, gradient bg), user name (h1, text-primary, read-only from OAuth), email below name (text-secondary, read-only)"
+      - id: user_info
+        columns: 8
+        purpose: "User info card (surface-primary bg). Sections: 'Account ID' label with external_id value (monospace, text-dimmed, read-only - useful for support), 'Notes' label with editable textarea (surface-secondary bg, border-subtle, min-height 100px), 'Save' button below textarea (btn-primary, only enabled when notes changed)"
+      - id: session_info
+        columns: 4
+        purpose: "Session card (surface-primary bg). Content: 'Signed in via' label + provider name with icon (e.g., GitHub icon + 'GitHub'), 'Member since' label + created_at date formatted, divider line, 'Sign out' button (btn-danger - red text, transparent bg, full width)"
+
   # ---------------------------------------------------------------------------
   # DASHBOARD
   # ---------------------------------------------------------------------------
