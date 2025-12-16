@@ -46,7 +46,7 @@ templates:
             purpose: "Forgetful logo: brain/network icon (gradient purple-pink), 'Forgetful' text. Click navigates to dashboard"
           - id: global_search
             type: custom
-            purpose: "Search input below logo: search icon, placeholder 'Search memories, entities... (Ctrl+K)', glass surface background. Opens search results overlay on focus"
+            purpose: "Search trigger below logo: search icon, placeholder 'Quick search...', '/' kbd hint. Click or '/' hotkey opens GlobalSearch modal overlay. Glass surface background"
           - id: nav
             type: main_navigation
             purpose: "Vertical navigation list with icons and labels. Items: Dashboard (grid icon), Memories (brain icon), Entities (cube icon), Projects (folder icon), Documents (file icon), Code Artifacts (code brackets icon), Graph (network icon). Active item: accent background glow, white text. Inactive: text-secondary. Hover: subtle highlight"
@@ -166,7 +166,7 @@ screens:
         purpose: "Quick actions panel"
         blocks:
           - id: global_search
-            purpose: "Search input with dropdown: searches across all entity types. Results grouped by type. Enter or click -> respective detail"
+            purpose: "Search trigger: click opens GlobalSearch modal. Shows '/' kbd hint. Same behavior as sidebar search"
           - id: create_buttons
             purpose: "Quick create buttons grid (2x3): New Memory, New Entity, New Project, New Document, New Code Artifact, View Graph. Each opens respective create modal or navigates"
           - id: high_importance
@@ -462,7 +462,7 @@ screens:
   # ---------------------------------------------------------------------------
   search_results:
     title: Search Results
-    purpose: "Unified search results overlay showing matches across all types. Respects global project context. Semantic search with relevance scoring. Results grouped by type with expandable sections"
+    purpose: "GlobalSearch modal overlay (opened via '/' hotkey or search triggers). Shows results grouped by type. Click result navigates to detail page. Respects global project context. Semantic search"
     blocks:
       - id: search_header
         columns: 12
@@ -475,15 +475,15 @@ screens:
         purpose: "Grouped results sections, each collapsible"
         blocks:
           - id: memories_results
-            purpose: "Memories section: header with count, collapsible. Each result: relevance score bar (accent-memory), title with highlighted matches, content preview with highlighted terms, importance badge, tags. Click selects. Shows top 5 by default, 'Show all N results' link"
+            purpose: "Memories section: header with count. Each result: title, content preview, importance badge. Click navigates to /memories/{id}"
           - id: entities_results
-            purpose: "Entities section: same pattern, accent-entity color"
+            purpose: "Entities section: name, entity_type. Click navigates to /entities/{id}"
           - id: documents_results
-            purpose: "Documents section: same pattern, accent-document color"
+            purpose: "Documents section. Click navigates to /documents/{id}"
           - id: code_artifacts_results
-            purpose: "Code artifacts section: same pattern, accent-code-artifact color"
+            purpose: "Code artifacts section. Click navigates to /code-artifacts/{id}"
           - id: projects_results
-            purpose: "Projects section: same pattern, accent-project color"
+            purpose: "Projects section. Click navigates to /projects/{id}"
 
   # ---------------------------------------------------------------------------
   # EDITOR MODAL

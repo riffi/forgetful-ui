@@ -28,6 +28,7 @@ import { useProjects } from '@/hooks/queries/useProjects'
 import { useNavigate, Link } from 'react-router-dom'
 import { useDashboardStats, useMemories } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
+import { useSearch } from '@/context/SearchContext'
 import { UnifiedEditorModal } from '@/components/modals'
 import { Section, Card } from '@/components/ui'
 import type { Memory } from '@/types'
@@ -270,6 +271,7 @@ function HighImportanceMemories({ memories }: { memories: Memory[] }) {
 
 export function Dashboard() {
   const { selectedProjectId } = useProjectContext()
+  const { openSearch } = useSearch()
   const { stats, isLoading: statsLoading, isError } = useDashboardStats(selectedProjectId)
   const { data: memoriesData, isLoading: memoriesLoading } = useMemories({
     limit: 10,
@@ -374,13 +376,15 @@ export function Dashboard() {
         {/* Quick Actions Panel */}
         <div className={classes.quickActions}>
           <Card title="Quick Search">
-            <div className={classes.quickSearchBox}>
+            <div
+              className={classes.quickSearchBox}
+              onClick={openSearch}
+              role="button"
+              tabIndex={0}
+            >
               <IconSearch size={18} className={classes.quickSearchIcon} />
-              <input
-                type="text"
-                className={classes.quickSearchInput}
-                placeholder="Search all types..."
-              />
+              <span className={classes.quickSearchPlaceholder}>Search all types...</span>
+              <kbd className={classes.quickSearchKbd}>/</kbd>
             </div>
           </Card>
 
