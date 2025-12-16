@@ -31,6 +31,7 @@ import { useNavigate } from 'react-router-dom'
 import { useEntities, useDeleteEntity } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
 import { useQuickEdit } from '@/context/QuickEditContext'
+import { UnifiedEditorModal } from '@/components/modals'
 import type { Entity, EntityFilters, EntityType } from '@/types'
 import classes from './Entities.module.css'
 
@@ -92,6 +93,9 @@ export function Entities() {
   const navigate = useNavigate()
   const { selectedProjectId } = useProjectContext()
   const { openPanel } = useQuickEdit()
+
+  // Create modal state
+  const [createModalOpen, setCreateModalOpen] = useState(false)
 
   // Filters state
   const [search, setSearch] = useState('')
@@ -192,7 +196,7 @@ export function Entities() {
         <Button
           leftSection={<IconPlus size={16} />}
           color="orange"
-          onClick={() => navigate('/entities?create=true')}
+          onClick={() => setCreateModalOpen(true)}
         >
           Create Entity
         </Button>
@@ -364,6 +368,13 @@ export function Entities() {
           </Group>
         </Paper>
       )}
+
+      {/* Create Entity Modal */}
+      <UnifiedEditorModal
+        opened={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        initialType="entity"
+      />
     </div>
   )
 }

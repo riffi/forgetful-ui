@@ -61,7 +61,6 @@
 }
 
 .providerButton {
-  width: 100%;
   height: 48px;
   background: var(--surface-secondary);
   border: 1px solid var(--border-subtle);

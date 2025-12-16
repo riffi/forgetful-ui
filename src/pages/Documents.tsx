@@ -27,6 +27,7 @@ import { useNavigate } from 'react-router-dom'
 import { useDocuments, useDeleteDocument } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
 import { useQuickEdit } from '@/context/QuickEditContext'
+import { UnifiedEditorModal } from '@/components/modals'
 import type { Document, DocumentFilters } from '@/types'
 import classes from './Documents.module.css'
 
@@ -89,6 +90,9 @@ export function Documents() {
   const navigate = useNavigate()
   const { selectedProjectId } = useProjectContext()
   const { openPanel } = useQuickEdit()
+
+  // Create modal state
+  const [createModalOpen, setCreateModalOpen] = useState(false)
 
   // Filters state
   const [search, setSearch] = useState('')
@@ -190,7 +194,7 @@ export function Documents() {
         <Button
           leftSection={<IconPlus size={16} />}
           color="blue"
-          onClick={() => navigate('/documents?create=true')}
+          onClick={() => setCreateModalOpen(true)}
         >
           Create Document
         </Button>
@@ -373,6 +377,13 @@ export function Documents() {
           </Group>
         </Paper>
       )}
+
+      {/* Create Document Modal */}
+      <UnifiedEditorModal
+        opened={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        initialType="document"
+      />
     </div>
   )
 }

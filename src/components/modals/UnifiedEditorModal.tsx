@@ -38,16 +38,11 @@ interface UnifiedEditorModalProps {
 }
 
 const ENTITY_TYPE_OPTIONS = [
-  { value: 'person', label: 'Person' },
-  { value: 'organization', label: 'Organization' },
-  { value: 'concept', label: 'Concept' },
-  { value: 'technology', label: 'Technology' },
-  { value: 'product', label: 'Product' },
-  { value: 'event', label: 'Event' },
-  { value: 'location', label: 'Location' },
-  { value: 'project', label: 'Project' },
-  { value: 'topic', label: 'Topic' },
-  { value: 'other', label: 'Other' },
+  { value: 'Organization', label: 'Organization' },
+  { value: 'Individual', label: 'Individual' },
+  { value: 'Team', label: 'Team' },
+  { value: 'Device', label: 'Device' },
+  { value: 'Other', label: 'Other' },
 ]
 
 const DOCUMENT_TYPE_OPTIONS = [
@@ -113,7 +108,7 @@ export function UnifiedEditorModal({ opened, onClose, initialType = 'memory', on
 
   // Entity form state
   const [entityName, setEntityName] = useState('')
-  const [entityType, setEntityType] = useState<string | null>('concept')
+  const [entityType, setEntityType] = useState<string | null>('Individual')
   const [entityNotes, setEntityNotes] = useState('')
   const [entityTags, setEntityTags] = useState<string[]>([])
 
@@ -139,7 +134,7 @@ export function UnifiedEditorModal({ opened, onClose, initialType = 'memory', on
     setMemoryTags([])
     setMemoryImportance(7)
     setEntityName('')
-    setEntityType('concept')
+    setEntityType('Individual')
     setEntityNotes('')
     setEntityTags([])
     setDocTitle('')

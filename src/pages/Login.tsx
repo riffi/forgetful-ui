@@ -40,9 +40,11 @@ export function Login() {
         {/* Sign in button */}
         <Button
           className={classes.providerButton}
-          leftSection={<IconBrandGithub size={24} />}
+          leftSection={<IconBrandGithub size={20} />}
           onClick={() => login()}
           mt="xl"
+          fullWidth
+          justify="center"
           style={{ '--provider-color': '#333' } as React.CSSProperties}
         >
           Continue with GitHub

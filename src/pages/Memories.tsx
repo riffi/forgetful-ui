@@ -22,7 +22,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMemories, useDeleteMemory, useUpdateMemory, useProjects } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
 import { useQuickEdit } from '@/context/QuickEditContext'
-import { CreateMemoryModal } from '@/components/modals'
+import { UnifiedEditorModal } from '@/components/modals'
 import type { Memory, MemoryFilters } from '@/types'
 import classes from './Memories.module.css'
 
@@ -237,9 +237,10 @@ export function Memories() {
       </div>
 
       {/* Create Memory Modal */}
-      <CreateMemoryModal
+      <UnifiedEditorModal
         opened={createOpened}
         onClose={closeCreate}
+        initialType="memory"
       />
 
       {/* Data Table */}

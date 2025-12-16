@@ -27,6 +27,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCodeArtifacts, useDeleteCodeArtifact } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
 import { useQuickEdit } from '@/context/QuickEditContext'
+import { UnifiedEditorModal } from '@/components/modals'
 import type { CodeArtifact, CodeArtifactFilters } from '@/types'
 import classes from './CodeArtifacts.module.css'
 
@@ -104,6 +105,9 @@ export function CodeArtifacts() {
   const navigate = useNavigate()
   const { selectedProjectId } = useProjectContext()
   const { openPanel } = useQuickEdit()
+
+  // Create modal state
+  const [createModalOpen, setCreateModalOpen] = useState(false)
 
   // Filters state
   const [search, setSearch] = useState('')
@@ -204,7 +208,7 @@ export function CodeArtifacts() {
         <Button
           leftSection={<IconPlus size={16} />}
           color="cyan"
-          onClick={() => navigate('/code-artifacts?create=true')}
+          onClick={() => setCreateModalOpen(true)}
         >
           Create Code Artifact
         </Button>
@@ -377,6 +381,13 @@ export function CodeArtifacts() {
           </Group>
         </Paper>
       )}
+
+      {/* Create Code Artifact Modal */}
+      <UnifiedEditorModal
+        opened={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        initialType="code_artifact"
+      />
     </div>
   )
 }
