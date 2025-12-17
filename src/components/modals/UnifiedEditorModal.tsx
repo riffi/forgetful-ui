@@ -109,6 +109,7 @@ export function UnifiedEditorModal({ opened, onClose, initialType = 'memory', on
   // Entity form state
   const [entityName, setEntityName] = useState('')
   const [entityType, setEntityType] = useState<string | null>('Individual')
+  const [entityCustomType, setEntityCustomType] = useState('')
   const [entityNotes, setEntityNotes] = useState('')
   const [entityTags, setEntityTags] = useState<string[]>([])
 
@@ -135,6 +136,7 @@ export function UnifiedEditorModal({ opened, onClose, initialType = 'memory', on
     setMemoryImportance(7)
     setEntityName('')
     setEntityType('Individual')
+    setEntityCustomType('')
     setEntityNotes('')
     setEntityTags([])
     setDocTitle('')
@@ -168,6 +170,9 @@ export function UnifiedEditorModal({ opened, onClose, initialType = 'memory', on
     const newErrors: Record<string, string> = {}
     if (!entityName.trim()) newErrors.entityName = 'Name is required'
     if (!entityType) newErrors.entityType = 'Type is required'
+    if (entityType === 'Other' && !entityCustomType.trim()) {
+      newErrors.entityCustomType = 'Custom type is required when Type is "Other"'
+    }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -223,6 +228,7 @@ export function UnifiedEditorModal({ opened, onClose, initialType = 'memory', on
     const data: EntityCreate = {
       name: entityName.trim(),
       entity_type: entityType as EntityType,
+      custom_type: entityType === 'Other' ? entityCustomType.trim() : undefined,
       notes: entityNotes.trim() || undefined,
       tags: entityTags.length > 0 ? entityTags : undefined,
     }
@@ -232,6 +238,7 @@ export function UnifiedEditorModal({ opened, onClose, initialType = 'memory', on
 
     if (saveAndCreateAnother) {
       setEntityName('')
+      setEntityCustomType('')
       setEntityNotes('')
       setEntityTags([])
     } else {
@@ -434,6 +441,16 @@ export function UnifiedEditorModal({ opened, onClose, initialType = 'memory', on
               onChange={setEntityType}
               error={errors.entityType}
             />
+            {entityType === 'Other' && (
+              <TextInput
+                label="Custom Type"
+                placeholder="Specify the entity type"
+                required
+                value={entityCustomType}
+                onChange={(e) => setEntityCustomType(e.target.value)}
+                error={errors.entityCustomType}
+              />
+            )}
             <Textarea
               label="Notes"
               placeholder="Additional notes about this entity"
