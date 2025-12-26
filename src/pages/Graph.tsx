@@ -116,13 +116,13 @@ export function Graph() {
     return () => window.removeEventListener('resize', updateDimensions)
   }, [])
 
-  // Get neighbors at N levels depth
+  // Get neighbors at N levels depth with their depth level
   const getNeighborsAtDepth = useCallback((
     startNodeId: string,
     maxDepth: number,
     edges: NonNullable<typeof data>['edges']
-  ): Set<string> => {
-    const visited = new Set<string>([startNodeId])
+  ): Map<string, number> => {
+    const visited = new Map<string, number>([[startNodeId, 0]])
     let currentLevel = new Set<string>([startNodeId])
 
     for (let d = 0; d < maxDepth; d++) {
@@ -134,11 +134,11 @@ export function Graph() {
 
           if (sourceId === nodeId && !visited.has(targetId)) {
             nextLevel.add(targetId)
-            visited.add(targetId)
+            visited.set(targetId, d + 1)
           }
           if (targetId === nodeId && !visited.has(sourceId)) {
             nextLevel.add(sourceId)
-            visited.add(sourceId)
+            visited.set(sourceId, d + 1)
           }
         }
       }
@@ -157,6 +157,12 @@ export function Graph() {
       .slice(0, 10)
   }, [data, searchQuery])
 
+  // Get node depths map for current focused node
+  const nodeDepths = useMemo(() => {
+    if (!data || !focusedNodeId) return new Map<string, number>()
+    return getNeighborsAtDepth(focusedNodeId, depth, data.edges)
+  }, [data, focusedNodeId, depth, getNeighborsAtDepth])
+
   // Filter graph data based on focused node + depth + node type filters
   const filteredData = useMemo(() => {
     if (!data) return { nodes: [], links: [] }
@@ -166,12 +172,9 @@ export function Graph() {
       return { nodes: [], links: [] }
     }
 
-    // Get all nodes within depth levels from focused node
-    const visibleNodeIds = getNeighborsAtDepth(focusedNodeId, depth, data.edges)
-
     // Filter by both visible nodes and type filters
     const filteredNodes = data.nodes.filter(
-      node => visibleNodeIds.has(node.id) && nodeFilters[node.type]
+      node => nodeDepths.has(node.id) && nodeFilters[node.type]
     )
     const nodeIds = new Set(filteredNodes.map(n => n.id))
 
@@ -190,7 +193,7 @@ export function Graph() {
       }))
 
     return { nodes: filteredNodes, links: filteredLinks }
-  }, [data, nodeFilters, focusedNodeId, depth, getNeighborsAtDepth])
+  }, [data, nodeFilters, focusedNodeId, nodeDepths])
 
   const handleZoomIn = useCallback(() => {
     graphRef.current?.zoom(1.5, 400)
@@ -480,6 +483,29 @@ export function Graph() {
     ctx.fill()
   }, [focusedNodeId])
 
+  // Get link opacity based on the depth of connected nodes
+  const getLinkColor = useCallback((link: GraphLinkData) => {
+    const sourceId = typeof link.source === 'string' ? link.source : (link.source as { id: string }).id
+    const targetId = typeof link.target === 'string' ? link.target : (link.target as { id: string }).id
+
+    const sourceDepth = nodeDepths.get(sourceId) ?? 999
+    const targetDepth = nodeDepths.get(targetId) ?? 999
+
+    // Link depth is the max depth of its endpoints (connection is as "far" as its furthest node)
+    const linkDepth = Math.max(sourceDepth, targetDepth)
+
+    // Opacity based on depth: depth 0-1 = 0.5, depth 2 = 0.25, depth 3 = 0.12
+    const opacityMap: Record<number, number> = {
+      0: 0.3,  // direct connection to focused node
+      1: 0.5,  // direct connection to focused node
+      2: 0.1, // second level
+      3: 0.07, // third level
+    }
+    const opacity = opacityMap[linkDepth] ?? 0.08
+
+    return `rgba(255,255,255,${opacity})`
+  }, [nodeDepths])
+
   // Empty state - no data at all
   if (!isLoading && (!data || data.nodes.length === 0)) {
     return (
@@ -702,7 +728,7 @@ export function Graph() {
               backgroundColor="transparent"
               nodeCanvasObject={nodeCanvasObject}
               nodePointerAreaPaint={nodePointerAreaPaint}
-              linkColor={() => 'rgba(255,255,255,0.4)'}
+              linkColor={getLinkColor}
               linkWidth={2}
               onNodeClick={handleNodeClick}
               onNodeDragEnd={node => {
