@@ -20,6 +20,8 @@ Browse memories, entities, projects, and visualize connections in an interactive
 - **Projects** - Organize knowledge by context
 - **Global Project Filter** - Focus on specific project across all views
 
+**New to Forgetful?** Check out the [User Guide](docs/USER_GUIDE.md) for a complete walkthrough of all features.
+
 ## 🚀 Quick Start (Docker)
 
 Add to your existing `docker-compose.yml`:
