@@ -21,6 +21,7 @@ import {
   IconPlus,
   IconChevronDown,
   IconAlertCircle,
+  IconShare3,
 } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMemory, useUpdateMemory, useDeleteMemory, useMemoryLinks, useEntities, useLinkEntityToMemory } from '@/hooks'
@@ -277,6 +278,13 @@ export function MemoryDetail() {
             className={classes.btnDanger}
           >
             Delete
+          </Button>
+          <Button
+            variant="default"
+            leftSection={<IconShare3 size={16} />}
+            onClick={() => navigate(`/graph?focus=memory_${memory.id}`)}
+          >
+            View in Graph
           </Button>
           <Button
             variant="default"

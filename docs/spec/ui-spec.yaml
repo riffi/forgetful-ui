@@ -242,7 +242,7 @@ screens:
         purpose: "Breadcrumb: Memories > [Memory Title]"
       - id: header
         columns: 12
-        purpose: "Header row: title (h1, INLINE EDITABLE via contenteditable - shows subtle border-bottom on hover, accent-memory border on focus), importance badge (clickable dropdown 1-10, colored by value), obsolete badge if applicable, actions: Delete, Mark Obsolete, 'Save Changes' primary button"
+        purpose: "Header row: title (h1, INLINE EDITABLE via contenteditable - shows subtle border-bottom on hover, accent-memory border on focus), importance badge (clickable dropdown 1-10, colored by value), obsolete badge if applicable, actions: Delete, 'View in Graph' (ghost style), Mark Obsolete, 'Save Changes' primary button"
       - id: main_content
         columns: 8
         purpose: "Main content area"
