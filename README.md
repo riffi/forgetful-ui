@@ -94,6 +94,17 @@ Create `.env.local` to override API URL:
 VITE_API_URL=http://localhost:8020/api/v1
 ```
 
+## 🌐 Production Deployment
+
+For production deployment with **Traefik** and **GitHub OAuth**, see the [Deployment Guide](docs/DEPLOYMENT.md).
+
+Key architecture:
+```
+Internet → Traefik (HTTPS) → forgetful-ui (nginx) → forgetful-service (API)
+```
+
+The UI container proxies all API and OAuth requests to the backend, making it easy to deploy behind a reverse proxy with SSL.
+
 ## 📦 Docker Build
 
 Build the image locally:

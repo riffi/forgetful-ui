@@ -1,8 +1,8 @@
 # Docker Setup for Forgetful UI
 
-## Quick Start
+## Quick Start (Development)
 
-Add to your `docker-compose.local.yml` under `services:`:
+Add to your `docker-compose.yml` under `services:`:
 
 ```yaml
   forgetful-ui:
@@ -20,16 +20,33 @@ Add to your `docker-compose.local.yml` under `services:`:
 
 Then run:
 ```bash
-docker compose -f docker-compose.local.yml up -d --pull always
+docker compose up -d --pull always
 ```
 
 Frontend will be available at: http://localhost:3000
 
+## Production Deployment
+
+For production deployment with Traefik and OAuth, see **[DEPLOYMENT.md](../docs/DEPLOYMENT.md)**.
+
+Key points:
+- Place UI container in front of backend (handles all traffic)
+- UI proxies all API/OAuth requests to backend internally
+- Configure GitHub OAuth callback URL to your domain
+
 ## How it works
 
-- Nginx serves static files and proxies `/api/*` to `forgetful-service:8020`
-- All OAuth endpoints (`/oauth/`, `/authorize`, `/token`, etc.) are also proxied
-- SSE/MCP endpoints are configured for long-polling
+Nginx serves static files and proxies to `forgetful-service:8020`:
+
+| Path | Description |
+|------|-------------|
+| `/api/*` | REST API |
+| `/authorize`, `/consent`, `/token` | OAuth flow |
+| `/register` | OAuth client registration |
+| `/auth/*`, `/oauth/*` | Auth endpoints |
+| `/.well-known/*` | OAuth discovery |
+| `/mcp`, `/sse` | MCP/SSE (long-polling) |
+| `/health` | Health check |
 
 ## Build locally
 
