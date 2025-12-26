@@ -113,3 +113,21 @@ Build the image locally:
 docker build -f docker/Dockerfile -t forgetful-ui .
 docker run -p 3000:80 forgetful-ui
 ```
+
+## 🔐 Authentication
+
+The frontend automatically detects the backend authentication mode:
+
+| Backend Response | Detected Mode | Frontend Behavior |
+|------------------|---------------|-------------------|
+| API returns `200 OK` | `disabled` | Direct access, no login required |
+| API returns `401` + OAuth metadata exists | `oauth` | Shows "Login with GitHub" button |
+| API returns `401` + no OAuth metadata | `jwt` | Shows JWT login form |
+
+Detection flow:
+1. Frontend makes test request to `/api/v1/memories?limit=1`
+2. If `401 Unauthorized`, checks `/.well-known/oauth-authorization-server`
+3. If OAuth metadata found → OAuth mode (PKCE flow with GitHub)
+4. Otherwise → JWT mode or auth disabled
+
+This allows the same frontend to work with different backend configurations without any changes.
