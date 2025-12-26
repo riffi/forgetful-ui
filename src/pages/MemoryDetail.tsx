@@ -24,7 +24,7 @@ import {
 } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMemory, useUpdateMemory, useDeleteMemory, useMemoryLinks, useEntities, useLinkEntityToMemory } from '@/hooks'
-import { Breadcrumb, Card, Section, TagsEditor } from '@/components/ui'
+import { Breadcrumb, Card, Section, TagsEditor, MarkdownEditor } from '@/components/ui'
 import classes from './MemoryDetail.module.css'
 
 // Importance badge with dropdown
@@ -100,39 +100,6 @@ function EditableTitle({ value, onChange }: { value: string; onChange: (value: s
     >
       {value}
     </h1>
-  )
-}
-
-// Inline editable content area
-function EditableContent({ value, onChange, placeholder, minHeight }: {
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
-  minHeight?: number
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-
-  const handleBlur = () => {
-    if (ref.current) {
-      const newValue = ref.current.innerText ?? ''
-      if (newValue !== value) {
-        onChange(newValue)
-      }
-    }
-  }
-
-  return (
-    <div
-      ref={ref}
-      className={classes.editableContent}
-      contentEditable
-      suppressContentEditableWarning
-      onBlur={handleBlur}
-      data-placeholder={placeholder}
-      style={minHeight ? { minHeight } : undefined}
-    >
-      {value || ''}
-    </div>
   )
 }
 
@@ -336,25 +303,29 @@ export function MemoryDetail() {
       <div className={classes.grid}>
         {/* Left Column - Content */}
         <div className={classes.mainColumn}>
-          {/* Content - inline editable */}
+          {/* Content - markdown editor with smart content detection */}
           <Paper className={classes.contentCard} mb="md">
             <Text className={classes.cardLabel}>Content</Text>
-            <EditableContent
+            <MarkdownEditor
               value={editedContent}
               onChange={setEditedContent}
               placeholder="Add memory content..."
               minHeight={150}
+              accentColor="memory"
+              inlineEdit
             />
           </Paper>
 
-          {/* Context - inline editable */}
+          {/* Context - markdown editor with smart content detection */}
           <Paper className={classes.contentCard} mb="md">
             <Text className={classes.cardLabel}>Context</Text>
-            <EditableContent
+            <MarkdownEditor
               value={editedContext}
               onChange={setEditedContext}
               placeholder="Add context about this memory..."
               minHeight={80}
+              accentColor="memory"
+              inlineEdit
             />
           </Paper>
 

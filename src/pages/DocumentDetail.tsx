@@ -1,70 +1,113 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
-  Title,
   Text,
   Group,
   Stack,
   Paper,
   Badge,
   Button,
-  TextInput,
-  Textarea,
-  Select,
   Skeleton,
-  TagsInput,
   Modal,
-  Code,
+  Menu,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import {
   IconFileText,
-  IconPencil,
   IconTrash,
   IconDeviceFloppy,
-  IconX,
   IconArrowLeft,
   IconCalendar,
   IconHash,
   IconFolder,
   IconFile,
+  IconChevronDown,
 } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useDocument, useUpdateDocument, useDeleteDocument } from '@/hooks'
-import { Breadcrumb } from '@/components/ui'
+import { Breadcrumb, Card, MarkdownEditor, TagsEditor } from '@/components/ui'
 import classes from './DocumentDetail.module.css'
 
 const DOCUMENT_TYPE_OPTIONS = [
-  { value: 'markdown', label: 'Markdown' },
-  { value: 'text', label: 'Text' },
-  { value: 'pdf', label: 'PDF' },
-  { value: 'html', label: 'HTML' },
-  { value: 'json', label: 'JSON' },
-  { value: 'yaml', label: 'YAML' },
-  { value: 'other', label: 'Other' },
+  { value: 'markdown', label: 'Markdown', color: 'blue' },
+  { value: 'text', label: 'Text', color: 'gray' },
+  { value: 'pdf', label: 'PDF', color: 'red' },
+  { value: 'html', label: 'HTML', color: 'orange' },
+  { value: 'json', label: 'JSON', color: 'yellow' },
+  { value: 'yaml', label: 'YAML', color: 'cyan' },
+  { value: 'other', label: 'Other', color: 'gray' },
 ]
-
-function DocumentTypeBadge({ type }: { type: string }) {
-  const colorMap: Record<string, string> = {
-    markdown: 'blue',
-    text: 'gray',
-    pdf: 'red',
-    html: 'orange',
-    json: 'yellow',
-    yaml: 'cyan',
-  }
-
-  return (
-    <Badge size="lg" variant="light" color={colorMap[type] ?? 'gray'}>
-      {type}
-    </Badge>
-  )
-}
 
 function formatFileSize(bytes?: number) {
   if (!bytes) return '-'
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+// Document type badge with dropdown
+function DocumentTypeBadgeDropdown({ type, onChange }: { type: string; onChange: (type: string) => void }) {
+  const typeOption = DOCUMENT_TYPE_OPTIONS.find(t => t.value === type) ?? DOCUMENT_TYPE_OPTIONS[6]
+
+  return (
+    <Menu position="bottom-start" withinPortal>
+      <Menu.Target>
+        <Badge
+          className={classes.clickableBadge}
+          variant="light"
+          color={typeOption.color}
+          size="lg"
+          rightSection={<IconChevronDown size={10} />}
+        >
+          {typeOption.label}
+        </Badge>
+      </Menu.Target>
+      <Menu.Dropdown>
+        {DOCUMENT_TYPE_OPTIONS.map(opt => (
+          <Menu.Item
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={opt.value === type ? classes.menuItemActive : undefined}
+          >
+            {opt.label}
+          </Menu.Item>
+        ))}
+      </Menu.Dropdown>
+    </Menu>
+  )
+}
+
+// Inline editable title component
+function EditableTitle({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const ref = useRef<HTMLHeadingElement>(null)
+
+  const handleBlur = () => {
+    if (ref.current) {
+      const newValue = ref.current.textContent ?? ''
+      if (newValue !== value) {
+        onChange(newValue)
+      }
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      ref.current?.blur()
+    }
+  }
+
+  return (
+    <h1
+      ref={ref}
+      className={classes.editableTitle}
+      contentEditable
+      suppressContentEditableWarning
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+    >
+      {value}
+    </h1>
+  )
 }
 
 export function DocumentDetail() {
@@ -76,8 +119,7 @@ export function DocumentDetail() {
   const updateDocument = useUpdateDocument()
   const deleteDocument = useDeleteDocument()
 
-  // Edit state
-  const [isEditing, setIsEditing] = useState(false)
+  // Local edit state (inline editing - no separate edit mode)
   const [editedTitle, setEditedTitle] = useState('')
   const [editedDescription, setEditedDescription] = useState('')
   const [editedContent, setEditedContent] = useState('')
@@ -87,16 +129,25 @@ export function DocumentDetail() {
   // Delete modal
   const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false)
 
-  // Start editing
-  const startEditing = () => {
-    if (!document) return
-    setEditedTitle(document.title)
-    setEditedDescription(document.description)
-    setEditedContent(document.content)
-    setEditedType(document.document_type)
-    setEditedTags(document.tags ?? [])
-    setIsEditing(true)
-  }
+  // Initialize edit state from document data
+  useEffect(() => {
+    if (document) {
+      setEditedTitle(document.title)
+      setEditedDescription(document.description)
+      setEditedContent(document.content)
+      setEditedType(document.document_type)
+      setEditedTags(document.tags ?? [])
+    }
+  }, [document])
+
+  // Check if there are unsaved changes
+  const hasChanges = document && (
+    editedTitle !== document.title ||
+    editedDescription !== document.description ||
+    editedContent !== document.content ||
+    editedType !== document.document_type ||
+    JSON.stringify(editedTags) !== JSON.stringify(document.tags ?? [])
+  )
 
   // Save changes
   const handleSave = async () => {
@@ -110,12 +161,6 @@ export function DocumentDetail() {
         tags: editedTags,
       },
     })
-    setIsEditing(false)
-  }
-
-  // Cancel editing
-  const handleCancel = () => {
-    setIsEditing(false)
   }
 
   // Handle delete
@@ -141,7 +186,7 @@ export function DocumentDetail() {
         <Paper className={classes.errorState}>
           <Stack align="center" gap="md">
             <IconFileText size={48} color="var(--text-dimmed)" />
-            <Title order={3}>Document not found</Title>
+            <Text size="xl" fw={600}>Document not found</Text>
             <Text c="dimmed">The document you're looking for doesn't exist.</Text>
             <Button
               leftSection={<IconArrowLeft size={16} />}
@@ -166,228 +211,152 @@ export function DocumentDetail() {
       <Breadcrumb items={breadcrumbItems} />
 
       {/* Header */}
-      <Paper className={classes.header} mb="md">
-        <Group justify="space-between" wrap="nowrap">
-          <Group gap="md" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-            <IconFileText size={32} color="var(--accent-document)" />
-            {isEditing ? (
-              <TextInput
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                size="lg"
-                style={{ flex: 1 }}
-                placeholder="Document title..."
-              />
-            ) : (
-              <Title order={2} lineClamp={1} style={{ flex: 1 }}>
-                {document.title}
-              </Title>
-            )}
+      <div className={classes.pageHeader}>
+        <div className={classes.headerMain}>
+          {/* Badges row */}
+          <Group gap="xs" mb="xs">
+            <Badge variant="light" color="blue" size="lg" leftSection={<IconFileText size={12} />}>
+              Document
+            </Badge>
+            <DocumentTypeBadgeDropdown
+              type={editedType}
+              onChange={setEditedType}
+            />
           </Group>
-          <Group gap="xs">
-            <DocumentTypeBadge type={document.document_type} />
-            {isEditing ? (
-              <>
-                <Button
-                  variant="light"
-                  color="gray"
-                  leftSection={<IconX size={16} />}
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  color="blue"
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  onClick={handleSave}
-                  loading={updateDocument.isPending}
-                >
-                  Save
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="light"
-                  leftSection={<IconPencil size={16} />}
-                  onClick={startEditing}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="light"
-                  color="red"
-                  leftSection={<IconTrash size={16} />}
-                  onClick={openDelete}
-                >
-                  Delete
-                </Button>
-              </>
-            )}
-          </Group>
+
+          {/* Title row - inline editable */}
+          <EditableTitle value={editedTitle} onChange={setEditedTitle} />
+        </div>
+
+        {/* Header actions */}
+        <Group gap="xs" className={classes.headerActions}>
+          <Button
+            variant="subtle"
+            color="gray"
+            leftSection={<IconTrash size={16} />}
+            onClick={openDelete}
+            className={classes.btnDanger}
+          >
+            Delete
+          </Button>
+          <Button
+            color="blue"
+            leftSection={<IconDeviceFloppy size={16} />}
+            onClick={handleSave}
+            loading={updateDocument.isPending}
+            disabled={!hasChanges}
+            className={classes.btnPrimary}
+          >
+            Save Changes
+          </Button>
         </Group>
-      </Paper>
+      </div>
 
       {/* Main Content Grid */}
       <div className={classes.grid}>
         {/* Left Column - Content */}
         <div className={classes.mainColumn}>
-          {/* Type */}
-          <Paper className={classes.section} mb="md">
-            <Text className={classes.sectionLabel}>Document Type</Text>
-            {isEditing ? (
-              <Select
-                value={editedType}
-                onChange={(val) => setEditedType(val ?? 'text')}
-                data={DOCUMENT_TYPE_OPTIONS}
-              />
-            ) : (
-              <DocumentTypeBadge type={document.document_type} />
-            )}
-          </Paper>
-
           {/* Description */}
-          <Paper className={classes.section} mb="md">
-            <Text className={classes.sectionLabel}>Description</Text>
-            {isEditing ? (
-              <Textarea
-                value={editedDescription}
-                onChange={(e) => setEditedDescription(e.target.value)}
-                minRows={2}
-                autosize
-                placeholder="Document description..."
-              />
-            ) : (
-              <Text className={classes.contentText}>
-                {document.description || <span style={{ color: 'var(--text-dimmed)' }}>No description</span>}
-              </Text>
-            )}
+          <Paper className={classes.contentCard} mb="md">
+            <Text className={classes.cardLabel}>Description</Text>
+            <MarkdownEditor
+              value={editedDescription}
+              onChange={setEditedDescription}
+              placeholder="Add document description..."
+              minHeight={80}
+              accentColor="document"
+              inlineEdit
+            />
           </Paper>
 
           {/* Content */}
-          <Paper className={classes.section} mb="md">
-            <Text className={classes.sectionLabel}>Content</Text>
-            {isEditing ? (
-              <Textarea
-                value={editedContent}
-                onChange={(e) => setEditedContent(e.target.value)}
-                minRows={10}
-                autosize
-                placeholder="Document content..."
-                styles={{ input: { fontFamily: 'monospace' } }}
-              />
-            ) : (
-              <Code block className={classes.codeContent}>
-                {document.content}
-              </Code>
-            )}
-          </Paper>
-
-          {/* Tags */}
-          <Paper className={classes.section}>
-            <Text className={classes.sectionLabel}>Tags</Text>
-            {isEditing ? (
-              <TagsInput
-                value={editedTags}
-                onChange={setEditedTags}
-                placeholder="Add tags..."
-              />
-            ) : (
-              <Group gap="xs">
-                {document.tags?.length ? (
-                  document.tags.map((tag) => (
-                    <Badge key={tag} variant="dot" color="blue">
-                      {tag}
-                    </Badge>
-                  ))
-                ) : (
-                  <Text c="dimmed">No tags</Text>
-                )}
-              </Group>
-            )}
+          <Paper className={classes.contentCard} mb="md">
+            <Text className={classes.cardLabel}>Content</Text>
+            <MarkdownEditor
+              value={editedContent}
+              onChange={setEditedContent}
+              placeholder="Add document content..."
+              minHeight={250}
+              accentColor="document"
+              inlineEdit
+            />
           </Paper>
         </div>
 
         {/* Right Column - Sidebar */}
         <div className={classes.sidebar}>
+          {/* Tags */}
+          <Card title="Tags">
+            <TagsEditor
+              value={editedTags}
+              onChange={setEditedTags}
+              variant="document"
+              accentColor="document"
+            />
+          </Card>
+
           {/* Metadata */}
-          <Paper className={classes.section} mb="md">
-            <Text className={classes.sectionLabel}>Metadata</Text>
-            <Stack gap="xs">
-              <Group gap="xs">
-                <IconHash size={14} color="var(--text-dimmed)" />
-                <Text size="sm" c="dimmed">
-                  ID: {document.id}
-                </Text>
-              </Group>
-              {document.filename && (
-                <Group gap="xs">
-                  <IconFile size={14} color="var(--text-dimmed)" />
-                  <Text size="sm" c="dimmed">
-                    {document.filename}
-                  </Text>
-                </Group>
-              )}
-              {document.size_bytes && (
-                <Group gap="xs">
-                  <IconFile size={14} color="var(--text-dimmed)" />
-                  <Text size="sm" c="dimmed">
-                    Size: {formatFileSize(document.size_bytes)}
-                  </Text>
-                </Group>
-              )}
-              <Group gap="xs">
-                <IconCalendar size={14} color="var(--text-dimmed)" />
-                <Text size="sm" c="dimmed">
-                  Created: {new Date(document.created_at).toLocaleString()}
-                </Text>
-              </Group>
-              <Group gap="xs">
-                <IconCalendar size={14} color="var(--text-dimmed)" />
-                <Text size="sm" c="dimmed">
-                  Updated: {new Date(document.updated_at).toLocaleString()}
-                </Text>
-              </Group>
-            </Stack>
-          </Paper>
+          <Card title="Metadata">
+            <div className={classes.metadataRow}>
+              <span className={classes.metadataLabel}>ID</span>
+              <span className={classes.metadataValue}>#{document.id}</span>
+            </div>
+            {document.filename && (
+              <div className={classes.metadataRow}>
+                <span className={classes.metadataLabel}>Filename</span>
+                <span className={classes.metadataValue}>{document.filename}</span>
+              </div>
+            )}
+            {document.size_bytes && (
+              <div className={classes.metadataRow}>
+                <span className={classes.metadataLabel}>Size</span>
+                <span className={classes.metadataValue}>{formatFileSize(document.size_bytes)}</span>
+              </div>
+            )}
+            <div className={classes.metadataRow}>
+              <span className={classes.metadataLabel}>Created</span>
+              <span className={classes.metadataValue}>
+                {new Date(document.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            </div>
+            <div className={classes.metadataRow}>
+              <span className={classes.metadataLabel}>Updated</span>
+              <span className={classes.metadataValue}>
+                {new Date(document.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            </div>
+          </Card>
 
           {/* Project */}
           {document.project && (
-            <Paper className={classes.section} mb="md">
-              <Text className={classes.sectionLabel}>Project</Text>
-              <Paper
-                className={classes.projectCard}
+            <Card title="Project">
+              <div
+                className={classes.linkedItem}
                 onClick={() => navigate(`/projects/${document.project!.id}`)}
               >
-                <Group gap="xs">
-                  <IconFolder size={14} color="var(--accent-project)" />
-                  <Text size="sm" fw={500}>
-                    {document.project.name}
-                  </Text>
-                </Group>
-              </Paper>
-            </Paper>
+                <div className={classes.linkedItemDot} style={{ background: 'var(--accent-project)' }} />
+                <div className={classes.linkedItemContent}>
+                  <div className={classes.linkedItemTitle}>{document.project.name}</div>
+                </div>
+              </div>
+            </Card>
           )}
 
           {/* Actions */}
-          <Paper className={classes.section}>
-            <Text className={classes.sectionLabel} mb="sm">
-              Actions
-            </Text>
+          <Card title="Actions">
             <Stack gap="xs">
               <Button
                 variant="light"
                 fullWidth
                 color="gray"
                 onClick={() => {
-                  // Copy content to clipboard
                   navigator.clipboard.writeText(document.content)
                 }}
               >
                 Copy Content
               </Button>
             </Stack>
-          </Paper>
+          </Card>
         </div>
       </div>
 
