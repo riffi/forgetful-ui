@@ -83,6 +83,14 @@ export function CreateMemoryModal({ opened, onClose, onSuccess }: CreateMemoryMo
       newErrors.context = 'Context is required'
     }
 
+    if (keywords.length === 0) {
+      newErrors.keywords = 'At least one keyword is required'
+    }
+
+    if (tags.length === 0) {
+      newErrors.tags = 'At least one tag is required'
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -94,8 +102,8 @@ export function CreateMemoryModal({ opened, onClose, onSuccess }: CreateMemoryMo
       title: title.trim(),
       content: content.trim(),
       context: context.trim(),
-      keywords: keywords.length > 0 ? keywords : undefined,
-      tags: tags.length > 0 ? tags : undefined,
+      keywords,
+      tags,
       importance,
       project_id: selectedProjectId ?? undefined,
     }
@@ -196,9 +204,11 @@ export function CreateMemoryModal({ opened, onClose, onSuccess }: CreateMemoryMo
         <TagsInput
           label="Keywords"
           placeholder="Search terms for discovery (max 10)"
+          required
           value={keywords}
           onChange={setKeywords}
           maxTags={10}
+          error={errors.keywords}
           classNames={{ input: classes.input }}
         />
 
@@ -206,9 +216,11 @@ export function CreateMemoryModal({ opened, onClose, onSuccess }: CreateMemoryMo
         <TagsInput
           label="Tags"
           placeholder="Categories for grouping (max 10)"
+          required
           value={tags}
           onChange={setTags}
           maxTags={10}
+          error={errors.tags}
           classNames={{ input: classes.input }}
         />
 

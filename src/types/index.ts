@@ -55,8 +55,8 @@ export interface MemoryCreate {
   title: string
   content: string
   context: string
-  keywords?: string[]
-  tags?: string[]
+  keywords: string[]
+  tags: string[]
   importance?: number
   project_id?: number
 }

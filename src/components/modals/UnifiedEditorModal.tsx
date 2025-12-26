@@ -162,6 +162,8 @@ export function UnifiedEditorModal({ opened, onClose, initialType = 'memory', on
     if (!memoryTitle.trim()) newErrors.memoryTitle = 'Title is required'
     if (!memoryContent.trim()) newErrors.memoryContent = 'Content is required'
     if (!memoryContext.trim()) newErrors.memoryContext = 'Context is required'
+    if (memoryKeywords.length === 0) newErrors.memoryKeywords = 'At least one keyword is required'
+    if (memoryTags.length === 0) newErrors.memoryTags = 'At least one tag is required'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -201,8 +203,8 @@ export function UnifiedEditorModal({ opened, onClose, initialType = 'memory', on
       title: memoryTitle.trim(),
       content: memoryContent.trim(),
       context: memoryContext.trim(),
-      keywords: memoryKeywords.length > 0 ? memoryKeywords : undefined,
-      tags: memoryTags.length > 0 ? memoryTags : undefined,
+      keywords: memoryKeywords,
+      tags: memoryTags,
       importance: memoryImportance,
       project_id: selectedProjectId ?? undefined,
     }
@@ -407,16 +409,20 @@ export function UnifiedEditorModal({ opened, onClose, initialType = 'memory', on
             <TagsInput
               label="Keywords"
               placeholder="Search terms"
+              required
               value={memoryKeywords}
               onChange={setMemoryKeywords}
               maxTags={10}
+              error={errors.memoryKeywords}
             />
             <TagsInput
               label="Tags"
               placeholder="Categories"
+              required
               value={memoryTags}
               onChange={setMemoryTags}
               maxTags={10}
+              error={errors.memoryTags}
             />
           </Stack>
         </Tabs.Panel>
