@@ -647,6 +647,19 @@ body {
   animation: slideInRight 0.3s ease;
 }
 
+/* === Markdown Editor Fullscreen Mode === */
+/* When fullscreen editor is active, disable backdrop-filter on all ancestors */
+/* This is needed because backdrop-filter creates a new stacking context */
+/* which breaks position: fixed on child elements */
+
+body:has(.w-md-editor-fullscreen) .mantine-Paper-root {
+  backdrop-filter: none !important;
+}
+
+body:has(.w-md-editor-fullscreen) .mantine-AppShell-main {
+  overflow: visible !important;
+}
+
 /* === Responsive === */
 @media (max-width: 1200px) {
   .stats-grid-6 {
