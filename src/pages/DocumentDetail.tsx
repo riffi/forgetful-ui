@@ -16,10 +16,6 @@ import {
   IconTrash,
   IconDeviceFloppy,
   IconArrowLeft,
-  IconCalendar,
-  IconHash,
-  IconFolder,
-  IconFile,
   IconChevronDown,
 } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
