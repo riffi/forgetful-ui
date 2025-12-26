@@ -1,14 +1,101 @@
 .container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
-.header {
+/* Page Header */
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.headerMain {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Editable Title */
+.editableTitle {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  outline: none;
+  border-bottom: 2px solid transparent;
+  padding-bottom: 2px;
+  transition: border-color 0.2s;
+  min-width: 200px;
+}
+
+.editableTitle:hover {
+  border-bottom-color: var(--border-hover);
+}
+
+.editableTitle:focus {
+  border-bottom-color: var(--accent-document);
+}
+
+/* Content Cards */
+.contentCard {
   background: var(--surface-primary);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  padding: 20px 24px;
+  padding: 20px;
+}
+
+.cardLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dimmed);
+  margin-bottom: 12px;
+}
+
+/* Action Buttons */
+.btnDanger {
+  color: var(--text-dimmed);
+}
+
+.btnDanger:hover {
+  color: var(--mantine-color-red-6);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.btnPrimary {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.btnPrimary:hover:not(:disabled) {
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+}
+
+/* Clickable Badge */
+.clickableBadge {
+  cursor: pointer;
+  transition: transform 200ms ease;
+}
+
+.clickableBadge:hover {
+  transform: scale(1.05);
+}
+
+/* Menu Item Active */
+.menuItemActive {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-document);
 }
 
 .grid {
@@ -17,73 +104,113 @@
   gap: 24px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .pageHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .headerActions {
+    justify-content: flex-end;
+  }
+
+  .editableTitle {
+    font-size: 24px;
   }
 }
 
 .mainColumn {
   display: flex;
   flex-direction: column;
+  gap: 20px;
 }
 
 .sidebar {
   display: flex;
   flex-direction: column;
+  gap: 20px;
 }
 
-.section {
-  background: var(--surface-primary);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 20px;
-}
-
-.sectionLabel {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
-}
-
-.contentText {
-  color: var(--text-primary);
-  white-space: pre-wrap;
-  line-height: 1.6;
-}
-
-.codeContent {
-  background: var(--surface-secondary) !important;
-  border: 1px solid var(--border-subtle);
-  max-height: 400px;
-  overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.projectCard {
-  background: var(--surface-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+/* Linked Item Styles */
+.linkedItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 10px 12px;
+  margin: 0 -12px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 150ms ease;
+  transition: background 200ms ease;
 }
 
-.projectCard:hover {
+.linkedItem:hover {
   background: var(--surface-hover);
-  border-color: var(--border-hover);
 }
 
+.linkedItemDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.linkedItemContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.linkedItemTitle {
+  color: var(--text-primary);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.linkedItemMeta {
+  color: var(--text-dimmed);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* Metadata Row */
+.metadataRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.metadataRow:last-child {
+  border-bottom: none;
+}
+
+.metadataLabel {
+  color: var(--text-dimmed);
+  font-size: 13px;
+}
+
+.metadataValue {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Error State */
 .errorState {
   background: var(--surface-primary);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border-subtle);
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 48px;
   text-align: center;
 }
