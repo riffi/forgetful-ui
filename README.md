@@ -20,7 +20,36 @@ Browse memories, entities, projects, and visualize connections in an interactive
 - **Projects** - Organize knowledge by context
 - **Global Project Filter** - Focus on specific project across all views
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Docker)
+
+Add to your existing `docker-compose.yml`:
+
+```yaml
+  forgetful-ui:
+    image: ghcr.io/riffi/forgetful-ui:latest
+    container_name: forgetful-ui
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:80"
+    networks:
+      - forgetful
+    depends_on:
+      forgetful-service:
+        condition: service_healthy
+```
+
+Then run:
+```bash
+docker compose up -d --pull always
+```
+
+Open http://localhost:3000 in your browser.
+
+> The frontend proxies all API requests to `forgetful-service:8020` automatically.
+
+## 🐳 Full Stack (Docker Compose)
+
+To run both frontend and backend together:
 
 ```bash
 cd docker
@@ -28,43 +57,48 @@ cp .env.example .env
 docker compose up -d
 ```
 
-Open http://localhost:3000 in your browser.
-
-This starts the full stack:
+This starts:
 - **Frontend** at http://localhost:3000
 - **Backend** at http://localhost:8020
 
 Edit `.env` to customize ports and settings.
 
-## 🔧 Manual Setup
-
-If you prefer running without Docker:
+## 🔧 Development Setup
 
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) 18+
-- [Python 3.12+](https://www.python.org/) with [uv](https://docs.astral.sh/uv/)
+- Running [Forgetful](https://github.com/ScottRBK/forgetful) backend
 
-### 1. Start the Backend
-
-```bash
-uvx forgetful-ai --transport http --port 8020
-```
-
-### 2. Start the Frontend
+### Start Development Server
 
 ```bash
 npm install
+npm run dev
+```
+
+Open http://localhost:5173 in your browser.
+
+### Build for Production
+
+```bash
 npm run build
 npm run preview
 ```
 
-Open http://localhost:4173 in your browser.
-
 ### Configuration
 
-Create `.env.local` before building to override API URL:
+Create `.env.local` to override API URL:
 
 ```env
 VITE_API_URL=http://localhost:8020/api/v1
+```
+
+## 📦 Docker Build
+
+Build the image locally:
+
+```bash
+docker build -f docker/Dockerfile -t forgetful-ui .
+docker run -p 3000:80 forgetful-ui
 ```

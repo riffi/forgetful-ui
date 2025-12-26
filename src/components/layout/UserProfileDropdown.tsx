@@ -27,7 +27,7 @@ export function UserProfileDropdown({ collapsed }: UserProfileDropdownProps) {
   const content = (
     <Menu position="top-start" offset={4} withinPortal>
       <Menu.Target>
-        <div className={classes.container} data-guest={isGuest || undefined}>
+        <div className={classes.container} data-guest={isGuest || undefined} data-collapsed={collapsed || undefined}>
           <div className={classes.avatar} data-guest={isGuest || undefined}>
             {isGuest ? <IconUser size={16} /> : initials}
           </div>

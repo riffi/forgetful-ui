@@ -169,17 +169,22 @@ export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
       {/* User Profile */}
       <UserProfileDropdown collapsed={collapsed} />
 
-      {/* Collapse toggle */}
-      <button className={classes.collapseToggle} onClick={onToggleCollapse}>
-        {collapsed ? (
-          <IconChevronRight size={18} stroke={1.5} />
-        ) : (
-          <>
-            <IconChevronLeft size={18} stroke={1.5} />
-            <span className={classes.collapseText}>Collapse</span>
-          </>
+      {/* Version & Collapse toggle */}
+      <div className={classes.footer}>
+        {!collapsed && (
+          <span className={classes.version}>v{__APP_VERSION__}</span>
         )}
-      </button>
+        <button className={classes.collapseToggle} onClick={onToggleCollapse}>
+          {collapsed ? (
+            <IconChevronRight size={18} stroke={1.5} />
+          ) : (
+            <>
+              <IconChevronLeft size={18} stroke={1.5} />
+              <span className={classes.collapseText}>Collapse</span>
+            </>
+          )}
+        </button>
+      </div>
     </div>
   )
 }

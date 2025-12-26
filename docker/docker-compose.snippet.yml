@@ -1,0 +1,15 @@
+# Add this service to your docker-compose.local.yml
+# Frontend will be available at http://localhost:3000
+# Proxies API requests to forgetful-service:8020
+
+  forgetful-ui:
+    image: ghcr.io/riffi/forgetful-ui:latest
+    container_name: forgetful-ui
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:80"
+    networks:
+      - forgetful
+    depends_on:
+      forgetful-service:
+        condition: service_healthy
