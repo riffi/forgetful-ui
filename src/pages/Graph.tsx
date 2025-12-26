@@ -120,7 +120,7 @@ export function Graph() {
   const getNeighborsAtDepth = useCallback((
     startNodeId: string,
     maxDepth: number,
-    edges: typeof data.edges
+    edges: NonNullable<typeof data>['edges']
   ): Set<string> => {
     const visited = new Set<string>([startNodeId])
     let currentLevel = new Set<string>([startNodeId])
@@ -713,7 +713,6 @@ export function Graph() {
               cooldownTicks={100}
               d3AlphaDecay={0.02}
               d3VelocityDecay={0.3}
-              linkDistance={120}
               nodeId="id"
               linkSource="source"
               linkTarget="target"

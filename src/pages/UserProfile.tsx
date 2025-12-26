@@ -6,7 +6,7 @@ import { Breadcrumb } from '@/components/ui'
 import classes from './UserProfile.module.css'
 
 export function UserProfile() {
-  const { user, logout, authMode, oauthProviders } = useAuth()
+  const { user, logout, oauthProviders } = useAuth()
   const [notes, setNotes] = useState(user?.notes || '')
   const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
@@ -56,7 +56,7 @@ export function UserProfile() {
 
   return (
     <div className={classes.container}>
-      <Breadcrumb items={[{ label: 'Profile' }]} />
+      <Breadcrumb items={[{ title: 'Profile', href: '/profile' }]} />
 
       {/* Header with avatar and name */}
       <div className={classes.header}>

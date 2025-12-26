@@ -10,7 +10,7 @@ interface UserProfileDropdownProps {
 
 export function UserProfileDropdown({ collapsed }: UserProfileDropdownProps) {
   const navigate = useNavigate()
-  const { user, logout, authMode, isAuthenticated } = useAuth()
+  const { user, logout, authMode } = useAuth()
 
   // Get user initials for avatar
   const initials = user?.name

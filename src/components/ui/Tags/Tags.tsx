@@ -1,5 +1,5 @@
 import { useState, useRef, KeyboardEvent } from 'react'
-import { IconX, IconPlus } from '@tabler/icons-react'
+import { IconX } from '@tabler/icons-react'
 import classes from './Tags.module.css'
 
 export type TagVariant = 'default' | 'memory' | 'entity' | 'document' | 'code' | 'project' | 'keyword'

@@ -69,6 +69,7 @@ export interface MemoryUpdate {
   tags?: string[]
   importance?: number
   project_ids?: number[]
+  is_obsolete?: boolean
 }
 
 export interface Project {
