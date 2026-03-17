@@ -275,6 +275,7 @@ export function DocumentDetail() {
               minHeight={250}
               accentColor="document"
               inlineEdit
+              contentType={['json', 'yaml', 'html', 'other'].includes(editedType) ? 'code' : 'markdown'}
             />
           </Paper>
         </div>

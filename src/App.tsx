@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
-import { Dashboard, Memories, MemoryDetail, Entities, EntityDetail, Projects, ProjectDetail, Documents, DocumentDetail, CodeArtifacts, CodeArtifactDetail, Graph, Login, UserProfile } from '@/pages'
+import { Dashboard, Memories, MemoryDetail, Entities, EntityDetail, Projects, ProjectDetail, Documents, DocumentDetail, CodeArtifacts, CodeArtifactDetail, Graph, Activity, Login, UserProfile } from '@/pages'
 import { useAuth } from '@/context/AuthContext'
 
 function App() {
@@ -32,6 +32,7 @@ function App() {
         <Route path="/code-artifacts" element={<CodeArtifacts />} />
         <Route path="/code-artifacts/:id" element={<CodeArtifactDetail />} />
         <Route path="/graph" element={<Graph />} />
+        <Route path="/activity" element={<Activity />} />
         <Route path="/profile" element={<UserProfile />} />
       </Route>
     </Routes>

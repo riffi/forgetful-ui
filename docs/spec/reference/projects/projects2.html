@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forgetful — Projects</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --slate-950: #020617;
+  --slate-900: #0f172a;
+  --slate-800: #1e293b;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748b;
+  --purple: #a855f7;
+  --amber: #f59e0b;
+  --blue: #3b82f6;
+  --cyan: #06b6d4;
+  --green: #22c55e;
+  --pink: #ec4899;
+  --violet: #8b5cf6;
+  --red: #ef4444;
+  --sidebar-w: 240px;
+  --sidebar-collapsed-w: 64px;
+  --detail-w: 380px;
+  --content-pad: 24px;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-pill: 100px;
+  --trans: 0.2s ease;
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font-body);
+  background: var(--slate-950);
+  color: rgba(255,255,255,0.9);
+  overflow: hidden;
+}
+
+/* ===== LAYOUT ===== */
+.app {
+  display: flex;
+  height: 100vh;
+  position: relative;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: rgba(15,23,42,0.95);
+  border-right: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: fixed;
+  left: 0; top: 0;
+  z-index: 40;
+  transition: width 0.3s ease, min-width 0.3s ease;
+}
+.sidebar.collapsed {
+  width: var(--sidebar-collapsed-w);
+  min-width: var(--sidebar-collapsed-w);
+}
+.sidebar.collapsed .hide-collapsed { display: none; }
+.sidebar.collapsed .sidebar-inner { align-items: center; }
+
+.sidebar-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px 12px;
+  gap: 8px;
+}
+
+/* Logo */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 16px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.logo-icon {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 18px rgba(168,85,247,0.35);
+}
+.logo-icon svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.logo-text { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; background: linear-gradient(135deg,#c084fc,#f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* Search trigger */
+.search-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(30,41,59,0.6);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.4);
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: var(--trans);
+}
+.search-trigger:hover { background: rgba(51,65,85,0.5); color: rgba(255,255,255,0.6); }
+.search-trigger svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+.search-trigger kbd {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 1px 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.35);
+}
+
+/* Nav */
+.nav { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  transition: var(--trans);
+  text-decoration: none;
+  position: relative;
+}
+.nav-item svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.nav-item:hover { background: rgba(51,65,85,0.35); color: rgba(255,255,255,0.8); }
+.nav-item.active {
+  background: rgba(34,197,94,0.12);
+  color: #fff;
+  box-shadow: 0 0 16px rgba(34,197,94,0.15);
+}
+.nav-item.active svg { stroke: var(--green); }
+
+.sidebar.collapsed .nav-item { justify-content: center; padding: 10px; }
+
+/* User profile */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
+  position: relative;
+  margin-top: auto;
+}
+.user-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--violet), var(--blue));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0;
+}
+.user-name { font-size: 13px; color: rgba(255,255,255,0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-chevron { margin-left: auto; width: 14px; height: 14px; stroke: rgba(255,255,255,0.4); fill: none; stroke-width: 2; }
+
+.user-dropdown {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 8px;
+  width: 180px;
+  background: rgba(15,23,42,0.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  box-shadow: 0 -8px 30px rgba(0,0,0,0.5);
+  z-index: 50;
+}
+.user-dropdown.open { display: block; }
+.user-dropdown-item {
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  transition: var(--trans);
+}
+.user-dropdown-item:hover { background: rgba(51,65,85,0.5); color: #fff; }
+.user-dropdown-item.danger:hover { background: rgba(239,68,68,0.15); color: var(--red); }
+
+/* Collapse toggle */
+.collapse-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: rgba(255,255,255,0.35);
+  cursor: pointer;
+  transition: var(--trans);
+}
+.collapse-toggle:hover { color: rgba(255,255,255,0.6); background: rgba(51,65,85,0.25); }
+.collapse-toggle svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; transition: transform 0.3s ease; }
+.sidebar.collapsed .collapse-toggle svg { transform: rotate(180deg); }
+
+/* ===== CONTENT WRAPPER ===== */
+.content-wrapper {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  transition: margin-left 0.3s ease;
+  position: relative;
+  background: radial-gradient(ellipse at 50% 30%, rgba(30,41,59,0.35) 0%, var(--slate-950) 70%);
+}
+.sidebar.collapsed ~ .content-wrapper { margin-left: var(--sidebar-collapsed-w); }
+
+/* Auth Warning */
+.auth-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: rgba(234,179,8,0.12);
+  border-bottom: 1px solid rgba(234,179,8,0.2);
+  font-size: 12px;
+  color: rgba(234,179,8,0.9);
+  flex-shrink: 0;
+}
+.auth-warning svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+.auth-warning-close {
+  margin-left: auto;
+  background: none; border: none;
+  color: rgba(234,179,8,0.6);
+  cursor: pointer;
+  padding: 2px;
+  line-height: 1;
+  font-size: 16px;
+  transition: var(--trans);
+}
+.auth-warning-close:hover { color: rgba(234,179,8,1); }
+
+/* Project context bar */
+.project-context-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 24px;
+  background: rgba(34,197,94,0.08);
+  border-bottom: 1px solid rgba(34,197,94,0.12);
+  font-size: 13px;
+  color: rgba(34,197,94,0.9);
+  flex-shrink: 0;
+}
+.project-context-bar.visible { display: flex; }
+.project-context-bar .ctx-name { font-weight: 600; }
+.project-context-bar .ctx-count { color: rgba(255,255,255,0.5); font-size: 12px; }
+.project-context-bar .ctx-clear {
+  margin-left: auto;
+  color: rgba(255,255,255,0.45);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: var(--trans);
+}
+.project-context-bar .ctx-clear:hover { color: rgba(255,255,255,0.7); }
+
+/* Main Content */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--content-pad);
+  transition: padding-right 0.3s ease;
+}
+.content.detail-open { padding-right: calc(var(--detail-w) + var(--content-pad)); }
+
+.content::-webkit-scrollbar { width: 6px; }
+.content::-webkit-scrollbar-track { background: transparent; }
+.content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+.content::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+
+/* ===== PAGE HEADER ===== */
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.page-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: rgba(255,255,255,0.95);
+  margin-right: auto;
+}
+
+.header-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: rgba(30,41,59,0.6);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius-sm);
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  min-width: 200px;
+  transition: var(--trans);
+}
+.header-search:focus-within { border-color: rgba(34,197,94,0.4); box-shadow: 0 0 12px rgba(34,197,94,0.1); }
+.header-search svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+.header-search input {
+  flex: 1;
+  background: none; border: none; outline: none;
+  color: rgba(255,255,255,0.9);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+.header-search input::placeholder { color: rgba(255,255,255,0.35); }
+
+/* Filter dropdown */
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: rgba(30,41,59,0.6);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius-sm);
+  color: rgba(255,255,255,0.6);
+  font-size: 13px;
+  cursor: pointer;
+  transition: var(--trans);
+  position: relative;
+  font-family: var(--font-body);
+}
+.filter-btn:hover { border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.85); }
+.filter-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+.filter-btn.active-filter { border-color: rgba(34,197,94,0.3); color: var(--green); }
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 160px;
+  background: rgba(15,23,42,0.96);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm);
+  padding: 5px;
+  z-index: 30;
+  box-shadow: 0 10px 35px rgba(0,0,0,0.5);
+}
+.dropdown-menu.open { display: block; }
+.dropdown-option {
+  padding: 7px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+  cursor: pointer;
+  transition: var(--trans);
+}
+.dropdown-option:hover { background: rgba(51,65,85,0.5); color: #fff; }
+.dropdown-option.selected { color: var(--green); }
+
+/* Create button */
+.btn-create {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--green);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: var(--trans);
+  box-shadow: 0 0 18px rgba(34,197,94,0.25);
+}
+.btn-create:hover { background: #16a34a; box-shadow: 0 0 24px rgba(34,197,94,0.4); transform: translateY(-1px); }
+.btn-create svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+
+/* ===== PROJECTS GRID ===== */
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.project-card {
+  background: rgba(30,41,59,0.55);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius);
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.project-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.project-card:hover {
+  border-color: rgba(34,197,94,0.2);
+  background: rgba(51,65,85,0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25), 0 0 20px rgba(34,197,94,0.06);
+}
+.project-card:hover::before { opacity: 1; }
+
+.card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.card-name { font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.92); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.badge-type {
+  background: rgba(34,197,94,0.15);
+  color: var(--green);
+}
+.badge-status {
+  cursor: pointer;
+  transition: var(--trans);
+  position: relative;
+}
+.badge-status.active { background: rgba(34,197,94,0.15); color: var(--green); }
+.badge-status.archived { background: rgba(100,116,139,0.2); color: var(--slate-500); }
+.badge-status.completed { background: rgba(59,130,246,0.15); color: var(--blue); }
+
+.status-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 130px;
+  background: rgba(15,23,42,0.97);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  z-index: 20;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+}
+.status-dropdown.open { display: block; }
+.status-option {
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+  cursor: pointer;
+  transition: var(--trans);
+}
+.status-option:hover { background: rgba(51,65,85,0.5); color: #fff; }
+.status-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.5;
+  margin-bottom: 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+}
+.card-meta-item { display: flex; align-items: center; gap: 4px; }
+.card-meta-item svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+.card-meta-item a {
+  color: var(--blue);
+  text-decoration: none;
+  transition: var(--trans);
+}
+.card-meta-item a:hover { color: #60a5fa; text-decoration: underline; }
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.btn-open {
+  padding: 5px 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-sm);
+  color: rgba(255,255,255,0.7);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: var(--trans);
+}
+.btn-open:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+/* Quick actions on hover */
+.card-quick-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.project-card:hover .card-quick-actions { opacity: 1; }
+.qa-btn {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.06);
+  border: none;
+  color: rgba(255,255,255,0.45);
+  cursor: pointer;
+  transition: var(--trans);
+}
+.qa-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+.qa-btn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
+.qa-btn.danger:hover { background: rgba(239,68,68,0.15); color: var(--red); }
+
+/* ===== DETAIL PANEL ===== */
+.detail-panel {
+  position: fixed;
+  right: 0; top: 0;
+  width: var(--detail-w);
+  height: 100vh;
+  background: rgba(15,23,42,0.92);
+  backdrop-filter: blur(16px);
+  border-left: 1px solid rgba(255,255,255,0.07);
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+}
+.detail-panel.open { transform: translateX(0); }
+.detail-panel::-webkit-scrollbar { width: 4px; }
+.detail-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+.detail-header {
+  padding: 20px;
+  position: relative;
+}
+.detail-type-badge {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background: rgba(34,197,94,0.15);
+  color: var(--green);
+  margin-bottom: 10px;
+}
+.detail-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.95);
+  cursor: text;
+  outline: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+  transition: border-color 0.2s;
+}
+.detail-title:hover { border-bottom-color: rgba(255,255,255,0.15); }
+.detail-title:focus { border-bottom-color: var(--green); }
+.detail-close {
+  position: absolute;
+  top: 20px; right: 20px;
+  background: none; border: none;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 20px;
+  line-height: 1;
+  transition: var(--trans);
+}
+.detail-close:hover { color: #fff; }
+
+.detail-section {
+  padding: 0 20px 18px;
+}
+.detail-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 12px;
+}
+
+/* Quick edit */
+.field-group { margin-bottom: 14px; }
+.field-label { font-size: 11px; color: rgba(255,255,255,0.35); margin-bottom: 6px; }
+
+.slider-wrap { display: flex; align-items: center; gap: 10px; }
+.slider-wrap input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 4px;
+  background: rgba(30,41,59,0.8);
+  border-radius: 2px;
+  outline: none;
+}
+.slider-wrap input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px rgba(34,197,94,0.4);
+  cursor: pointer;
+}
+.slider-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+  font-family: var(--font-mono);
+  min-width: 20px;
+  text-align: center;
+}
+
+.tags-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: rgba(255,255,255,0.07);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+}
+.tag-remove {
+  background: none; border: none;
+  color: rgba(255,255,255,0.35);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 0 0 2px;
+}
+.tag-remove:hover { color: var(--red); }
+.tag-input {
+  background: none; border: none; outline: none;
+  color: rgba(255,255,255,0.7);
+  font-size: 12px;
+  font-family: var(--font-body);
+  width: 80px;
+}
+.tag-input::placeholder { color: rgba(255,255,255,0.25); }
+
+.project-pills { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.project-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: rgba(34,197,94,0.12);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  color: var(--green);
+}
+.add-btn {
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: 1px dashed rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.35);
+  cursor: pointer;
+  font-size: 16px;
+  transition: var(--trans);
+}
+.add-btn:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+
+/* Content preview */
+.preview-text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.show-more {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  cursor: pointer;
+  margin-top: 6px;
+  display: inline-block;
+}
+.show-more:hover { color: rgba(255,255,255,0.7); text-decoration: underline; }
+
+/* Related items */
+.related-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.related-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.related-name { font-size: 13px; color: rgba(255,255,255,0.8); flex: 1; cursor: pointer; transition: var(--trans); }
+.related-name:hover { color: #fff; }
+.unlink-btn {
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  cursor: pointer;
+  transition: var(--trans);
+  background: none; border: none;
+  font-family: var(--font-body);
+}
+.unlink-btn:hover { color: rgba(255,255,255,0.6); }
+
+.show-all-link {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  margin-top: 8px;
+  display: inline-block;
+  cursor: pointer;
+}
+.show-all-link:hover { color: rgba(255,255,255,0.65); text-decoration: underline; }
+
+/* Detail footer */
+.detail-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.detail-meta { font-size: 11px; color: rgba(255,255,255,0.3); line-height: 1.6; font-family: var(--font-mono); }
+.detail-actions-row { display: flex; gap: 8px; }
+
+.btn-ghost {
+  padding: 6px 14px;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm);
+  color: rgba(255,255,255,0.6);
+  font-size: 12px;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: var(--trans);
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: #fff; }
+
+.btn-delete {
+  padding: 6px 14px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.35);
+  font-size: 12px;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: var(--trans);
+}
+.btn-delete:hover { color: var(--red); }
+
+.btn-primary {
+  padding: 6px 16px;
+  background: var(--green);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: var(--trans);
+  box-shadow: 0 0 14px rgba(34,197,94,0.2);
+}
+.btn-primary:hover { background: #16a34a; box-shadow: 0 0 20px rgba(34,197,94,0.35); }
+
+/* ===== GLOBAL SEARCH OVERLAY ===== */
+.search-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(2,6,23,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  justify-content: center;
+  padding-top: 18vh;
+}
+.search-overlay.open { display: flex; }
+.search-modal {
+  width: 520px;
+  max-height: 60vh;
+  background: rgba(15,23,42,0.96);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(168,85,247,0.08);
+  overflow: hidden;
+}
+.search-modal-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.search-modal-input svg { width: 18px; height: 18px; stroke: rgba(255,255,255,0.4); fill: none; stroke-width: 2; }
+.search-modal-input input {
+  flex: 1;
+  background: none; border: none; outline: none;
+  color: rgba(255,255,255,0.9);
+  font-size: 15px;
+  font-family: var(--font-body);
+}
+.search-modal-input input::placeholder { color: rgba(255,255,255,0.3); }
+.search-modal-body { padding: 12px; }
+.search-hint { font-size: 12px; color: rgba(255,255,255,0.3); text-align: center; padding: 20px; }
+
+/* ===== PROJECT FILTER MODAL (Ctrl+P) ===== */
+.project-filter-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(2,6,23,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  justify-content: center;
+  padding-top: 18vh;
+}
+.project-filter-overlay.open { display: flex; }
+.pf-modal {
+  width: 400px;
+  background: rgba(15,23,42,0.96);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+.pf-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  display: flex; align-items: center; gap: 8px;
+}
+.pf-header input {
+  flex: 1;
+  background: none; border: none; outline: none;
+  color: rgba(255,255,255,0.9);
+  font-size: 14px;
+  font-family: var(--font-body);
+}
+.pf-header input::placeholder { color: rgba(255,255,255,0.3); }
+.pf-list { padding: 6px; max-height: 240px; overflow-y: auto; }
+.pf-item {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+  cursor: pointer;
+  transition: var(--trans);
+  display: flex; align-items: center; gap: 8px;
+}
+.pf-item:hover { background: rgba(51,65,85,0.5); color: #fff; }
+.pf-item .pf-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+.pf-item.all-projects { color: rgba(255,255,255,0.45); font-style: italic; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+  .projects-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .sidebar { width: var(--sidebar-collapsed-w); min-width: var(--sidebar-collapsed-w); }
+  .sidebar .hide-collapsed { display: none; }
+  .sidebar .nav-item { justify-content: center; padding: 10px; }
+  .content-wrapper { margin-left: var(--sidebar-collapsed-w); }
+  .projects-grid { grid-template-columns: 1fr; }
+  .page-header { flex-direction: column; align-items: stretch; }
+  .page-title { margin-right: 0; }
+  .detail-panel { width: 100%; }
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.project-card { animation: fadeInUp 0.35s ease both; }
+.project-card:nth-child(1) { animation-delay: 0.04s; }
+.project-card:nth-child(2) { animation-delay: 0.08s; }
+.project-card:nth-child(3) { animation-delay: 0.12s; }
+.project-card:nth-child(4) { animation-delay: 0.16s; }
+.project-card:nth-child(5) { animation-delay: 0.20s; }
+.project-card:nth-child(6) { animation-delay: 0.24s; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-inner">
+
+      <!-- Logo -->
+      <a href="#dashboard" class="logo" ui-spec-block-id="block_id(logo)">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/><circle cx="12" cy="12" r="8" opacity="0.3"/></svg>
+        </div>
+        <span class="logo-text hide-collapsed">Forgetful</span>
+      </a>
+
+      <!-- Global Search -->
+      <div class="search-trigger hide-collapsed" ui-spec-block-id="block_id(global_search)" onclick="openGlobalSearch()">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <span>Quick search...</span>
+        <kbd>/</kbd>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="nav" ui-spec-block-id="block_id(nav)">
+        <a href="#dashboard" class="nav-item" data-nav="dashboard">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span class="hide-collapsed">Dashboard</span>
+        </a>
+        <a href="#memories" class="nav-item" data-nav="memories">
+          <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 3-2 5.5-4 7.5S12 20 12 22c0-2-1-2.5-3-4.5S5 12 5 9a7 7 0 017-7z"/></svg>
+          <span class="hide-collapsed">Memories</span>
+        </a>
+        <a href="#entities" class="nav-item" data-nav="entities">
+          <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+          <span class="hide-collapsed">Entities</span>
+        </a>
+        <a href="#projects" class="nav-item active" data-nav="projects">
+          <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+          <span class="hide-collapsed">Projects</span>
+        </a>
+        <a href="#plans" class="nav-item" data-nav="plans">
+          <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+          <span class="hide-collapsed">Plans</span>
+        </a>
+        <a href="#documents" class="nav-item" data-nav="documents">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span class="hide-collapsed">Documents</span>
+        </a>
+        <a href="#code_artifacts" class="nav-item" data-nav="code_artifacts">
+          <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <span class="hide-collapsed">Code Artifacts</span>
+        </a>
+        <a href="#graph" class="nav-item" data-nav="graph">
+          <svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.5 7.5l7 7M8.5 16.5l7-7"/></svg>
+          <span class="hide-collapsed">Graph</span>
+        </a>
+        <a href="#activity" class="nav-item" data-nav="activity">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span class="hide-collapsed">Activity</span>
+        </a>
+      </nav>
+
+      <!-- User Profile -->
+      <div class="user-profile" ui-spec-block-id="block_id(user_profile)" onclick="toggleUserDropdown(event)">
+        <div class="user-avatar">JD</div>
+        <span class="user-name hide-collapsed">Jane Doe</span>
+        <svg class="user-chevron hide-collapsed" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="user-dropdown-item" onclick="event.stopPropagation()">Profile</div>
+          <div class="user-dropdown-item danger" onclick="event.stopPropagation()">Sign out</div>
+        </div>
+      </div>
+
+      <!-- Collapse Toggle -->
+      <div class="collapse-toggle" ui-spec-block-id="block_id(collapse_toggle)" onclick="toggleSidebar()">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        <span class="hide-collapsed">Collapse</span>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- CONTENT WRAPPER -->
+  <div class="content-wrapper">
+
+    <!-- Auth Warning -->
+    <div class="auth-warning" ui-spec-block-id="block_id(auth_warning)" id="authWarning">
+      <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Auth disabled — Server running without authentication</span>
+      <button class="auth-warning-close" onclick="dismissAuthWarning()">×</button>
+    </div>
+
+    <!-- Project Context Bar -->
+    <div class="project-context-bar" ui-spec-block-id="block_id(project_context_bar)" id="projectContextBar">
+      <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+      <span class="ctx-name" id="ctxProjectName">API Backend</span>
+      <span class="ctx-count">· 12 items</span>
+      <span class="ctx-clear" onclick="clearProjectFilter()">Clear filter</span>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="content" id="mainContent">
+
+      <!-- Page Header -->
+      <div class="page-header" ui-spec-block-id="block_id(header)">
+        <h1 class="page-title">Projects</h1>
+
+        <div class="header-search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search projects..." id="projectSearch" oninput="filterProjects()">
+        </div>
+
+        <div class="filter-btn" id="statusFilter" onclick="toggleDropdown('statusDropdown')">
+          <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          <span id="statusFilterLabel">Status</span>
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px"><polyline points="6 9 12 15 18 9"/></svg>
+          <div class="dropdown-menu" id="statusDropdown">
+            <div class="dropdown-option selected" data-status="all" onclick="setStatusFilter(this, event)">All</div>
+            <div class="dropdown-option" data-status="active" onclick="setStatusFilter(this, event)">Active</div>
+            <div class="dropdown-option" data-status="archived" onclick="setStatusFilter(this, event)">Archived</div>
+            <div class="dropdown-option" data-status="completed" onclick="setStatusFilter(this, event)">Completed</div>
+          </div>
+        </div>
+
+        <div class="filter-btn" id="typeFilter" onclick="toggleDropdown('typeDropdown')">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h6"/></svg>
+          <span id="typeFilterLabel">Type</span>
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px"><polyline points="6 9 12 15 18 9"/></svg>
+          <div class="dropdown-menu" id="typeDropdown">
+            <div class="dropdown-option selected" data-type="all" onclick="setTypeFilter(this, event)">All Types</div>
+            <div class="dropdown-option" data-type="software" onclick="setTypeFilter(this, event)">Software</div>
+            <div class="dropdown-option" data-type="research" onclick="setTypeFilter(this, event)">Research</div>
+            <div class="dropdown-option" data-type="design" onclick="setTypeFilter(this, event)">Design</div>
+            <div class="dropdown-option" data-type="infrastructure" onclick="setTypeFilter(this, event)">Infrastructure</div>
+          </div>
+        </div>
+
+        <button class="btn-create" onclick="createProject()">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create Project
+        </button>
+      </div>
+
+      <!-- Projects Grid -->
+      <div class="projects-grid" ui-spec-block-id="block_id(projects_grid)" id="projectsGrid">
+
+        <div class="project-card" data-project="1" data-status="active" data-type="software" onclick="openDetail(this)">
+          <div class="card-top">
+            <span class="card-name">API Backend</span>
+            <span class="badge badge-type">Software</span>
+            <span class="badge badge-status active" onclick="toggleStatusDropdown(event, this)">Active
+              <div class="status-dropdown">
+                <div class="status-option" onclick="changeCardStatus(event, 'active')"><span class="status-dot" style="background:var(--green)"></span>Active</div>
+                <div class="status-option" onclick="changeCardStatus(event, 'archived')"><span class="status-dot" style="background:var(--slate-500)"></span>Archived</div>
+                <div class="status-option" onclick="changeCardStatus(event, 'completed')"><span class="status-dot" style="background:var(--blue)"></span>Completed</div>
+              </div>
+            </span>
+          </div>
+          <div class="card-desc">REST API service built with Node.js and Express. Handles authentication, data validation, and database operations for the main platform.</div>
+          <div class="card-meta">
+            <div class="card-meta-item">
+              <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 3-2 5.5-4 7.5S12 20 12 22c0-2-1-2.5-3-4.5S5 12 5 9a7 7 0 017-7z"/></svg>
+              24 memories
+            </div>
+            <div class="card-meta-item">
+              <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              <a href="#">api-backend</a>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="btn-open" onclick="event.stopPropagation()">Open</button>
+            <div class="card-quick-actions">
+              <button class="qa-btn" title="Archive" onclick="event.stopPropagation()">
+                <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>
+              </button>
+              <button class="qa-btn danger" title="Delete" onclick="event.stopPropagation()">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="project-card" data-project="2" data-status="active" data-type="design" onclick="openDetail(this)">
+          <div class="card-top">
+            <span class="card-name">Design System v3</span>
+            <span class="badge badge-type">Design</span>
+            <span class="badge badge-status active" onclick="toggleStatusDropdown(event, this)">Active
+              <div class="status-dropdown">
+                <div class="status-option" onclick="changeCardStatus(event, 'active')"><span class="status-dot" style="background:var(--green)"></span>Active</div>
+                <div class="status-option" onclick="changeCardStatus(event, 'archived')"><span class="status-dot" style="background:var(--slate-500)"></span>Archived</div>
+                <div class="status-option" onclick="changeCardStatus(event, 'completed')"><span class="status-dot" style="background:var(--blue)"></span>Completed</div>
+              </div>
+            </span>
+          </div>
+          <div class="card-desc">Unified design system with tokens, components, and accessibility patterns. Figma library synced with code components.</div>
+          <div class="card-meta">
+            <div class="card-meta-item">
+              <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 3-2 5.5-4 7.5S12 20 12 22c0-2-1-2.5-3-4.5S5 12 5 9a7 7 0 017-7z"/></svg>
+              18 memories
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="btn-open" onclick="event.stopPropagation()">Open</button>
+            <div class="card-quick-actions">
+              <button class="qa-btn" title="Archive" onclick="event.stopPropagation()">
+                <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>
+              </button>
+              <button class="qa-btn danger" title="Delete" onclick="event.stopPropagation()">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="project-card" data-project="3" data-status="completed" data-type="research" onclick="openDetail(this)">
+          <div class="card-top">
+            <span class="card-name">LLM Benchmarking</span>
+            <span class="badge badge-type">Research</span>
+            <span class="badge badge-status completed" onclick="toggleStatusDropdown(event, this)">Completed
+              <div class="status-dropdown">
+                <div class="status-option" onclick="changeCardStatus(event, 'active')"><span class="status-dot" style="background:var(--green)"></span>Active</div>
+                <div class="status-option" onclick="changeCardStatus(event, 'archived')"><span class="status-dot" style="background:var(--slate-500)"></span>Archived</div>
+                <div class="status-option" onclick="changeCardStatus(event, 'completed')"><span class="status-dot" style="background:var(--blue)"></span>Completed</div>
+              </div>
+            </span>
+          </div>
+          <div class="card-desc">Comparative analysis of large language model performance across reasoning, coding, and instruction-following benchmarks.</div>
+          <div class="card-meta">
+            <div class="card-meta-item">
+              <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 3-2 5.5-4 7.5S12 20 12 22c0-2-1-2.5-3-4.5S5 12 5 9a7 7 0 017-7z"/></svg>
+              42 memories
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="btn-open" onclick="event.stopPropagation()">Open</button>
+            <div class="card-quick-actions">
+              <button class="qa-btn" title="Archive" onclick="event.stopPropagation()">
+                <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>
+              </button>
+              <button class="qa-btn danger" title="Delete" onclick="event.stopPropagation()">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="project-card" data-project="4" data-status="active" data-type="infrastructure" onclick="openDetail(this)">
+          <div class="card-top">
+            <span class="card-name">Cloud Migration</span>
+            <span class="badge badge-type">Infrastructure</span>
+            <span class="badge badge-status active" onclick="toggleStatusDropdown(event, this)">Active
+              <div class="status-dropdown">
+                <div class="status-option" onclick="changeCardStatus(event, 'active')"><span class="status-dot" style="background:var(--green)"></span>Active</div>
+                <div class="status-option" onclick="changeCardStatus(event, 'archived')"><span class="status-dot" style="background:var(--slate-500)"></span>Archived</div>
+                <div class="status-option" onclick="changeCardStatus(event, 'completed')"><span class="status-dot" style="background:var(--blue)"></span>Completed</div>
+              </div>
+            </span>
+          </div>
+          <div class="card-desc">Migrating on-premise infrastructure to AWS. Covers VPC setup, container orchestration, CI/CD pipelines, and monitoring.</div>
+          <div class="card-meta">
+            <div class="card-meta-item">
+              <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 3-2 5.5-4 7.5S12 20 12 22c0-2-1-2.5-3-4.5S5 12 5 9a7 7 0 017-7z"/></svg>
+              31 memories
+            </div>
+            <div class="card-meta-item">
+              <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              <a href="#">infra-migration</a>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="btn-open" onclick="event.stopPropagation()">Open</button>
+            <div class="card-quick-actions">
+              <button class="qa-btn" title="Archive" onclick="event.stopPropagation()">
+                <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>
+              </button>
+              <button class="qa-btn danger" title="Delete" onclick="event.stopPropagation()">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="project-card" data-project="5" data-status="archived" data-type="software" onclick="openDetail(this)">
+          <div class="card-top">
+            <span class="card-name">Mobile App v1</span>
+            <span class="badge badge-type">Software</span>
+            <span class="badge badge-status archived" onclick="toggleStatusDropdown(event, this)">Archived
+              <div class="status-dropdown">
+                <div class="status-option" onclick="changeCardStatus(event, 'active')"><span class="status-dot" style="background:var(--green)"></span>Active</div>
+                <div class="status-option" onclick="changeCardStatus(event, 'archived')"><span class="status-dot" style="background:var(--slate-500)"></span>Archived</div>
+                <div class="status-option" onclick="changeCardStatus(event, 'completed')"><span class="status-dot" style="background:var(--blue)"></span>Completed</div>
+              </div>
+            </span>
+          </div>
+          <div class="card-desc">React Native mobile application. Superseded by v2 which uses a native approach for better performance.</div>
+          <div class="card-meta">
+            <div class="card-meta-item">
+              <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 3-2 5.5-4 7.5S12 20 12 22c0-2-1-2.5-3-4.5S5 12 5 9a7 7 0 017-7z"/></svg>
+              8 memories
+            </div>
+            <div class="card-meta-item">
+              <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              <a href="#">mobile-app-v1</a>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="btn-open" onclick="event.stopPropagation()">Open</button>
+            <div class="card-quick-actions">
+              <button class="qa-btn" title="Archive" onclick="event.stopPropagation()">
+                <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>
+              </button>
+              <button class="qa-btn danger" title="Delete" onclick="event.stopPropagation()">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="project-card" data-project="6" data-status="active" data-type="research" onclick="openDetail(this)">
+          <div class="card-top">
+            <span class="card-name">Knowledge Graph R&D</span>
+            <span class="badge badge-type">Research</span>
+            <span class="badge badge-status active" onclick="toggleStatusDropdown(event, this)">Active
+              <div class="status-dropdown">
+                <div class="status-option" onclick="changeCardStatus(event, 'active')"><span class="status-dot" style="background:var(--green)"></span>Active</div>
+                <div class="status-option" onclick="changeCardStatus(event, 'archived')"><span class="status-dot" style="background:var(--slate-500)"></span>Archived</div>
+                <div class="status-option" onclick="changeCardStatus(event, 'completed')"><span class="status-dot" style="background:var(--blue)"></span>Completed</div>
+              </div>
+            </span>
+          </div>
+          <div class="card-desc">Exploring graph-based knowledge representation for improved memory retrieval and semantic relationships.</div>
+          <div class="card-meta">
+            <div class="card-meta-item">
+              <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 3-2 5.5-4 7.5S12 20 12 22c0-2-1-2.5-3-4.5S5 12 5 9a7 7 0 017-7z"/></svg>
+              15 memories
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="btn-open" onclick="event.stopPropagation()">Open</button>
+            <div class="card-quick-actions">
+              <button class="qa-btn" title="Archive" onclick="event.stopPropagation()">
+                <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>
+              </button>
+              <button class="qa-btn danger" title="Delete" onclick="event.stopPropagation()">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- DETAIL PANEL -->
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-header" ui-spec-block-id="block_id(detail_header)">
+      <div class="detail-type-badge">Project</div>
+      <div class="detail-title" contenteditable="true" id="detailTitle">API Backend</div>
+      <button class="detail-close" onclick="closeDetail()">×</button>
+    </div>
+
+    <div class="detail-section" ui-spec-block-id="block_id(detail_quick_edit)">
+      <div class="detail-section-label">Quick Edit</div>
+      <div class="field-group">
+        <div class="field-label">Importance</div>
+        <div class="slider-wrap">
+          <input type="range" min="1" max="10" value="8" id="importanceSlider" oninput="document.getElementById('importanceVal').textContent=this.value">
+          <span class="slider-value" id="importanceVal">8</span>
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Tags</div>
+        <div class="tags-row">
+          <span class="tag-pill">backend <button class="tag-remove" onclick="this.parentElement.remove()">×</button></span>
+          <span class="tag-pill">api <button class="tag-remove" onclick="this.parentElement.remove()">×</button></span>
+          <span class="tag-pill">node.js <button class="tag-remove" onclick="this.parentElement.remove()">×</button></span>
+          <input class="tag-input" placeholder="Add tag..." onkeydown="addTag(event)">
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Associated Projects</div>
+        <div class="project-pills">
+          <span class="project-pill">Cloud Migration</span>
+          <button class="add-btn" title="Add project">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section" ui-spec-block-id="block_id(detail_content_preview)">
+      <div class="detail-section-label">Content Preview</div>
+      <div class="preview-text">REST API service built with Node.js and Express. Handles authentication, data validation, and database operations for the main platform. Includes rate limiting, caching layer, and comprehensive logging.</div>
+      <span class="show-more">Show more</span>
+    </div>
+
+    <div class="detail-section" ui-spec-block-id="block_id(detail_related_items)">
+      <div class="detail-section-label">Related Items</div>
+      <div class="related-item">
+        <span class="related-dot" style="background:var(--purple)"></span>
+        <span class="related-name">Authentication flow design</span>
+        <button class="unlink-btn">Unlink</button>
+      </div>
+      <div class="related-item">
+        <span class="related-dot" style="background:var(--amber)"></span>
+        <span class="related-name">Express.js</span>
+        <button class="unlink-btn">Unlink</button>
+      </div>
+      <div class="related-item">
+        <span class="related-dot" style="background:var(--blue)"></span>
+        <span class="related-name">API specification doc</span>
+        <button class="unlink-btn">Unlink</button>
+      </div>
+      <div class="related-item">
+        <span class="related-dot" style="background:var(--cyan)"></span>
+        <span class="related-name">auth-middleware.ts</span>
+        <button class="unlink-btn">Unlink</button>
+      </div>
+      <div class="related-item">
+        <span class="related-dot" style="background:var(--purple)"></span>
+        <span class="related-name">Rate limiting strategy</span>
+        <button class="unlink-btn">Unlink</button>
+      </div>
+      <span class="show-all-link">Show all 12</span>
+    </div>
+
+    <div class="detail-footer" ui-spec-block-id="block_id(detail_footer)">
+      <div class="detail-meta">
+        ID: 1<br>Created: 2025-11-04
+      </div>
+      <div class="detail-actions-row" ui-spec-block-id="block_id(detail_actions)">
+        <button class="btn-delete">Delete</button>
+        <button class="btn-ghost">View in Graph</button>
+        <button class="btn-primary">Edit Full</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GLOBAL SEARCH OVERLAY -->
+  <div class="search-overlay" id="searchOverlay" onclick="closeGlobalSearch(event)">
+    <div class="search-modal" onclick="event.stopPropagation()">
+      <div class="search-modal-input">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" placeholder="Search memories, entities, projects..." id="globalSearchInput" autofocus>
+      </div>
+      <div class="search-modal-body">
+        <div class="search-hint">Type to search across all items&hellip;</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECT FILTER OVERLAY (Ctrl+P) -->
+  <div class="project-filter-overlay" id="projectFilterOverlay" onclick="closeProjectFilter(event)">
+    <div class="pf-modal" onclick="event.stopPropagation()">
+      <div class="pf-header">
+        <svg style="width:16px;height:16px;stroke:rgba(255,255,255,0.4);fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        <input type="text" placeholder="Filter by project..." autofocus>
+      </div>
+      <div class="pf-list">
+        <div class="pf-item all-projects" onclick="selectProjectFilter(null)">All Projects</div>
+        <div class="pf-item" onclick="selectProjectFilter('API Backend')"><span class="pf-dot"></span>API Backend</div>
+        <div class="pf-item" onclick="selectProjectFilter('Design System v3')"><span class="pf-dot"></span>Design System v3</div>
+        <div class="pf-item" onclick="selectProjectFilter('Cloud Migration')"><span class="pf-dot"></span>Cloud Migration</div>
+        <div class="pf-item" onclick="selectProjectFilter('Knowledge Graph R&D')"><span class="pf-dot"></span>Knowledge Graph R&amp;D</div>
+        <div class="pf-item" onclick="selectProjectFilter('LLM Benchmarking')"><span class="pf-dot"></span>LLM Benchmarking</div>
+        <div class="pf-item" onclick="selectProjectFilter('Mobile App v1')"><span class="pf-dot"></span>Mobile App v1</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Sidebar collapse
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+// User dropdown
+function toggleUserDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('userDropdown').classList.toggle('open');
+}
+
+// Auth warning
+function dismissAuthWarning() {
+  const el = document.getElementById('authWarning');
+  el.style.display = 'none';
+  sessionStorage.setItem('authDismissed', '1');
+}
+if (sessionStorage.getItem('authDismissed')) {
+  document.getElementById('authWarning').style.display = 'none';
+}
+
+// Global search
+function openGlobalSearch() {
+  const ov = document.getElementById('searchOverlay');
+  ov.classList.add('open');
+  setTimeout(() => document.getElementById('globalSearchInput').focus(), 50);
+}
+function closeGlobalSearch(e) {
+  if (e.target === e.currentTarget || e.key === 'Escape') {
+    document.getElementById('searchOverlay').classList.remove('open');
+  }
+}
+
+// Project filter (Ctrl+P)
+function openProjectFilter() {
+  document.getElementById('projectFilterOverlay').classList.add('open');
+}
+function closeProjectFilter(e) {
+  if (e.target === e.currentTarget || e.key === 'Escape') {
+    document.getElementById('projectFilterOverlay').classList.remove('open');
+  }
+}
+function selectProjectFilter(name) {
+  const bar = document.getElementById('projectContextBar');
+  if (name) {
+    document.getElementById('ctxProjectName').textContent = name;
+    bar.classList.add('visible');
+  } else {
+    bar.classList.remove('visible');
+  }
+  document.getElementById('projectFilterOverlay').classList.remove('open');
+}
+function clearProjectFilter() {
+  document.getElementById('projectContextBar').classList.remove('visible');
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+  if (e.key === '/' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) {
+    e.preventDefault();
+    openGlobalSearch();
+  }
+  if (e.key === 'Escape') {
+    document.getElementById('searchOverlay').classList.remove('open');
+    document.getElementById('projectFilterOverlay').classList.remove('open');
+    closeDetail();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+    e.preventDefault();
+    openProjectFilter();
+  }
+});
+
+// Dropdowns
+function toggleDropdown(id) {
+  document.querySelectorAll('.dropdown-menu').forEach(d => {
+    if (d.id !== id) d.classList.remove('open');
+  });
+  document.getElementById(id).classList.toggle('open');
+}
+
+let currentStatusFilter = 'all';
+let currentTypeFilter = 'all';
+
+function setStatusFilter(el, e) {
+  e.stopPropagation();
+  currentStatusFilter = el.dataset.status;
+  document.getElementById('statusFilterLabel').textContent = el.textContent;
+  el.closest('.dropdown-menu').querySelectorAll('.dropdown-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  el.closest('.dropdown-menu').classList.remove('open');
+  if (currentStatusFilter !== 'all') {
+    document.getElementById('statusFilter').classList.add('active-filter');
+  } else {
+    document.getElementById('statusFilter').classList.remove('active-filter');
+  }
+  applyFilters();
+}
+
+function setTypeFilter(el, e) {
+  e.stopPropagation();
+  currentTypeFilter = el.dataset.type;
+  document.getElementById('typeFilterLabel').textContent = el.textContent;
+  el.closest('.dropdown-menu').querySelectorAll('.dropdown-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  el.closest('.dropdown-menu').classList.remove('open');
+  if (currentTypeFilter !== 'all') {
+    document.getElementById('typeFilter').classList.add('active-filter');
+  } else {
+    document.getElementById('typeFilter').classList.remove('active-filter');
+  }
+  applyFilters();
+}
+
+function filterProjects() {
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = document.getElementById('projectSearch').value.toLowerCase();
+  document.querySelectorAll('.project-card').forEach(card => {
+    const name = card.querySelector('.card-name').textContent.toLowerCase();
+    const desc = card.querySelector('.card-desc').textContent.toLowerCase();
+    const status = card.dataset.status;
+    const type = card.dataset.type;
+    let show = true;
+    if (currentStatusFilter !== 'all' && status !== currentStatusFilter) show = false;
+    if (currentTypeFilter !== 'all' && type !== currentTypeFilter) show = false;
+    if (q && !name.includes(q) && !desc.includes(q)) show = false;
+    card.style.display = show ? '' : 'none';
+  });
+}
+
+// Status badge dropdown on card
+function toggleStatusDropdown(e, badge) {
+  e.stopPropagation();
+  const dd = badge.querySelector('.status-dropdown');
+  document.querySelectorAll('.status-dropdown.open').forEach(d => { if (d !== dd) d.classList.remove('open'); });
+  dd.classList.toggle('open');
+}
+
+function changeCardStatus(e, status) {
+  e.stopPropagation();
+  const card = e.target.closest('.project-card');
+  const badge = card.querySelector('.badge-status');
+  badge.className = 'badge badge-status ' + status;
+  badge.childNodes[0].textContent = status.charAt(0).toUpperCase() + status.slice(1);
+  card.dataset.status = status;
+  badge.querySelector('.status-dropdown').classList.remove('open');
+  applyFilters();
+}
+
+// Detail panel
+function openDetail(card) {
+  const panel = document.getElementById('detailPanel');
+  const content = document.getElementById('mainContent');
+  const title = card.querySelector('.card-name').textContent;
+  document.getElementById('detailTitle').textContent = title;
+  panel.classList.add('open');
+  content.classList.add('detail-open');
+}
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+  document.getElementById('mainContent').classList.remove('detail-open');
+}
+
+// Tags
+function addTag(e) {
+  if (e.key === 'Enter' && e.target.value.trim()) {
+    const pill = document.createElement('span');
+    pill.className = 'tag-pill';
+    pill.innerHTML = e.target.value.trim() + ' <button class="tag-remove" onclick="this.parentElement.remove()">×</button>';
+    e.target.parentElement.insertBefore(pill, e.target);
+    e.target.value = '';
+  }
+}
+
+// Create project placeholder
+function createProject() {
+  alert('Create Project dialog would open here.');
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.filter-btn')) {
+    document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.remove('open'));
+  }
+  if (!e.target.closest('.user-profile')) {
+    document.getElementById('userDropdown').classList.remove('open');
+  }
+  if (!e.target.closest('.badge-status')) {
+    document.querySelectorAll('.status-dropdown').forEach(d => d.classList.remove('open'));
+  }
+});
+</script>
+</body>
+</html>

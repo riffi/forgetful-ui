@@ -1,16 +1,13 @@
 import { useState, useMemo, useCallback } from 'react'
 import {
-  Title,
   Group,
-  TextInput,
   Select,
-  Button,
-  Badge,
   Text,
   Paper,
   ActionIcon,
   MultiSelect,
   Menu,
+  Button,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { DataTable, type DataTableSortStatus } from 'mantine-datatable'
@@ -26,6 +23,7 @@ import {
   IconUser,
   IconDeviceDesktop,
   IconDevices,
+  IconChevronDown,
 } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useEntities, useDeleteEntity } from '@/hooks'
@@ -64,9 +62,9 @@ function EntityTypeIcon({ type }: { type: EntityType }) {
 
 function EntityTypeBadge({ type }: { type: EntityType }) {
   return (
-    <Badge size="sm" variant="light" color="orange">
+    <span className={classes.badge}>
       {type}
-    </Badge>
+    </span>
   )
 }
 
@@ -76,9 +74,7 @@ function TagsList({ tags }: { tags: string[] }) {
   return (
     <Group gap={4} wrap="nowrap">
       {tags.slice(0, 2).map((tag) => (
-        <Badge key={tag} size="xs" variant="dot" color="orange">
-          {tag}
-        </Badge>
+        <span key={tag} className={classes.tagPill}>{tag}</span>
       ))}
       {tags.length > 2 && (
         <Text size="xs" c="dimmed">
@@ -189,49 +185,55 @@ export function Entities() {
 
   return (
     <div className={classes.container}>
-      <Group justify="space-between" mb="md">
-        <Title order={1} className={classes.title}>
-          Entities
-        </Title>
-        <Button
-          leftSection={<IconPlus size={16} />}
-          color="orange"
-          onClick={() => setCreateModalOpen(true)}
-        >
-          Create Entity
-        </Button>
-      </Group>
+      {/* Page Header */}
+      <div className={classes.pageHeader}>
+        <h1 className={classes.pageTitle}>Entities</h1>
 
-      {/* Filters */}
-      <Paper className={classes.filters} mb="md">
-        <Group gap="md" wrap="wrap">
-          <TextInput
+        <div className={classes.headerSearch}>
+          <IconSearch size={15} />
+          <input
+            type="text"
             placeholder="Search entities..."
-            leftSection={<IconSearch size={16} />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ flex: 1, minWidth: 200 }}
           />
-          <Select
-            placeholder="Entity Type"
-            leftSection={<IconFilter size={16} />}
-            data={ENTITY_TYPE_OPTIONS}
-            value={typeFilter}
-            onChange={setTypeFilter}
-            clearable
-            w={160}
-          />
-          <MultiSelect
-            placeholder="Tags"
-            data={availableTags}
-            value={tagsFilter}
-            onChange={setTagsFilter}
-            maxDropdownHeight={200}
-            w={200}
-            searchable
-          />
-        </Group>
-      </Paper>
+        </div>
+
+        <Select
+          placeholder="Type"
+          data={ENTITY_TYPE_OPTIONS}
+          value={typeFilter}
+          onChange={setTypeFilter}
+          clearable
+          leftSection={<IconFilter size={14} />}
+          rightSection={<IconChevronDown size={12} />}
+          classNames={{
+            input: classes.filterBtn,
+            dropdown: classes.filterDropdown,
+          }}
+          w={150}
+        />
+
+        <MultiSelect
+          placeholder="Tags"
+          data={availableTags}
+          value={tagsFilter}
+          onChange={setTagsFilter}
+          maxDropdownHeight={200}
+          rightSection={<IconChevronDown size={12} />}
+          classNames={{
+            input: classes.filterBtn,
+            dropdown: classes.filterDropdown,
+          }}
+          w={180}
+          searchable
+        />
+
+        <button className={classes.btnCreate} onClick={() => setCreateModalOpen(true)}>
+          <IconPlus size={15} strokeWidth={2.5} />
+          Create Entity
+        </button>
+      </div>
 
       {/* Data Table */}
       <Paper className={classes.tableWrapper}>

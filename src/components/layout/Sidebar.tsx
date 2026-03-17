@@ -9,6 +9,7 @@ import {
   IconFileText,
   IconCode,
   IconSitemap,
+  IconActivity,
   IconChevronLeft,
   IconChevronRight,
   IconSearch,
@@ -33,6 +34,7 @@ const navItems = [
   { path: '/documents', label: 'Documents', icon: IconFileText },
   { path: '/code-artifacts', label: 'Code Artifacts', icon: IconCode },
   { path: '/graph', label: 'Graph', icon: IconSitemap },
+  { path: '/activity', label: 'Activity', icon: IconActivity },
 ]
 
 export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {

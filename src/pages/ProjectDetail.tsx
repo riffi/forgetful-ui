@@ -226,7 +226,7 @@ export function ProjectDetail() {
   useEffect(() => {
     if (project) {
       setEditedName(project.name)
-      setEditedDescription(project.description)
+      setEditedDescription(project.description ?? '')
       setEditedType(project.project_type)
       setEditedStatus(project.status)
       setEditedNotes(project.notes ?? '')

@@ -75,7 +75,7 @@ export interface MemoryUpdate {
 export interface Project {
   id: number
   name: string
-  description: string
+  description?: string  // Not returned in list API (ProjectSummary)
   project_type: ProjectType
   status: ProjectStatus
   repo_name?: string

@@ -1,16 +1,13 @@
 import { useState, useMemo, useCallback } from 'react'
 import {
-  Title,
   Group,
-  TextInput,
   Select,
-  Button,
-  Badge,
   Text,
   Paper,
   ActionIcon,
   MultiSelect,
   Menu,
+  Button,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { DataTable, type DataTableSortStatus } from 'mantine-datatable'
@@ -22,6 +19,7 @@ import {
   IconDotsVertical,
   IconFileText,
   IconExternalLink,
+  IconChevronDown,
 } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useDocuments, useDeleteDocument } from '@/hooks'
@@ -44,19 +42,11 @@ const DOCUMENT_TYPE_OPTIONS = [
 ]
 
 function DocumentTypeBadge({ type }: { type: string }) {
-  const colorMap: Record<string, string> = {
-    markdown: 'blue',
-    text: 'gray',
-    pdf: 'red',
-    html: 'orange',
-    json: 'yellow',
-    yaml: 'cyan',
-  }
-
+  const typeClass = classes[`badgeType${type.charAt(0).toUpperCase() + type.slice(1)}`] || classes.badgeTypeOther
   return (
-    <Badge size="sm" variant="light" color={colorMap[type] ?? 'gray'}>
+    <span className={`${classes.badge} ${typeClass}`}>
       {type}
-    </Badge>
+    </span>
   )
 }
 
@@ -66,9 +56,7 @@ function TagsList({ tags }: { tags: string[] }) {
   return (
     <Group gap={4} wrap="nowrap">
       {tags.slice(0, 2).map((tag) => (
-        <Badge key={tag} size="xs" variant="dot" color="blue">
-          {tag}
-        </Badge>
+        <span key={tag} className={classes.tagPill}>{tag}</span>
       ))}
       {tags.length > 2 && (
         <Text size="xs" c="dimmed">
@@ -187,49 +175,55 @@ export function Documents() {
 
   return (
     <div className={classes.container}>
-      <Group justify="space-between" mb="md">
-        <Title order={1} className={classes.title}>
-          Documents
-        </Title>
-        <Button
-          leftSection={<IconPlus size={16} />}
-          color="blue"
-          onClick={() => setCreateModalOpen(true)}
-        >
-          Create Document
-        </Button>
-      </Group>
+      {/* Page Header */}
+      <div className={classes.pageHeader}>
+        <h1 className={classes.pageTitle}>Documents</h1>
 
-      {/* Filters */}
-      <Paper className={classes.filters} mb="md">
-        <Group gap="md" wrap="wrap">
-          <TextInput
+        <div className={classes.headerSearch}>
+          <IconSearch size={15} />
+          <input
+            type="text"
             placeholder="Search documents..."
-            leftSection={<IconSearch size={16} />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ flex: 1, minWidth: 200 }}
           />
-          <Select
-            placeholder="Type"
-            leftSection={<IconFilter size={16} />}
-            data={DOCUMENT_TYPE_OPTIONS}
-            value={typeFilter}
-            onChange={setTypeFilter}
-            clearable
-            w={140}
-          />
-          <MultiSelect
-            placeholder="Tags"
-            data={availableTags}
-            value={tagsFilter}
-            onChange={setTagsFilter}
-            maxDropdownHeight={200}
-            w={200}
-            searchable
-          />
-        </Group>
-      </Paper>
+        </div>
+
+        <Select
+          placeholder="Type"
+          data={DOCUMENT_TYPE_OPTIONS}
+          value={typeFilter}
+          onChange={setTypeFilter}
+          clearable
+          leftSection={<IconFilter size={14} />}
+          rightSection={<IconChevronDown size={12} />}
+          classNames={{
+            input: classes.filterBtn,
+            dropdown: classes.filterDropdown,
+          }}
+          w={140}
+        />
+
+        <MultiSelect
+          placeholder="Tags"
+          data={availableTags}
+          value={tagsFilter}
+          onChange={setTagsFilter}
+          maxDropdownHeight={200}
+          rightSection={<IconChevronDown size={12} />}
+          classNames={{
+            input: classes.filterBtn,
+            dropdown: classes.filterDropdown,
+          }}
+          w={180}
+          searchable
+        />
+
+        <button className={classes.btnCreate} onClick={() => setCreateModalOpen(true)}>
+          <IconPlus size={15} strokeWidth={2.5} />
+          Create Document
+        </button>
+      </div>
 
       {/* Data Table */}
       <Paper className={classes.tableWrapper}>

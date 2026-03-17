@@ -1,36 +1,33 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import {
-  Title,
   Group,
   TextInput,
+  Textarea,
   Select,
   Button,
-  Badge,
   Text,
-  Paper,
-  ActionIcon,
-  Menu,
-  SimpleGrid,
   Stack,
   Loader,
+  Modal,
 } from '@mantine/core'
-import { useDebouncedValue } from '@mantine/hooks'
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks'
 import {
   IconSearch,
   IconPlus,
   IconFilter,
   IconTrash,
-  IconDotsVertical,
   IconFolder,
-  IconExternalLink,
   IconArchive,
   IconBrain,
-  IconCalendar,
+  IconCode,
+  IconDeviceFloppy,
+  IconX,
+  IconChevronDown,
 } from '@tabler/icons-react'
-import { useNavigate } from 'react-router-dom'
-import { useProjects, useDeleteProject } from '@/hooks'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useProjects, useDeleteProject, useCreateProject } from '@/hooks'
 import { useQuickEdit } from '@/context/QuickEditContext'
-import type { Project, ProjectFilters, ProjectType, ProjectStatus } from '@/types'
+import type { Project, ProjectFilters, ProjectType, ProjectStatus, ProjectCreate } from '@/types'
 import classes from './Projects.module.css'
 
 const PROJECT_TYPE_OPTIONS = [
@@ -55,123 +52,134 @@ const PROJECT_STATUS_OPTIONS = [
   { value: 'completed', label: 'Completed' },
 ]
 
-function StatusBadge({ status }: { status: ProjectStatus }) {
-  const colorMap: Record<ProjectStatus, string> = {
-    active: 'green',
-    archived: 'gray',
-    completed: 'blue',
-  }
-
-  return (
-    <Badge size="sm" variant="light" color={colorMap[status]}>
-      {status}
-    </Badge>
-  )
-}
-
 interface ProjectCardProps {
   project: Project
   onClick: () => void
   onDoubleClick: () => void
   onDelete: () => void
+  onOpen: () => void
 }
 
-function ProjectCard({ project, onClick, onDoubleClick, onDelete }: ProjectCardProps) {
-  const navigate = useNavigate()
+function ProjectCard({ project, onClick, onDoubleClick, onDelete, onOpen }: ProjectCardProps) {
+  const statusColorMap: Record<ProjectStatus, string> = {
+    active: classes.badgeStatusActive,
+    archived: classes.badgeStatusArchived,
+    completed: classes.badgeStatusCompleted,
+  }
 
   return (
-    <Paper
+    <div
       className={classes.projectCard}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
     >
-      <div className={classes.cardHeader}>
-        <div className={classes.cardIcon}>
-          <IconFolder size={24} />
-        </div>
-        <Menu shadow="md" position="bottom-end">
-          <Menu.Target>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="sm"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <IconDotsVertical size={16} />
-            </ActionIcon>
-          </Menu.Target>
-          <Menu.Dropdown>
-            <Menu.Item
-              leftSection={<IconExternalLink size={14} />}
-              onClick={(e) => {
-                e.stopPropagation()
-                navigate(`/projects/${project.id}`)
-              }}
-            >
-              View Details
-            </Menu.Item>
-            <Menu.Item
-              leftSection={<IconArchive size={14} />}
-              onClick={(e) => {
-                e.stopPropagation()
-                // TODO: Archive project
-              }}
-            >
-              Archive
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Item
-              color="red"
-              leftSection={<IconTrash size={14} />}
-              onClick={(e) => {
-                e.stopPropagation()
-                onDelete()
-              }}
-            >
-              Delete
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
+      <div className={classes.cardTop}>
+        <span className={classes.cardName}>{project.name}</span>
+        <span className={`${classes.badge} ${classes.badgeType}`}>
+          {project.project_type.replace(/-/g, ' ')}
+        </span>
+        <span className={`${classes.badge} ${classes.badgeStatus} ${statusColorMap[project.status]}`}>
+          {project.status}
+        </span>
       </div>
 
-      <Text className={classes.cardTitle} lineClamp={1}>
-        {project.name}
-      </Text>
-
-      <Text className={classes.cardDescription} lineClamp={2}>
-        {project.description || 'No description'}
-      </Text>
-
       <div className={classes.cardMeta}>
-        <Group gap={8}>
-          <StatusBadge status={project.status} />
-          <Badge size="xs" variant="outline" color="gray">
-            {project.project_type.replace(/-/g, ' ')}
-          </Badge>
-        </Group>
+        <div className={classes.cardMetaItem}>
+          <IconBrain size={13} />
+          <span>{project.memory_count} memories</span>
+        </div>
+        {project.repo_name && (
+          <div className={classes.cardMetaItem}>
+            <IconCode size={13} />
+            <a href={`https://github.com/${project.repo_name}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+              {project.repo_name}
+            </a>
+          </div>
+        )}
       </div>
 
       <div className={classes.cardFooter}>
-        <Group gap={16}>
-          <Group gap={4}>
-            <IconBrain size={14} color="var(--accent-memory)" />
-            <Text size="xs" c="dimmed">{project.memory_count}</Text>
-          </Group>
-          <Group gap={4}>
-            <IconCalendar size={14} color="var(--text-dimmed)" />
-            <Text size="xs" c="dimmed">
-              {new Date(project.updated_at).toLocaleDateString()}
-            </Text>
-          </Group>
-        </Group>
+        <button className={classes.btnOpen} onClick={(e) => { e.stopPropagation(); onOpen(); }}>
+          Open
+        </button>
+        <div className={classes.cardQuickActions}>
+          <button className={classes.qaBtn} title="Archive" onClick={(e) => e.stopPropagation()}>
+            <IconArchive size={14} />
+          </button>
+          <button className={`${classes.qaBtn} ${classes.qaBtnDanger}`} title="Delete" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+            <IconTrash size={14} />
+          </button>
+        </div>
       </div>
-    </Paper>
+    </div>
   )
 }
 
 export function Projects() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { openPanel } = useQuickEdit()
+
+  // Create modal state
+  const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false)
+  const createProject = useCreateProject()
+
+  // Form state for creating project
+  const [formName, setFormName] = useState('')
+  const [formDescription, setFormDescription] = useState('')
+  const [formType, setFormType] = useState<string | null>('development')
+  const [formStatus, setFormStatus] = useState<string | null>('active')
+  const [formRepoName, setFormRepoName] = useState('')
+  const [formNotes, setFormNotes] = useState('')
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+
+  // Handle ?create=true query param
+  useEffect(() => {
+    if (searchParams.get('create') === 'true') {
+      openCreateModal()
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, openCreateModal, setSearchParams])
+
+  const resetForm = () => {
+    setFormName('')
+    setFormDescription('')
+    setFormType('development')
+    setFormStatus('active')
+    setFormRepoName('')
+    setFormNotes('')
+    setFormErrors({})
+  }
+
+  const handleCloseCreateModal = () => {
+    resetForm()
+    closeCreateModal()
+  }
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {}
+    if (!formName.trim()) errors.name = 'Name is required'
+    if (!formDescription.trim()) errors.description = 'Description is required'
+    if (!formType) errors.type = 'Type is required'
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const handleCreateProject = async () => {
+    if (!validateForm()) return
+
+    const data: ProjectCreate = {
+      name: formName.trim(),
+      description: formDescription.trim(),
+      project_type: formType as ProjectType,
+      status: (formStatus as ProjectStatus) || 'active',
+      repo_name: formRepoName.trim() || undefined,
+      notes: formNotes.trim() || undefined,
+    }
+
+    await createProject.mutateAsync(data)
+    handleCloseCreateModal()
+  }
 
   // Filters state
   const [search, setSearch] = useState('')
@@ -213,8 +221,8 @@ export function Projects() {
     openPanel({ type: 'project', id: project.id })
   }, [openPanel])
 
-  // Handle double click - navigates to full detail page
-  const handleCardDoubleClick = useCallback((project: Project) => {
+  // Handle double click / Open button - navigates to full detail page
+  const handleOpen = useCallback((project: Project) => {
     navigate(`/projects/${project.id}`)
   }, [navigate])
 
@@ -227,49 +235,55 @@ export function Projects() {
 
   return (
     <div className={classes.container}>
-      <Group justify="space-between" mb="md">
-        <Title order={1} className={classes.title}>
-          Projects
-        </Title>
-        <Button
-          leftSection={<IconPlus size={16} />}
-          color="green"
-          onClick={() => navigate('/projects?create=true')}
-        >
-          Create Project
-        </Button>
-      </Group>
+      {/* Page Header */}
+      <div className={classes.pageHeader}>
+        <h1 className={classes.pageTitle}>Projects</h1>
 
-      {/* Filters */}
-      <Paper className={classes.filters} mb="md">
-        <Group gap="md" wrap="wrap">
-          <TextInput
+        <div className={classes.headerSearch}>
+          <IconSearch size={15} />
+          <input
+            type="text"
             placeholder="Search projects..."
-            leftSection={<IconSearch size={16} />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ flex: 1, minWidth: 200 }}
           />
-          <Select
-            placeholder="Type"
-            leftSection={<IconFilter size={16} />}
-            data={PROJECT_TYPE_OPTIONS}
-            value={typeFilter}
-            onChange={setTypeFilter}
-            clearable
-            w={180}
-            searchable
-          />
-          <Select
-            placeholder="Status"
-            data={PROJECT_STATUS_OPTIONS}
-            value={statusFilter}
-            onChange={setStatusFilter}
-            clearable
-            w={140}
-          />
-        </Group>
-      </Paper>
+        </div>
+
+        <Select
+          placeholder="Status"
+          data={PROJECT_STATUS_OPTIONS}
+          value={statusFilter}
+          onChange={setStatusFilter}
+          clearable
+          leftSection={<IconFilter size={14} />}
+          rightSection={<IconChevronDown size={12} />}
+          classNames={{
+            input: classes.filterBtn,
+            dropdown: classes.filterDropdown,
+          }}
+          w={140}
+        />
+
+        <Select
+          placeholder="Type"
+          data={PROJECT_TYPE_OPTIONS}
+          value={typeFilter}
+          onChange={setTypeFilter}
+          clearable
+          rightSection={<IconChevronDown size={12} />}
+          classNames={{
+            input: classes.filterBtn,
+            dropdown: classes.filterDropdown,
+          }}
+          w={160}
+          searchable
+        />
+
+        <button className={classes.btnCreate} onClick={openCreateModal}>
+          <IconPlus size={15} strokeWidth={2.5} />
+          Create Project
+        </button>
+      </div>
 
       {/* Projects Grid */}
       {isLoading ? (
@@ -278,35 +292,114 @@ export function Projects() {
           <Text c="dimmed">Loading projects...</Text>
         </Stack>
       ) : filteredData.length === 0 ? (
-        <Paper className={classes.emptyState}>
-          <Stack align="center" gap="md">
-            <div className={classes.emptyIcon}>
-              <IconFolder size={48} />
-            </div>
-            <Title order={3}>No projects found</Title>
-            <Text c="dimmed">Create your first project to get started</Text>
-            <Button
-              leftSection={<IconPlus size={16} />}
-              color="green"
-              onClick={() => navigate('/projects?create=true')}
-            >
-              Create Project
-            </Button>
-          </Stack>
-        </Paper>
+        <div className={classes.emptyState}>
+          <div className={classes.emptyIcon}>
+            <IconFolder size={48} />
+          </div>
+          <h3>No projects found</h3>
+          <p>Create your first project to get started</p>
+          <button className={classes.btnCreate} onClick={openCreateModal}>
+            <IconPlus size={15} strokeWidth={2.5} />
+            Create Project
+          </button>
+        </div>
       ) : (
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+        <div className={classes.projectsGrid}>
           {filteredData.map((project) => (
             <ProjectCard
               key={project.id}
               project={project}
               onClick={() => handleCardClick(project)}
-              onDoubleClick={() => handleCardDoubleClick(project)}
+              onDoubleClick={() => handleOpen(project)}
+              onOpen={() => handleOpen(project)}
               onDelete={() => handleDelete(project)}
             />
           ))}
-        </SimpleGrid>
+        </div>
       )}
+
+      {/* Create Project Modal */}
+      <Modal
+        opened={createModalOpened}
+        onClose={handleCloseCreateModal}
+        title={
+          <Group gap="xs">
+            <IconPlus size={20} />
+            <Text fw={600} size="lg">Create Project</Text>
+          </Group>
+        }
+        size="lg"
+        centered
+      >
+        <Stack gap="md">
+          <TextInput
+            label="Name"
+            placeholder="Project name"
+            required
+            value={formName}
+            onChange={(e) => setFormName(e.target.value)}
+            error={formErrors.name}
+          />
+          <Textarea
+            label="Description"
+            placeholder="Brief description of the project"
+            required
+            minRows={2}
+            value={formDescription}
+            onChange={(e) => setFormDescription(e.target.value)}
+            error={formErrors.description}
+          />
+          <Select
+            label="Type"
+            placeholder="Select type"
+            required
+            data={PROJECT_TYPE_OPTIONS}
+            value={formType}
+            onChange={setFormType}
+            error={formErrors.type}
+            searchable
+          />
+          <Select
+            label="Status"
+            placeholder="Select status"
+            data={PROJECT_STATUS_OPTIONS}
+            value={formStatus}
+            onChange={setFormStatus}
+          />
+          <TextInput
+            label="Repository"
+            placeholder="owner/repo (optional)"
+            value={formRepoName}
+            onChange={(e) => setFormRepoName(e.target.value)}
+          />
+          <Textarea
+            label="Notes"
+            placeholder="Additional notes (optional)"
+            minRows={2}
+            value={formNotes}
+            onChange={(e) => setFormNotes(e.target.value)}
+          />
+        </Stack>
+
+        <Group justify="flex-end" mt="xl" gap="xs">
+          <Button
+            variant="subtle"
+            color="gray"
+            leftSection={<IconX size={16} />}
+            onClick={handleCloseCreateModal}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="green"
+            leftSection={<IconDeviceFloppy size={16} />}
+            onClick={handleCreateProject}
+            loading={createProject.isPending}
+          >
+            Create Project
+          </Button>
+        </Group>
+      </Modal>
     </div>
   )
 }

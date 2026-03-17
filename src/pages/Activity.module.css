@@ -1,0 +1,340 @@
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 20px;
+}
+
+.title {
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* Live indicator */
+.liveIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 16px;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-project);
+  animation: pulse 2s infinite;
+}
+
+.liveText {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-project);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0);
+  }
+}
+
+/* Filters bar */
+.filtersBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.filterSelect {
+  min-width: 140px;
+}
+
+.clearFilters {
+  color: var(--accent-memory);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.clearFilters:hover {
+  color: var(--text-primary);
+}
+
+/* Main grid */
+.mainGrid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+}
+
+@media (max-width: 992px) {
+  .mainGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    order: -1;
+  }
+}
+
+/* Events list */
+.eventsList {
+  max-height: calc(100vh - 320px);
+  overflow-y: auto;
+}
+
+.eventRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: all 200ms ease;
+}
+
+.eventRow:last-child {
+  border-bottom: none;
+}
+
+.eventRowClickable {
+  cursor: pointer;
+}
+
+.eventRowClickable:hover {
+  background: var(--surface-hover);
+}
+
+.eventRowClickable:hover .eventTitle {
+  color: white;
+}
+
+.eventTime {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-dimmed);
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.actionBadge {
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.entityTypeIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.eventTitle {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actorBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--surface-secondary);
+  color: var(--text-dimmed);
+  flex-shrink: 0;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Sidebar */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Stats card */
+.statsCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.statsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.statsLabel {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.statsValue {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.statsDivider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 4px 0;
+}
+
+.statsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.statsSectionTitle {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dimmed);
+}
+
+.statsTypeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statsTypeDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statsTypeLabel {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.statsTypeCount {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Live indicator inactive state */
+.liveIndicatorInactive {
+  background: rgba(100, 116, 139, 0.1);
+  border-color: rgba(100, 116, 139, 0.2);
+}
+
+.liveIndicatorInactive .liveText {
+  color: var(--text-dimmed);
+}
+
+.liveDotInactive {
+  background: var(--text-dimmed) !important;
+  animation: none !important;
+}
+
+/* New event highlight */
+.eventRowNew {
+  background: rgba(34, 197, 94, 0.05);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    background: rgba(34, 197, 94, 0.15);
+  }
+  to {
+    background: rgba(34, 197, 94, 0.05);
+  }
+}
+
+/* SSE Status Bar */
+.sseStatusBar {
+  position: fixed;
+  bottom: 0;
+  left: 240px;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 12px;
+  z-index: 100;
+  transition: all 0.2s ease;
+}
+
+.sseStatusConnected {
+  background: rgba(34, 197, 94, 0.1);
+  border-top: 1px solid rgba(34, 197, 94, 0.2);
+  color: var(--accent-project);
+}
+
+.sseStatusConnecting {
+  background: rgba(59, 130, 246, 0.1);
+  border-top: 1px solid rgba(59, 130, 246, 0.2);
+  color: var(--accent-document);
+}
+
+.sseStatusDisconnected {
+  background: rgba(239, 68, 68, 0.1);
+  border-top: 1px solid rgba(239, 68, 68, 0.2);
+  color: var(--mantine-color-red-5);
+}
+
+.reconnectBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reconnectBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Adjust for collapsed sidebar */
+@media (max-width: 768px) {
+  .sseStatusBar {
+    left: 64px;
+  }
+}

@@ -3,18 +3,170 @@
   margin: 0 auto;
 }
 
-.title {
-  color: var(--text-primary);
-  font-size: 28px;
-  font-weight: 600;
+/* ===== PAGE HEADER ===== */
+.pageHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
 }
 
-.filters {
-  background: var(--surface-primary);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 16px;
+.pageTitle {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  margin-right: auto;
+}
+
+.headerSearch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  min-width: 200px;
+  transition: 0.2s ease;
+}
+
+.headerSearch:focus-within {
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.1);
+}
+
+.headerSearch svg {
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.headerSearch input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.headerSearch input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* Filter buttons */
+.filterBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 6px !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 13px !important;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.filterBtn:hover {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.filterDropdown {
+  background: rgba(15, 23, 42, 0.96) !important;
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.5);
+}
+
+/* Create button - blue accent for documents */
+.btnCreate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  color: #3b82f6;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: 0.2s ease;
+}
+
+.btnCreate:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #60a5fa;
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.badgeTypeMarkdown {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.badgeTypeText {
+  background: rgba(100, 116, 139, 0.2);
+  color: #64748b;
+}
+
+.badgeTypePdf {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.badgeTypeHtml {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+}
+
+.badgeTypeJson {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+}
+
+.badgeTypeYaml {
+  background: rgba(6, 182, 212, 0.15);
+  color: #06b6d4;
+}
+
+.badgeTypeOther {
+  background: rgba(100, 116, 139, 0.2);
+  color: #64748b;
+}
+
+/* Tag pills */
+.tagPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 100px;
+  font-size: 11px;
+  color: rgba(59, 130, 246, 0.8);
 }
 
 /* Table Container - uses global datatable-wrapper class */
@@ -27,12 +179,23 @@
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--surface-primary);
+  background: rgba(15, 23, 42, 0.96);
   backdrop-filter: blur(12px);
-  border: 1px solid var(--border-hover);
-  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
   padding: 12px 20px;
   min-width: 300px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   z-index: 100;
+}
+
+@media (max-width: 768px) {
+  .pageHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pageTitle {
+    margin-right: 0;
+  }
 }
