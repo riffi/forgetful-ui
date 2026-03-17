@@ -1,140 +1,153 @@
-# Как выложить новый релиз forgetful-ui
+# Release Guide
 
-## Подготовка (один раз)
+## Prerequisites (one-time setup)
 
-### 1. Создай GitHub Token
+### 1. Create GitHub Token
 
-1. Открой https://github.com/settings/tokens
-2. Нажми "Generate new token (classic)"
-3. Выбери scope: `write:packages`
-4. Скопируй токен (он покажется только один раз!)
+1. Go to https://github.com/settings/tokens
+2. Click "Generate new token (classic)"
+3. Select scope: `write:packages`
+4. Copy the token (it will only be shown once!)
 
-### 2. Авторизуйся в Docker Registry
+### 2. Login to Docker Registry
 
 ```bash
-echo ТВОЙ_ТОКЕН | docker login ghcr.io -u riffi --password-stdin
+echo YOUR_TOKEN | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
 ```
 
-Если успешно - увидишь `Login Succeeded`
+You should see `Login Succeeded`
 
 ---
 
-## Выкладка релиза (каждый раз)
+## Publishing a Release
 
-### Шаг 1: Убедись что Docker Desktop запущен
+### Step 1: Make sure Docker is running
 
-Просто открой Docker Desktop. Должен работать.
+Start Docker Desktop (or Docker daemon on Linux).
 
-### Шаг 2: Перейди в папку проекта
+### Step 2: Navigate to project folder
 
 ```bash
-cd C:\work\forgetful-prj\forgetful-ui
+cd forgetful-ui
 ```
 
-### Шаг 3: Собери и запуши
+### Step 3: Build and push
 
 ```bash
 npm run release
 ```
 
-Это выполнит:
-- `npm run build` - соберёт фронтенд
-- `npm run docker:build` - соберёт Docker образ
-- `npm run docker:tag` - пометит тегом для ghcr.io
-- `npm run docker:push` - запушит в registry
+This will:
+- `npm run build` - build the frontend
+- `npm run docker:build` - build Docker image
+- `npm run docker:tag` - tag for ghcr.io
+- `npm run docker:push` - push to registry
 
-### Шаг 4: Готово!
+### Step 4: Done!
 
-Образ доступен по адресу:
+Image is available at:
 ```
 ghcr.io/riffi/forgetful-ui:latest
 ```
 
 ---
 
-## Если что-то пошло не так
+## Troubleshooting
 
 ### "denied: permission denied"
-Повтори авторизацию (Шаг 2 из подготовки)
+Re-run the docker login command from Prerequisites.
 
 ### "Cannot connect to Docker daemon"
-Запусти Docker Desktop
+Start Docker Desktop / Docker daemon.
 
 ### Build failed
-Сначала проверь что локально собирается:
+First check that local build works:
 ```bash
 npm run build
 ```
 
 ---
 
-## Команды по отдельности (если нужно)
+## Individual Commands
 
-| Что сделать | Команда |
-|-------------|---------|
-| Только собрать фронт | `npm run build` |
-| Только собрать Docker образ | `npm run docker:build` |
-| Только запушить | `npm run docker:push` |
-| Всё сразу | `npm run release` |
+| Action | Command |
+|--------|---------|
+| Build frontend only | `npm run build` |
+| Build Docker image only | `npm run docker:build` |
+| Push only | `npm run docker:push` |
+| Full release | `npm run release` |
 
 ---
 
-## Обновление на сервере (после публикации)
+## Updating Production Server
 
-После того как `npm run release` успешно завершился, нужно обновить прод.
+After `npm run release` completes successfully, update the production server.
 
-### Шаг 1: Подключись к серверу
-
-```bash
-ssh твой-сервер
-```
-
-### Шаг 2: Перейди в папку с docker-compose
+### Update UI only
 
 ```bash
-cd /путь/к/forgetful-ui/docker
-```
-
-### Шаг 3: Скачай новый образ
-
-```bash
+ssh your-server
+cd /path/to/forgetful-ui/docker
 docker compose pull forgetful-ui
-```
-
-### Шаг 4: Перезапусти контейнер
-
-```bash
 docker compose up -d forgetful-ui
 ```
 
-### Шаг 5: Проверь что работает
+### Update Backend only
+
+```bash
+ssh your-server
+cd /path/to/forgetful-ui/docker
+docker compose pull forgetful-service
+docker compose up -d forgetful-service
+```
+
+### Update Everything
+
+```bash
+ssh your-server
+cd /path/to/forgetful-ui/docker
+docker compose pull
+docker compose up -d
+```
+
+### Verify deployment
 
 ```bash
 docker compose ps
-docker compose logs -f forgetful-ui --tail 20
-```
-
-Должен показать статус `Up` и nginx логи.
-
----
-
-## Быстрая версия (копипаста для сервера)
-
-```bash
-cd /путь/к/forgetful-ui/docker && docker compose pull forgetful-ui && docker compose up -d forgetful-ui
+docker compose logs --tail 20 forgetful-ui
+docker compose logs --tail 20 forgetful-service
 ```
 
 ---
 
-## Откат на предыдущую версию
+## Quick Copy-Paste Commands
 
-Если что-то сломалось:
+**Update UI on server:**
+```bash
+cd /path/to/docker && docker compose pull forgetful-ui && docker compose up -d forgetful-ui
+```
+
+**Update backend on server:**
+```bash
+cd /path/to/docker && docker compose pull forgetful-service && docker compose up -d forgetful-service
+```
+
+**Update all on server:**
+```bash
+cd /path/to/docker && docker compose pull && docker compose up -d
+```
+
+---
+
+## Rollback
+
+If something breaks:
 
 ```bash
-# Посмотри какие образы есть
+# List available images
 docker images ghcr.io/riffi/forgetful-ui
 
-# Откати на конкретную версию (если есть теги)
+# Rollback (stop and restart with previous cached image)
 docker compose down forgetful-ui
 docker compose up -d forgetful-ui
 ```
