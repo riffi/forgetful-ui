@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d'
 import * as d3 from 'd3-force'
-import { Tooltip, ActionIcon, Menu, SegmentedControl, TextInput, Select, Badge } from '@mantine/core'
+import { Tooltip, ActionIcon, Menu, SegmentedControl, TextInput, Select, Badge, Loader } from '@mantine/core'
 import {
   IconZoomIn,
   IconZoomOut,
@@ -20,11 +20,12 @@ import {
   IconVectorSpline,
   IconX,
 } from '@tabler/icons-react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useGraphData } from '@/hooks'
+import { useSearchParams } from 'react-router-dom'
+import { useSubgraph, useMemories, useEntities } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
 import { useQuickEdit, type QuickEditItemType } from '@/context/QuickEditContext'
-import type { GraphNode } from '@/api/graph'
+import { useDebouncedValue } from '@mantine/hooks'
+import type { GraphNode, NodeType } from '@/api/graph'
 import classes from './Graph.module.css'
 
 const NODE_COLORS: Record<string, string> = {
@@ -62,7 +63,6 @@ interface GraphLinkData {
 type LayoutType = 'force' | 'hierarchical' | 'radial'
 
 export function Graph() {
-  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { selectedProjectId } = useProjectContext()
   const { openPanel } = useQuickEdit()
@@ -88,6 +88,7 @@ export function Graph() {
   )
   const [depth, setDepth] = useState<number>(2)
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch] = useDebouncedValue(searchQuery, 300)
 
   // Sync focusedNodeId with URL search params (for navigation from other pages)
   useEffect(() => {
@@ -97,10 +98,34 @@ export function Graph() {
     }
   }, [searchParams])
 
-  const { data, isLoading } = useGraphData({
-    projectId: selectedProjectId ?? undefined,
-    includeEntities: true,
+  // Get active node types for subgraph query
+  const activeNodeTypes = useMemo(() => {
+    return (Object.entries(nodeFilters)
+      .filter(([, enabled]) => enabled)
+      .map(([type]) => type) as NodeType[])
+  }, [nodeFilters])
+
+  // Load subgraph when we have a focused node
+  const { data: subgraphData, isLoading: subgraphLoading } = useSubgraph({
+    nodeId: focusedNodeId || '',
+    depth,
+    nodeTypes: activeNodeTypes,
+    maxNodes: 300,
   })
+
+  // Search for nodes via memories and entities APIs
+  const { data: memoriesSearch, isLoading: memoriesSearchLoading } = useMemories({
+    search: debouncedSearch || undefined,
+    limit: 5,
+    project_id: selectedProjectId ?? undefined,
+  })
+  const { data: entitiesSearch, isLoading: entitiesSearchLoading } = useEntities({
+    search: debouncedSearch || undefined,
+    limit: 5,
+  })
+
+  const isLoading = subgraphLoading
+  const isSearching = memoriesSearchLoading || entitiesSearchLoading
 
   // Update dimensions on resize
   useEffect(() => {
@@ -116,84 +141,53 @@ export function Graph() {
     return () => window.removeEventListener('resize', updateDimensions)
   }, [])
 
-  // Get neighbors at N levels depth with their depth level
-  const getNeighborsAtDepth = useCallback((
-    startNodeId: string,
-    maxDepth: number,
-    edges: NonNullable<typeof data>['edges']
-  ): Map<string, number> => {
-    const visited = new Map<string, number>([[startNodeId, 0]])
-    let currentLevel = new Set<string>([startNodeId])
-
-    for (let d = 0; d < maxDepth; d++) {
-      const nextLevel = new Set<string>()
-      for (const nodeId of currentLevel) {
-        for (const edge of edges) {
-          const sourceId = typeof edge.source === 'string' ? edge.source : (edge.source as { id: string }).id
-          const targetId = typeof edge.target === 'string' ? edge.target : (edge.target as { id: string }).id
-
-          if (sourceId === nodeId && !visited.has(targetId)) {
-            nextLevel.add(targetId)
-            visited.set(targetId, d + 1)
-          }
-          if (targetId === nodeId && !visited.has(sourceId)) {
-            nextLevel.add(sourceId)
-            visited.set(sourceId, d + 1)
-          }
-        }
-      }
-      currentLevel = nextLevel
-    }
-
-    return visited
-  }, [])
-
-  // Search results - filtered nodes matching query
+  // Search results - combine memories and entities from search APIs
   const searchResults = useMemo(() => {
-    if (!data || !searchQuery.trim()) return []
-    const q = searchQuery.toLowerCase()
-    return data.nodes
-      .filter(node => node.label.toLowerCase().includes(q))
-      .slice(0, 10)
-  }, [data, searchQuery])
+    if (!debouncedSearch.trim()) return []
 
-  // Get node depths map for current focused node
-  const nodeDepths = useMemo(() => {
-    if (!data || !focusedNodeId) return new Map<string, number>()
-    return getNeighborsAtDepth(focusedNodeId, depth, data.edges)
-  }, [data, focusedNodeId, depth, getNeighborsAtDepth])
+    const results: { id: string; label: string; type: string }[] = []
 
-  // Filter graph data based on focused node + depth + node type filters
-  const filteredData = useMemo(() => {
-    if (!data) return { nodes: [], links: [] }
-
-    // If no focused node, show empty graph
-    if (!focusedNodeId) {
-      return { nodes: [], links: [] }
+    // Add memories
+    if (memoriesSearch?.memories) {
+      for (const m of memoriesSearch.memories.slice(0, 5)) {
+        results.push({ id: `memory_${m.id}`, label: m.title, type: 'memory' })
+      }
     }
 
-    // Filter by both visible nodes and type filters
-    const filteredNodes = data.nodes.filter(
-      node => nodeDepths.has(node.id) && nodeFilters[node.type]
-    )
-    const nodeIds = new Set(filteredNodes.map(n => n.id))
+    // Add entities
+    if (entitiesSearch?.entities) {
+      for (const e of entitiesSearch.entities.slice(0, 5)) {
+        results.push({ id: `entity_${e.id}`, label: e.name, type: 'entity' })
+      }
+    }
 
-    const filteredLinks = data.edges
-      .filter(edge => {
-        // Handle both string IDs and object nodes (after ForceGraph processes data)
-        const sourceId = typeof edge.source === 'string' ? edge.source : (edge.source as { id: string }).id
-        const targetId = typeof edge.target === 'string' ? edge.target : (edge.target as { id: string }).id
-        return nodeIds.has(sourceId) && nodeIds.has(targetId)
-      })
-      .map(edge => ({
+    return results.slice(0, 10)
+  }, [debouncedSearch, memoriesSearch, entitiesSearch])
+
+  // Get node depths map from subgraph data (backend provides depth field)
+  const nodeDepths = useMemo(() => {
+    if (!subgraphData || !focusedNodeId) return new Map<string, number>()
+    const depths = new Map<string, number>()
+    for (const node of subgraphData.nodes) {
+      depths.set(node.id, node.depth ?? 0)
+    }
+    return depths
+  }, [subgraphData, focusedNodeId])
+
+  // Graph data from subgraph API (no client-side filtering needed)
+  const filteredData = useMemo(() => {
+    if (!subgraphData || !focusedNodeId) return { nodes: [], links: [] }
+
+    return {
+      nodes: subgraphData.nodes,
+      links: subgraphData.edges.map(edge => ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
         type: edge.type,
-      }))
-
-    return { nodes: filteredNodes, links: filteredLinks }
-  }, [data, nodeFilters, focusedNodeId, nodeDepths])
+      })),
+    }
+  }, [subgraphData, focusedNodeId])
 
   const handleZoomIn = useCallback(() => {
     graphRef.current?.zoom(1.5, 400)
@@ -506,37 +500,8 @@ export function Graph() {
     return `rgba(255,255,255,${opacity})`
   }, [nodeDepths])
 
-  // Empty state - no data at all
-  if (!isLoading && (!data || data.nodes.length === 0)) {
-    return (
-      <div className={classes.container}>
-        <div className={classes.emptyState}>
-          <div className={classes.emptyIllustration}>
-            <IconBrain size={64} stroke={1} />
-          </div>
-          <h2 className={classes.emptyTitle}>Your knowledge graph is empty</h2>
-          <p className={classes.emptySubtext}>
-            Create memories and entities to see connections
-          </p>
-          <button
-            className={classes.emptyButton}
-            onClick={() => navigate('/memories?create=true')}
-          >
-            Create First Memory
-          </button>
-          <button
-            className={classes.emptyButtonGhost}
-            onClick={() => navigate('/memories')}
-          >
-            Import Data
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // Get focused node label for display
-  const focusedNode = focusedNodeId ? data?.nodes.find(n => n.id === focusedNodeId) : null
+  // Get focused node from subgraph data
+  const focusedNode = focusedNodeId ? subgraphData?.nodes.find(n => n.id === focusedNodeId) : null
 
   return (
     <div className={classes.container} ref={containerRef}>
@@ -600,9 +565,9 @@ export function Graph() {
         <div className={classes.toolbarGroup}>
           <div style={{ position: 'relative' }}>
             <TextInput
-              placeholder="Search nodes..."
+              placeholder="Search memories, entities..."
               size="xs"
-              leftSection={<IconSearch size={14} />}
+              leftSection={isSearching ? <Loader size={14} /> : <IconSearch size={14} />}
               rightSection={searchQuery ? (
                 <ActionIcon size="xs" variant="subtle" onClick={() => setSearchQuery('')}>
                   <IconX size={12} />
@@ -610,7 +575,7 @@ export function Graph() {
               ) : null}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: 180 }}
+              style={{ width: 220 }}
             />
             {searchResults.length > 0 && (
               <div className={classes.searchDropdown}>
@@ -691,7 +656,7 @@ export function Graph() {
               Search for a memory or entity to explore its connections
             </p>
             <p className={classes.noFocusHint}>
-              {data?.nodes.length ?? 0} nodes available
+              Use the search bar above to find nodes
             </p>
           </div>
         ) : (

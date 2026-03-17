@@ -1,13 +1,17 @@
 {
   "name": "forgetful-ui",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docker:build": "docker build -f docker/Dockerfile -t forgetful-ui:latest .",
+    "docker:tag": "docker tag forgetful-ui:latest ghcr.io/riffi/forgetful-ui:latest",
+    "docker:push": "docker push ghcr.io/riffi/forgetful-ui:latest",
+    "release": "npm run build && npm run docker:build && npm run docker:tag && npm run docker:push"
   },
   "dependencies": {
     "@mantine/core": "^7.14.3",

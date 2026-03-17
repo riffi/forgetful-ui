@@ -117,6 +117,9 @@ entities:
       tags:
         type: json
         description: "Tags for categorization (array of strings)"
+      aka:
+        type: json
+        description: "Alternative names/aliases for this entity (array of strings, e.g., ['Johnny', 'J.S.'] for 'John Smith')"
       created_at:
         type: datetime
         required: true
@@ -234,6 +237,166 @@ entities:
         type: datetime
         required: true
 
+  plan:
+    label: Plan
+    description: "Implementation plan for a project goal. Contains tasks with dependencies and acceptance criteria"
+    fields:
+      id:
+        type: integer
+        pk: true
+      title:
+        type: string
+        required: true
+        description: "Plan title (max 500 chars)"
+      project_id:
+        type: integer
+        required: true
+        description: "Parent project"
+      goal:
+        type: string
+        description: "What this plan aims to achieve (max 2000 chars)"
+      context:
+        type: string
+        description: "Background context and constraints (max 2000 chars)"
+      status:
+        type: plan_status
+        default: draft
+      task_count:
+        type: integer
+        default: 0
+        description: "Computed: number of tasks in this plan"
+      created_at:
+        type: datetime
+        required: true
+      updated_at:
+        type: datetime
+        required: true
+
+  task:
+    label: Task
+    description: "Actionable work item within a plan. Has state machine, priority, criteria, and dependencies"
+    fields:
+      id:
+        type: integer
+        pk: true
+      plan_id:
+        type: integer
+        required: true
+        description: "Parent plan"
+      title:
+        type: string
+        required: true
+        description: "Task title (max 500 chars)"
+      description:
+        type: string
+        description: "Detailed task description (max 5000 chars)"
+      state:
+        type: task_state
+        default: todo
+      priority:
+        type: task_priority
+        default: P2
+      assigned_agent:
+        type: string
+        description: "Agent/person assigned to this task (max 200 chars)"
+      version:
+        type: integer
+        default: 1
+        description: "Optimistic locking version for concurrent updates"
+      created_at:
+        type: datetime
+        required: true
+      updated_at:
+        type: datetime
+        required: true
+
+  criterion:
+    label: Acceptance Criterion
+    description: "Acceptance criterion for a task. All criteria must be met for task completion"
+    fields:
+      id:
+        type: integer
+        pk: true
+      task_id:
+        type: integer
+        required: true
+        description: "Parent task"
+      description:
+        type: string
+        required: true
+        description: "What needs to be true for this criterion to be met (max 1000 chars)"
+      met:
+        type: boolean
+        default: false
+      met_at:
+        type: datetime
+        description: "When this criterion was marked as met"
+      created_at:
+        type: datetime
+        required: true
+      updated_at:
+        type: datetime
+        required: true
+
+  task_dependency:
+    label: Task Dependency
+    description: "Dependency between tasks. Task cannot start until all dependencies are done"
+    fields:
+      id:
+        type: integer
+        pk: true
+      task_id:
+        type: integer
+        required: true
+        description: "The dependent task"
+      depends_on_task_id:
+        type: integer
+        required: true
+        description: "The task that must be completed first"
+      created_at:
+        type: datetime
+        required: true
+
+  activity_event:
+    label: Activity Event
+    description: "Audit log entry tracking entity lifecycle events (create, update, delete, read, query)"
+    fields:
+      id:
+        type: integer
+        pk: true
+      entity_type:
+        type: activity_entity_type
+        required: true
+        description: "Type of entity that changed"
+      entity_id:
+        type: integer
+        required: true
+        description: "ID of the entity (0 for links)"
+      action:
+        type: action_type
+        required: true
+        description: "What happened to the entity"
+      changes:
+        type: json
+        description: "For updates: {field: {old: value, new: value}}"
+      snapshot:
+        type: json
+        required: true
+        description: "Full entity state at event time"
+      actor:
+        type: actor_type
+        default: user
+        description: "Who/what triggered this event"
+      actor_id:
+        type: string
+        description: "Optional actor identifier (session ID, user ID)"
+      metadata:
+        type: json
+        description: "Additional context (query params, link details)"
+      created_at:
+        type: datetime
+        required: true
+
 # =============================================================================
 # ENUMS
 # =============================================================================
@@ -271,6 +434,64 @@ enums:
       - active
       - archived
       - completed
+
+  plan_status:
+    description: "Plan lifecycle states"
+    values:
+      - draft
+      - active
+      - completed
+      - archived
+
+  task_state:
+    description: "Task state machine states"
+    values:
+      - todo
+      - doing
+      - waiting
+      - done
+      - cancelled
+
+  task_priority:
+    description: "Task priority levels"
+    values:
+      - P0  # Critical
+      - P1  # High
+      - P2  # Medium
+      - P3  # Low
+
+  activity_entity_type:
+    description: "Types of entities that can generate activity events"
+    values:
+      - memory
+      - project
+      - document
+      - code_artifact
+      - entity
+      - link
+      - entity_memory_link
+      - entity_relationship
+      - entity_project_link
+      - plan
+      - task
+      - criterion
+      - task_dependency
+
+  action_type:
+    description: "Types of actions that generate activity events"
+    values:
+      - created
+      - updated
+      - deleted
+      - read      # Single entity fetch (opt-in)
+      - queried   # Search/query operation (opt-in)
+
+  actor_type:
+    description: "Types of actors that can trigger activity events"
+    values:
+      - user
+      - system
+      - llm-maintenance
 
 # =============================================================================
 # RELATIONS
@@ -324,3 +545,33 @@ relations:
     cardinality: one_to_many
     label: "contains"
     description: "Project contains multiple code artifacts (via code_artifact.project_id)"
+
+  - entity_a: project
+    entity_b: plan
+    cardinality: one_to_many
+    label: "has plans"
+    description: "Project can have multiple plans (via plan.project_id)"
+
+  - entity_a: plan
+    entity_b: task
+    cardinality: one_to_many
+    label: "contains"
+    description: "Plan contains multiple tasks (via task.plan_id)"
+
+  - entity_a: task
+    entity_b: criterion
+    cardinality: one_to_many
+    label: "has criteria"
+    description: "Task has acceptance criteria (via criterion.task_id)"
+
+  - entity_a: task
+    entity_b: task_dependency
+    cardinality: one_to_many
+    label: "has dependencies"
+    description: "Task can depend on other tasks (via task_dependency.task_id)"
+
+  - entity_a: entity
+    entity_b: memory
+    cardinality: many_to_many
+    label: "linked to"
+    description: "Entity can be linked to multiple memories (via entity_memory_links)"

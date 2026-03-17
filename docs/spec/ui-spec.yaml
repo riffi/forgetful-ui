@@ -15,6 +15,9 @@ metadata:
     accent-document: "#3b82f6 (blue-500) - for document nodes and badges"
     accent-code-artifact: "#06b6d4 (cyan-500) - for code artifact badges"
     accent-project: "#22c55e (green-500) - for project badges"
+    accent-plan: "#ec4899 (pink-500) - for plan nodes and badges"
+    accent-task: "#8b5cf6 (violet-500) - for task badges and states"
+    accent-activity: "#64748b (slate-500) - for activity log entries"
     text-primary: "white opacity-90"
     text-secondary: "white opacity-60"
     text-dimmed: "white opacity-40"
@@ -49,7 +52,7 @@ templates:
             purpose: "Search trigger below logo: search icon, placeholder 'Quick search...', '/' kbd hint. Click or '/' hotkey opens GlobalSearch modal overlay. Glass surface background"
           - id: nav
             type: main_navigation
-            purpose: "Vertical navigation list with icons and labels. Items: Dashboard (grid icon), Memories (brain icon), Entities (cube icon), Projects (folder icon), Documents (file icon), Code Artifacts (code brackets icon), Graph (network icon). Active item: accent background glow, white text. Inactive: text-secondary. Hover: subtle highlight"
+            purpose: "Vertical navigation list with icons and labels. Items: Dashboard (grid icon), Memories (brain icon), Entities (cube icon), Projects (folder icon), Plans (clipboard-list icon, only if PLANNING_ENABLED), Documents (file icon), Code Artifacts (code brackets icon), Graph (network icon), Activity (activity icon, only if ACTIVITY_ENABLED). Active item: accent background glow, white text. Inactive: text-secondary. Hover: subtle highlight. Feature-flagged items hidden when disabled"
           - id: user_profile
             type: custom
             purpose: "User profile section at bottom of sidebar (above collapse toggle). Visible when auth enabled. Shows: avatar (32px circle with user initials, gradient background), user name (text-primary, truncate if long), chevron icon. Click opens dropdown with 'Profile' and 'Sign out' options. When auth disabled: shows 'Guest' with muted icon styling. Dropdown items: 'Profile' navigates to user_profile screen, 'Sign out' triggers logout flow"
@@ -109,6 +112,10 @@ navigation:
     - id: projects
       label: Projects
       target: projects
+    - id: plans
+      label: Plans
+      target: plans
+      feature_flag: PLANNING_ENABLED
     - id: documents
       label: Documents
       target: documents
@@ -118,6 +125,10 @@ navigation:
     - id: graph
       label: Graph
       target: graph
+    - id: activity
+      label: Activity
+      target: activity
+      feature_flag: ACTIVITY_ENABLED
 
 # =============================================================================
 # SCREEN GROUPS
@@ -127,9 +138,11 @@ screen_groups:
   - id: auth
     screens: [login, user_profile]
   - id: overview
-    screens: [dashboard, graph]
+    screens: [dashboard, graph, activity]
   - id: data_management
     screens: [memories, memory_detail, entities, entity_detail, projects, project_detail, documents, document_detail, code_artifacts, code_artifact_detail]
+  - id: planning
+    screens: [plans, plan_detail]
   - id: overlays
     screens: [search_results, item_editor]
 
@@ -205,16 +218,16 @@ screens:
       - id: recent_memories
         columns: 8
         purpose: "Recent memories list (last 10). Each row: title, importance badge (color-coded), tags, project badge, updated_at. Row click -> memory detail. Header has 'View All' link"
-      - id: quick_actions
+      - id: recent_activity
         columns: 4
-        purpose: "Quick actions panel"
+        purpose: "Recent activity panel (surface-primary bg). Shows live feed of recent changes across all entity types. Requires ACTIVITY_ENABLED=true, shows placeholder message when disabled"
         blocks:
-          - id: global_search
-            purpose: "Search trigger: click opens GlobalSearch modal. Shows '/' kbd hint. Same behavior as sidebar search"
-          - id: create_buttons
-            purpose: "Quick create buttons grid (2x3): New Memory, New Entity, New Project, New Document, New Code Artifact, View Graph. Each opens respective create modal or navigates"
-          - id: high_importance
-            purpose: "High importance memories (importance >= 9). Shows count badge. Click expands to show list of top 5 titles. Click title -> memory detail"
+          - id: activity_header
+            purpose: "Panel header: 'Recent Activity' title, live indicator (pulsing green dot when SSE connected), 'View All' link -> activity page"
+          - id: activity_list
+            purpose: "Compact activity feed (last 15 events). Each event row: relative timestamp (e.g., '2m ago'), action icon (created=plus/green, updated=pencil/blue, deleted=trash/red), entity type icon (colored), entity title (truncated, clickable -> detail). Hover shows full timestamp and actor. Auto-updates via SSE when connected"
+          - id: activity_empty
+            purpose: "Empty state when no activity: clock icon (dimmed), 'No recent activity' text. Shown when activity log is empty or ACTIVITY_ENABLED=false"
 
   # ---------------------------------------------------------------------------
   # MEMORIES
@@ -307,6 +320,8 @@ screens:
         columns: 4
         purpose: "Right sidebar with tags, metadata, relationships, and actions cards"
         blocks:
+          - id: aka_card
+            purpose: "Sidebar card with 'Also Known As' title. Alternative names displayed as gray pills. Inline editable with '+ alias' input. Useful for entity search matching"
           - id: tags_card
             purpose: "Sidebar card with 'Tags' title. Tags displayed as gray pills (rgba white 0.1 bg, 12px font). Inline editable with '+ tag' input"
           - id: metadata_card
@@ -548,3 +563,95 @@ screens:
             purpose: "Live preview tab: rendered markdown, tags displayed as chips, importance badge with color, type badge"
           - id: editor_actions
             purpose: "Footer (sticky): Cancel button (ghost style), Save button (primary, accent glow), 'Save & Create Another' checkbox for batch creation"
+
+  # ---------------------------------------------------------------------------
+  # PLANS (requires PLANNING_ENABLED feature flag)
+  # ---------------------------------------------------------------------------
+  plans:
+    title: Plans
+    purpose: "List all plans with status filters. Plans organize tasks with dependencies and acceptance criteria. Only visible when PLANNING_ENABLED=true"
+    feature_flag: PLANNING_ENABLED
+    blocks:
+      - id: header
+        columns: 12
+        purpose: "Page header: title 'Plans', search input, filter by status (draft/active/completed/archived), filter by project dropdown, 'Create Plan' button (btn-primary). Auto-filtered by global project context"
+      - id: plans_grid
+        columns: 12
+        purpose: "Card grid (3 columns). Each card: title, status badge (colored: draft=gray, active=green, completed=blue, archived=slate), project badge, goal (truncated 2 lines), progress bar (tasks done/total), task_count. Card click -> plan_detail. Hover shows quick actions (activate, archive, delete)"
+
+  plan_detail:
+    title: Plan Detail
+    purpose: "Full page for plan management with Kanban-style task board. Shows tasks organized by state columns. Supports drag-and-drop for state transitions. INLINE EDITING for plan fields"
+    feature_flag: PLANNING_ENABLED
+    blocks:
+      - id: breadcrumb
+        columns: 12
+        purpose: "Breadcrumb: Plans > [Plan Title] (or Projects > [Project] > Plans > [Plan Title] if accessed from project)"
+      - id: header
+        columns: 12
+        purpose: "Header row: status badge (clickable dropdown: draft/active/completed/archived, colored), title (h1, INLINE EDITABLE), project badge (clickable -> project detail), actions: Delete, Archive, 'Save Changes' primary button"
+      - id: plan_meta
+        columns: 12
+        purpose: "Collapsible section with plan goal and context. Goal field (INLINE EDITABLE, shows rendered text, click to edit), Context field (INLINE EDITABLE). Both use accent-plan border on focus"
+      - id: task_board
+        columns: 12
+        purpose: "Kanban board with 5 columns: Todo, Doing, Waiting, Done, Cancelled. Each column header: state name, task count badge. Column body scrollable. Tasks shown as cards"
+        blocks:
+          - id: task_card
+            purpose: "Task card in column: title (bold), priority badge (P0=red, P1=orange, P2=yellow, P3=gray), assigned_agent pill (if set), criteria progress (N/M met), dependency indicator (blocked icon if has unmet dependencies). Click opens task_drawer. Drag to move between columns (validates state transitions). Version conflict shows warning toast"
+          - id: add_task_button
+            purpose: "'+' button at bottom of Todo column. Opens inline task creation form or task_editor modal"
+      - id: task_drawer
+        columns: 12
+        purpose: "Slide-in drawer (400px) when task selected. Shows full task details"
+        blocks:
+          - id: task_header
+            purpose: "Task title (INLINE EDITABLE), state badge (dropdown for valid transitions), priority dropdown, assigned_agent input, version indicator"
+          - id: task_description
+            purpose: "Description field (INLINE EDITABLE, markdown support)"
+          - id: task_criteria
+            purpose: "Acceptance Criteria section. List of criteria, each with: checkbox (toggles met), description text, met_at timestamp if checked. Add criterion input at bottom. Delete button on hover"
+          - id: task_dependencies
+            purpose: "Dependencies section. List of dependency tasks with title and state badge. 'Add Dependency' button opens task picker (only tasks from same plan). Remove dependency X button"
+          - id: task_actions
+            purpose: "Footer: 'Claim Task' button (if not assigned), state transition buttons (Start, Complete, Block, Cancel based on current state), Delete button (red)"
+      - id: sidebar
+        columns: 4
+        purpose: "Right sidebar (visible on wide screens, collapsible)"
+        blocks:
+          - id: progress_card
+            purpose: "Plan progress card: circular progress chart (tasks done %), breakdown by state (todo/doing/waiting/done/cancelled counts), criteria met ratio"
+          - id: metadata_card
+            purpose: "Metadata: ID, Created date, Updated date, Project link"
+
+  # ---------------------------------------------------------------------------
+  # ACTIVITY (requires ACTIVITY_ENABLED feature flag)
+  # ---------------------------------------------------------------------------
+  activity:
+    title: Activity Log
+    purpose: "Real-time activity feed showing entity lifecycle events. Supports SSE streaming for live updates. Only visible when ACTIVITY_ENABLED=true"
+    feature_flag: ACTIVITY_ENABLED
+    blocks:
+      - id: header
+        columns: 12
+        purpose: "Page header: title 'Activity', live indicator (pulsing green dot when SSE connected), filter controls"
+      - id: filters
+        columns: 12
+        purpose: "Filter bar: entity_type multi-select (memory/entity/project/document/code_artifact/plan/task), action filter (created/updated/deleted/read/queried), actor filter (user/system/llm-maintenance), date range picker, entity_id search input. 'Clear Filters' button"
+      - id: activity_feed
+        columns: 8
+        purpose: "Activity event list (virtualized for performance). Each event row"
+        blocks:
+          - id: activity_event
+            purpose: "Event row: timestamp (relative, hover shows absolute), action badge (created=green, updated=blue, deleted=red, read=gray, queried=purple), entity_type icon (colored by type), entity title/name (clickable -> detail page), actor badge (user/system/llm). Expandable to show changes diff (for updates) or full snapshot"
+      - id: sidebar
+        columns: 4
+        purpose: "Activity sidebar"
+        blocks:
+          - id: stats_card
+            purpose: "Activity stats: events today, events this week, most active entity types pie chart"
+          - id: recent_entities_card
+            purpose: "Recently modified entities: quick links to most recently changed items by type"
+      - id: sse_status
+        columns: 12
+        purpose: "SSE connection status bar at bottom: 'Live updates active' with green indicator when connected, 'Reconnecting...' with spinner when disconnected, 'Live updates unavailable' if SSE fails. Click to manually reconnect"

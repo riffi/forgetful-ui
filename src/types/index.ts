@@ -110,6 +110,7 @@ export interface Entity {
   custom_type?: string
   notes?: string
   tags: string[]
+  aka: string[]
   created_at: string
   updated_at: string
   // Relations
@@ -124,6 +125,7 @@ export interface EntityCreate {
   custom_type?: string
   notes?: string
   tags?: string[]
+  aka?: string[]
 }
 
 export interface EntityUpdate {
@@ -132,6 +134,7 @@ export interface EntityUpdate {
   custom_type?: string
   notes?: string
   tags?: string[]
+  aka?: string[]
 }
 
 export interface EntityRelationship {
@@ -332,4 +335,59 @@ export interface DashboardStats {
   documents_count: number
   code_artifacts_count: number
   relations_count: number
+}
+
+// =============================================================================
+// ACTIVITY
+// =============================================================================
+
+export type ActivityEntityType =
+  | 'memory'
+  | 'project'
+  | 'document'
+  | 'code_artifact'
+  | 'entity'
+  | 'link'
+  | 'entity_memory_link'
+  | 'entity_relationship'
+  | 'entity_project_link'
+  | 'plan'
+  | 'task'
+  | 'criterion'
+  | 'task_dependency'
+
+export type ActionType = 'created' | 'updated' | 'deleted' | 'read' | 'queried'
+
+export type ActorType = 'user' | 'system' | 'llm-maintenance'
+
+export interface ActivityEvent {
+  id: number
+  user_id: string
+  entity_type: ActivityEntityType
+  entity_id: number
+  action: ActionType
+  changes?: Record<string, { old: unknown; new: unknown }>
+  snapshot: Record<string, unknown>
+  actor: ActorType
+  actor_id?: string
+  metadata?: Record<string, unknown>
+  created_at: string
+}
+
+export interface ActivityResponse {
+  events: ActivityEvent[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface ActivityFilters {
+  entity_type?: ActivityEntityType
+  action?: ActionType
+  entity_id?: number
+  actor?: ActorType
+  since?: string
+  until?: string
+  limit?: number
+  offset?: number
 }
