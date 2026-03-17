@@ -13,6 +13,7 @@ export function useActivity(filters: ActivityFilters = {}) {
   return useQuery({
     queryKey: activityKeys.list(filters),
     queryFn: () => activityApi.list(filters),
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   })
 }
 

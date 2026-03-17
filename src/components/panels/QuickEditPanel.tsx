@@ -4,7 +4,6 @@ import {
   Text,
   Badge,
   Slider,
-  TagsInput,
   Loader,
   Tooltip,
   Select,
@@ -261,15 +260,6 @@ function MemoryContent({ id }: { id: number }) {
           {memory.content?.slice(0, 300) || 'No content'}
           {memory.content && memory.content.length > 300 && '...'}
         </p>
-        {memory.content && memory.content.length > 300 && (
-          <button
-            type="button"
-            className={classes.showMoreLink}
-            onClick={() => navigate(`/memories/${id}`)}
-          >
-            Show more
-          </button>
-        )}
       </div>
 
       {/* Related Items */}
@@ -353,6 +343,7 @@ function EntityContent({ id }: { id: number }) {
   const deleteEntity = useDeleteEntity()
 
   const [localTags, setLocalTags] = useState<string[]>([])
+  const [newTagValue, setNewTagValue] = useState('')
 
   useEffect(() => {
     if (entity) {
@@ -368,9 +359,22 @@ function EntityContent({ id }: { id: number }) {
     return <div className={classes.empty}>Entity not found</div>
   }
 
-  const handleTagsChange = (tags: string[]) => {
-    setLocalTags(tags)
-    updateEntity.mutate({ id, data: { tags } })
+  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && newTagValue.trim()) {
+      const newTag = newTagValue.trim()
+      if (!localTags.includes(newTag) && localTags.length < 10) {
+        const newTags = [...localTags, newTag]
+        setLocalTags(newTags)
+        updateEntity.mutate({ id, data: { tags: newTags } })
+      }
+      setNewTagValue('')
+    }
+  }
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    const newTags = localTags.filter(tag => tag !== tagToRemove)
+    setLocalTags(newTags)
+    updateEntity.mutate({ id, data: { tags: newTags } })
   }
 
   const handleDelete = () => {
@@ -397,12 +401,29 @@ function EntityContent({ id }: { id: number }) {
 
         <div className={classes.field}>
           <div className={classes.fieldLabel}>Tags</div>
-          <TagsInput
-            value={localTags}
-            onChange={handleTagsChange}
+          {localTags.length > 0 && (
+            <div className={classes.tagsRow}>
+              {localTags.map((tag) => (
+                <span key={tag} className={classes.tagPill}>
+                  {tag}
+                  <button
+                    type="button"
+                    className={classes.tagRemove}
+                    onClick={() => handleRemoveTag(tag)}
+                  >
+                    <IconX size={10} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <input
+            type="text"
+            className={classes.tagInput}
             placeholder="Add tag..."
-            maxTags={10}
-            classNames={{ input: classes.tagsInput }}
+            value={newTagValue}
+            onChange={(e) => setNewTagValue(e.target.value)}
+            onKeyDown={handleAddTag}
           />
         </div>
       </div>
@@ -414,15 +435,6 @@ function EntityContent({ id }: { id: number }) {
             {entity.notes.slice(0, 300)}
             {entity.notes.length > 300 && '...'}
           </p>
-          {entity.notes.length > 300 && (
-            <button
-              type="button"
-              className={classes.showMoreLink}
-              onClick={() => navigate(`/entities/${id}`)}
-            >
-              Show more
-            </button>
-          )}
         </div>
       )}
 
@@ -467,6 +479,7 @@ function DocumentContent({ id }: { id: number }) {
   const deleteDocument = useDeleteDocument()
 
   const [localTags, setLocalTags] = useState<string[]>([])
+  const [newTagValue, setNewTagValue] = useState('')
 
   useEffect(() => {
     if (document) {
@@ -482,9 +495,22 @@ function DocumentContent({ id }: { id: number }) {
     return <div className={classes.empty}>Document not found</div>
   }
 
-  const handleTagsChange = (tags: string[]) => {
-    setLocalTags(tags)
-    updateDocument.mutate({ id, data: { tags } })
+  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && newTagValue.trim()) {
+      const newTag = newTagValue.trim()
+      if (!localTags.includes(newTag) && localTags.length < 10) {
+        const newTags = [...localTags, newTag]
+        setLocalTags(newTags)
+        updateDocument.mutate({ id, data: { tags: newTags } })
+      }
+      setNewTagValue('')
+    }
+  }
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    const newTags = localTags.filter(tag => tag !== tagToRemove)
+    setLocalTags(newTags)
+    updateDocument.mutate({ id, data: { tags: newTags } })
   }
 
   const handleDelete = () => {
@@ -511,12 +537,29 @@ function DocumentContent({ id }: { id: number }) {
 
         <div className={classes.field}>
           <div className={classes.fieldLabel}>Tags</div>
-          <TagsInput
-            value={localTags}
-            onChange={handleTagsChange}
+          {localTags.length > 0 && (
+            <div className={classes.tagsRow}>
+              {localTags.map((tag) => (
+                <span key={tag} className={classes.tagPill}>
+                  {tag}
+                  <button
+                    type="button"
+                    className={classes.tagRemove}
+                    onClick={() => handleRemoveTag(tag)}
+                  >
+                    <IconX size={10} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <input
+            type="text"
+            className={classes.tagInput}
             placeholder="Add tag..."
-            maxTags={10}
-            classNames={{ input: classes.tagsInput }}
+            value={newTagValue}
+            onChange={(e) => setNewTagValue(e.target.value)}
+            onKeyDown={handleAddTag}
           />
         </div>
       </div>
@@ -524,17 +567,10 @@ function DocumentContent({ id }: { id: number }) {
       {document.content && (
         <div className={classes.section}>
           <h3 className={classes.sectionTitle}>Content Preview</h3>
-          <div className={classes.contentPreview}>
+          <p className={classes.contentPreview}>
             {document.content.slice(0, 300)}
-            {document.content.length > 300 && (
-              <button
-                className={classes.showMore}
-                onClick={() => navigate(`/documents/${id}`)}
-              >
-                Show more
-              </button>
-            )}
-          </div>
+            {document.content.length > 300 && '...'}
+          </p>
         </div>
       )}
 
@@ -572,6 +608,7 @@ function CodeArtifactContent({ id }: { id: number }) {
   const deleteArtifact = useDeleteCodeArtifact()
 
   const [localTags, setLocalTags] = useState<string[]>([])
+  const [newTagValue, setNewTagValue] = useState('')
 
   useEffect(() => {
     if (artifact) {
@@ -587,9 +624,22 @@ function CodeArtifactContent({ id }: { id: number }) {
     return <div className={classes.empty}>Code artifact not found</div>
   }
 
-  const handleTagsChange = (tags: string[]) => {
-    setLocalTags(tags)
-    updateArtifact.mutate({ id, data: { tags } })
+  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && newTagValue.trim()) {
+      const newTag = newTagValue.trim()
+      if (!localTags.includes(newTag) && localTags.length < 10) {
+        const newTags = [...localTags, newTag]
+        setLocalTags(newTags)
+        updateArtifact.mutate({ id, data: { tags: newTags } })
+      }
+      setNewTagValue('')
+    }
+  }
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    const newTags = localTags.filter(tag => tag !== tagToRemove)
+    setLocalTags(newTags)
+    updateArtifact.mutate({ id, data: { tags: newTags } })
   }
 
   const handleDelete = () => {
@@ -616,12 +666,29 @@ function CodeArtifactContent({ id }: { id: number }) {
 
         <div className={classes.field}>
           <div className={classes.fieldLabel}>Tags</div>
-          <TagsInput
-            value={localTags}
-            onChange={handleTagsChange}
+          {localTags.length > 0 && (
+            <div className={classes.tagsRow}>
+              {localTags.map((tag) => (
+                <span key={tag} className={classes.tagPill}>
+                  {tag}
+                  <button
+                    type="button"
+                    className={classes.tagRemove}
+                    onClick={() => handleRemoveTag(tag)}
+                  >
+                    <IconX size={10} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <input
+            type="text"
+            className={classes.tagInput}
             placeholder="Add tag..."
-            maxTags={10}
-            classNames={{ input: classes.tagsInput }}
+            value={newTagValue}
+            onChange={(e) => setNewTagValue(e.target.value)}
+            onKeyDown={handleAddTag}
           />
         </div>
       </div>
@@ -704,17 +771,10 @@ function ProjectContent({ id }: { id: number }) {
       {project.description && (
         <div className={classes.section}>
           <h3 className={classes.sectionTitle}>Description</h3>
-          <div className={classes.contentPreview}>
+          <p className={classes.contentPreview}>
             {project.description.slice(0, 300)}
-            {project.description.length > 300 && (
-              <button
-                className={classes.showMore}
-                onClick={() => navigate(`/projects/${id}`)}
-              >
-                Show more
-              </button>
-            )}
-          </div>
+            {project.description.length > 300 && '...'}
+          </p>
         </div>
       )}
 

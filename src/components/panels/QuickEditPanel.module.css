@@ -283,29 +283,9 @@
   font-size: 14px;
   color: var(--text-primary);
   line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
   margin: 0;
-}
-
-.showMoreLink {
-  display: inline-block;
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 13px;
-  font-family: inherit;
-  padding: 0;
-  margin-top: 8px;
-  transition: color 0.2s ease;
-}
-
-.showMoreLink:hover {
-  color: var(--text-primary);
-  text-decoration: underline;
 }
 
 /* Code Preview */

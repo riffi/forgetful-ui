@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import {
   Title,
   Group,
@@ -11,7 +11,6 @@ import {
   Tooltip,
   Paper,
   Pagination,
-  Loader,
 } from '@mantine/core'
 import {
   IconActivity,
@@ -29,13 +28,9 @@ import {
   IconRobot,
   IconSettings,
   IconLink,
-  IconWifi,
-  IconWifiOff,
-  IconRefresh,
 } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
-import { useActivity, useActivityStream } from '@/hooks'
-import type { SSEStatus } from '@/hooks/useActivityStream'
+import { useActivity } from '@/hooks'
 import { Section } from '@/components/ui'
 import type { ActivityEvent, ActivityEntityType, ActionType, ActorType } from '@/types'
 import classes from './Activity.module.css'
@@ -234,16 +229,15 @@ function getEntityTypeLabel(entityType: ActivityEntityType): string {
 interface ActivityRowProps {
   event: ActivityEvent
   onNavigate: (path: string) => void
-  isNew?: boolean
 }
 
-function ActivityRow({ event, onNavigate, isNew }: ActivityRowProps) {
+function ActivityRow({ event, onNavigate }: ActivityRowProps) {
   const path = getEntityPath(event.entity_type, event.entity_id)
   const isClickable = path !== null && event.action !== 'deleted'
 
   return (
     <div
-      className={`${classes.eventRow} ${isClickable ? classes.eventRowClickable : ''} ${isNew ? classes.eventRowNew : ''}`}
+      className={`${classes.eventRow} ${isClickable ? classes.eventRowClickable : ''}`}
       onClick={isClickable ? () => onNavigate(path) : undefined}
     >
       {/* Timestamp */}
@@ -343,64 +337,6 @@ function StatsCard({ events }: StatsCardProps) {
   )
 }
 
-interface SSEStatusBarProps {
-  status: SSEStatus
-  error: string | null
-  onReconnect: () => void
-}
-
-function SSEStatusBar({ status, error, onReconnect }: SSEStatusBarProps) {
-  const getStatusContent = () => {
-    switch (status) {
-      case 'connected':
-        return (
-          <>
-            <IconWifi size={14} />
-            <span>Live updates active</span>
-          </>
-        )
-      case 'connecting':
-        return (
-          <>
-            <Loader size={14} />
-            <span>Connecting...</span>
-          </>
-        )
-      case 'error':
-      case 'disconnected':
-        return (
-          <>
-            <IconWifiOff size={14} />
-            <span>{error || 'Disconnected'}</span>
-            <button className={classes.reconnectBtn} onClick={onReconnect}>
-              <IconRefresh size={12} />
-              Reconnect
-            </button>
-          </>
-        )
-      case 'disabled':
-        return (
-          <>
-            <IconWifiOff size={14} />
-            <span>Live updates unavailable</span>
-          </>
-        )
-      default:
-        return null
-    }
-  }
-
-  const statusClass = status === 'connected' ? classes.sseStatusConnected :
-                      status === 'connecting' ? classes.sseStatusConnecting :
-                      classes.sseStatusDisconnected
-
-  return (
-    <div className={`${classes.sseStatusBar} ${statusClass}`}>
-      {getStatusContent()}
-    </div>
-  )
-}
-
 export function Activity() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
@@ -408,18 +344,6 @@ export function Activity() {
   const [actionFilter, setActionFilter] = useState<string>('')
   const [actorFilter, setActorFilter] = useState<string>('')
 
-  // SSE stream for real-time updates (only on first page without filters)
-  const enableSSE = page === 1 && !entityTypeFilter && !actionFilter && !actorFilter
-  const {
-    events: sseEvents,
-    status: sseStatus,
-    error: sseError,
-    reconnect,
-  } = useActivityStream({
-    enabled: enableSSE,
-  })
-
-  // Regular API fetch for historical data
   const { data, isLoading, isError } = useActivity({
     entity_type: entityTypeFilter as ActivityEntityType || undefined,
     action: actionFilter as ActionType || undefined,
@@ -428,23 +352,9 @@ export function Activity() {
     offset: (page - 1) * ITEMS_PER_PAGE,
   })
 
-  const apiEvents = data?.events ?? []
+  const events = data?.events ?? []
   const total = data?.total ?? 0
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE)
-
-  // Merge SSE events with API events (SSE events are newer, deduplicate by id)
-  const events = useMemo(() => {
-    if (!enableSSE || sseEvents.length === 0) {
-      return apiEvents
-    }
-
-    const apiEventIds = new Set(apiEvents.map(e => e.id))
-    const uniqueSseEvents = sseEvents.filter(e => !apiEventIds.has(e.id))
-    return [...uniqueSseEvents, ...apiEvents]
-  }, [enableSSE, sseEvents, apiEvents])
-
-  // Track which events came from SSE (for highlighting)
-  const sseEventIds = useMemo(() => new Set(sseEvents.map(e => e.id)), [sseEvents])
 
   const handleClearFilters = () => {
     setEntityTypeFilter('')
@@ -455,20 +365,11 @@ export function Activity() {
 
   const hasFilters = entityTypeFilter || actionFilter || actorFilter
 
-  // Determine live indicator status
-  const isLive = sseStatus === 'connected'
-
   return (
     <div className={classes.container}>
       {/* Header */}
       <div className={classes.header}>
-        <Group gap="md">
-          <Title order={1} className={classes.title}>Activity</Title>
-          <div className={`${classes.liveIndicator} ${isLive ? '' : classes.liveIndicatorInactive}`}>
-            <span className={`${classes.liveDot} ${isLive ? '' : classes.liveDotInactive}`} />
-            <span className={classes.liveText}>{isLive ? 'Live' : 'Offline'}</span>
-          </div>
-        </Group>
+        <Title order={1} className={classes.title}>Activity</Title>
       </div>
 
       {/* Filters */}
@@ -576,7 +477,6 @@ export function Activity() {
                     key={event.id}
                     event={event}
                     onNavigate={navigate}
-                    isNew={sseEventIds.has(event.id)}
                   />
                 ))}
               </div>
@@ -609,13 +509,6 @@ export function Activity() {
           </Section>
         </div>
       </div>
-
-      {/* SSE Status Bar */}
-      <SSEStatusBar
-        status={sseStatus}
-        error={sseError}
-        onReconnect={reconnect}
-      />
     </div>
   )
 }

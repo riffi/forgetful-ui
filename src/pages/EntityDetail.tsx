@@ -367,7 +367,6 @@ export function EntityDetail() {
               placeholder="Add notes about this entity..."
               minHeight={250}
               accentColor="entity"
-              inlineEdit
             />
           </Paper>
         </div>

@@ -1,60 +1,108 @@
 /* =============================================================================
-   MARKDOWN EDITOR STYLES (TipTap-based)
+   MARKDOWN EDITOR STYLES
    ============================================================================= */
 
 .container {
   border-radius: 8px;
   overflow: hidden;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+.container:focus-within {
+  border-color: var(--border-hover);
+}
+
+/* Accent color focus states */
+.memory:focus-within {
+  border-color: var(--accent-memory);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.15);
+}
+
+.entity:focus-within {
+  border-color: var(--accent-entity);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15);
+}
+
+.document:focus-within {
+  border-color: var(--accent-document);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.code:focus-within {
+  border-color: var(--accent-code);
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.15);
+}
+
+.project:focus-within {
+  border-color: var(--accent-project);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
 }
 
 /* =============================================================================
-   CLICKABLE (inline edit preview mode)
+   TOOLBAR & MODE TOGGLE
    ============================================================================= */
 
-.clickable {
-  cursor: pointer;
-  background: var(--surface-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  transition: all 0.2s ease;
+.toolbar {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--surface-primary);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-.clickable:hover {
-  border-color: var(--border-hover);
+.modeToggle {
+  display: flex;
+  gap: 2px;
+  background: var(--surface-secondary);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.modeButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modeButton:hover:not(:disabled) {
+  color: var(--text-primary);
   background: var(--surface-hover);
 }
 
-/* Accent color hover states */
-.memory.clickable:hover {
-  border-color: var(--accent-memory);
-  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.1);
+.modeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.entity.clickable:hover {
-  border-color: var(--accent-entity);
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1);
-}
-
-.document.clickable:hover {
-  border-color: var(--accent-document);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-}
-
-.code.clickable:hover {
-  border-color: var(--accent-code);
-  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.1);
-}
-
-.project.clickable:hover {
-  border-color: var(--accent-project);
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.1);
+.modeButtonActive {
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* =============================================================================
-   TIPTAP PREVIEW (read-only / inline-edit preview)
+   EDITOR WRAPPER
    ============================================================================= */
 
-.tiptapPreview {
+.editorWrapper {
+  position: relative;
+}
+
+/* =============================================================================
+   PREVIEW MODE (TipTap read-only)
+   ============================================================================= */
+
+.preview {
   padding: 16px;
   color: var(--text-primary);
   font-size: 14px;
@@ -70,161 +118,44 @@
   font-style: italic;
 }
 
-/* =============================================================================
-   TIPTAP EDITOR (active editing mode)
-   ============================================================================= */
-
-.editorActive {
-  background: var(--surface-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-}
-
-.editorActive:focus-within {
-  border-color: var(--border-hover);
-}
-
-/* Accent color focus states */
-.memory.editorActive:focus-within {
-  border-color: var(--accent-memory);
-  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
-}
-
-.entity.editorActive:focus-within {
-  border-color: var(--accent-entity);
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
-}
-
-.document.editorActive:focus-within {
-  border-color: var(--accent-document);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-}
-
-.code.editorActive:focus-within {
-  border-color: var(--accent-code);
-  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
-}
-
-.project.editorActive:focus-within {
-  border-color: var(--accent-project);
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
-}
-
-/* =============================================================================
-   TOOLBAR
-   ============================================================================= */
-
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 8px 12px;
-  background: var(--surface-primary);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.toolbarButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 6px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.15s ease;
-}
-
-.toolbarButton:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-}
-
-.toolbarButtonActive {
-  background: var(--surface-tertiary);
-  color: var(--text-primary);
-}
-
-.toolbarDivider {
-  width: 1px;
-  height: 20px;
-  margin: 0 4px;
-  background: var(--border-subtle);
-}
-
-/* =============================================================================
-   TIPTAP EDITOR CONTENT
-   ============================================================================= */
-
-.tiptapEditor {
-  padding: 16px;
-  overflow-y: auto;
-}
-
-.tiptapEditor :global(.tiptap) {
+/* TipTap content styles */
+.preview :global(.tiptap) {
   outline: none;
-  color: var(--text-primary);
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-.tiptapEditor :global(.tiptap p.is-editor-empty:first-child::before) {
-  content: attr(data-placeholder);
-  color: var(--text-dimmed);
-  pointer-events: none;
-  float: left;
-  height: 0;
 }
 
 /* Headings */
-.tiptapEditor :global(.tiptap h1),
-.tiptapEditor :global(.tiptap h2),
-.tiptapEditor :global(.tiptap h3),
-.tiptapEditor :global(.tiptap h4),
-.tiptapEditor :global(.tiptap h5),
-.tiptapEditor :global(.tiptap h6),
-.tiptapPreview :global(.tiptap h1),
-.tiptapPreview :global(.tiptap h2),
-.tiptapPreview :global(.tiptap h3),
-.tiptapPreview :global(.tiptap h4),
-.tiptapPreview :global(.tiptap h5),
-.tiptapPreview :global(.tiptap h6) {
+.preview :global(.tiptap h1),
+.preview :global(.tiptap h2),
+.preview :global(.tiptap h3),
+.preview :global(.tiptap h4),
+.preview :global(.tiptap h5),
+.preview :global(.tiptap h6) {
   color: var(--text-primary);
   margin: 1em 0 0.5em 0;
   font-weight: 600;
   line-height: 1.3;
 }
 
-.tiptapEditor :global(.tiptap h1),
-.tiptapPreview :global(.tiptap h1) {
+.preview :global(.tiptap h1) {
   font-size: 1.75em;
 }
 
-.tiptapEditor :global(.tiptap h2),
-.tiptapPreview :global(.tiptap h2) {
+.preview :global(.tiptap h2) {
   font-size: 1.5em;
 }
 
-.tiptapEditor :global(.tiptap h3),
-.tiptapPreview :global(.tiptap h3) {
+.preview :global(.tiptap h3) {
   font-size: 1.25em;
 }
 
 /* Links */
-.tiptapEditor :global(.tiptap a),
-.tiptapPreview :global(.tiptap a) {
+.preview :global(.tiptap a) {
   color: var(--accent-document);
   text-decoration: underline;
 }
 
 /* Inline code */
-.tiptapEditor :global(.tiptap code),
-.tiptapPreview :global(.tiptap code) {
+.preview :global(.tiptap code) {
   background: var(--surface-primary);
   color: var(--accent-code);
   padding: 2px 6px;
@@ -234,8 +165,7 @@
 }
 
 /* Code blocks */
-.tiptapEditor :global(.tiptap pre),
-.tiptapPreview :global(.tiptap pre) {
+.preview :global(.tiptap pre) {
   background: var(--surface-primary);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
@@ -244,8 +174,7 @@
   margin: 1em 0;
 }
 
-.tiptapEditor :global(.tiptap pre code),
-.tiptapPreview :global(.tiptap pre code) {
+.preview :global(.tiptap pre code) {
   background: transparent;
   padding: 0;
   font-size: 13px;
@@ -254,8 +183,7 @@
 }
 
 /* Blockquote */
-.tiptapEditor :global(.tiptap blockquote),
-.tiptapPreview :global(.tiptap blockquote) {
+.preview :global(.tiptap blockquote) {
   border-left: 3px solid var(--border-hover);
   color: var(--text-secondary);
   background: var(--surface-primary);
@@ -265,70 +193,69 @@
 }
 
 /* Lists */
-.tiptapEditor :global(.tiptap ul),
-.tiptapEditor :global(.tiptap ol),
-.tiptapPreview :global(.tiptap ul),
-.tiptapPreview :global(.tiptap ol) {
+.preview :global(.tiptap ul),
+.preview :global(.tiptap ol) {
   padding-left: 24px;
   margin: 0.5em 0;
 }
 
-.tiptapEditor :global(.tiptap li),
-.tiptapPreview :global(.tiptap li) {
+.preview :global(.tiptap li) {
   margin: 4px 0;
 }
 
 /* Horizontal rule */
-.tiptapEditor :global(.tiptap hr),
-.tiptapPreview :global(.tiptap hr) {
+.preview :global(.tiptap hr) {
   border: none;
   border-top: 1px solid var(--border-subtle);
   margin: 1.5em 0;
 }
 
 /* Paragraphs */
-.tiptapEditor :global(.tiptap p),
-.tiptapPreview :global(.tiptap p) {
+.preview :global(.tiptap p) {
   margin: 0.5em 0;
 }
 
-.tiptapEditor :global(.tiptap p:first-child),
-.tiptapPreview :global(.tiptap p:first-child) {
+.preview :global(.tiptap p:first-child) {
   margin-top: 0;
 }
 
-.tiptapEditor :global(.tiptap p:last-child),
-.tiptapPreview :global(.tiptap p:last-child) {
+.preview :global(.tiptap p:last-child) {
   margin-bottom: 0;
 }
 
 /* =============================================================================
-   CODE EDITOR (textarea for code content)
+   SOURCE MODE (textarea)
    ============================================================================= */
 
-.codePreview {
+.sourceTextarea {
+  display: block;
+  width: 100%;
+  min-height: 200px;
   padding: 16px;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: hidden;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 13px;
   line-height: 1.6;
   color: var(--text-primary);
-  white-space: pre-wrap;
-  word-break: break-word;
+  box-sizing: border-box;
 }
 
-.codeEditorWrapper {
-  background: var(--surface-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  overflow: hidden;
+.sourceTextarea::placeholder {
+  color: var(--text-dimmed);
 }
 
-.codeEditorWrapper:focus-within {
-  border-color: var(--border-hover);
-}
+/* =============================================================================
+   CODE EDITOR (for code content type)
+   ============================================================================= */
 
 .codeTextarea {
+  display: block;
   width: 100%;
+  min-height: 200px;
   padding: 16px;
   background: transparent;
   border: none;
@@ -338,34 +265,9 @@
   font-size: 13px;
   line-height: 1.6;
   color: var(--text-primary);
+  box-sizing: border-box;
 }
 
 .codeTextarea::placeholder {
   color: var(--text-dimmed);
-}
-
-/* Accent color focus states for code editor */
-.memory .codeEditorWrapper:focus-within {
-  border-color: var(--accent-memory);
-  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
-}
-
-.entity .codeEditorWrapper:focus-within {
-  border-color: var(--accent-entity);
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
-}
-
-.document .codeEditorWrapper:focus-within {
-  border-color: var(--accent-document);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-}
-
-.code .codeEditorWrapper:focus-within {
-  border-color: var(--accent-code);
-  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
-}
-
-.project .codeEditorWrapper:focus-within {
-  border-color: var(--accent-project);
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
 }

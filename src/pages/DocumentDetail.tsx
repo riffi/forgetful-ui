@@ -261,7 +261,6 @@ export function DocumentDetail() {
               placeholder="Add document description..."
               minHeight={80}
               accentColor="document"
-              inlineEdit
             />
           </Paper>
 
@@ -274,7 +273,6 @@ export function DocumentDetail() {
               placeholder="Add document content..."
               minHeight={250}
               accentColor="document"
-              inlineEdit
               contentType={['json', 'yaml', 'html', 'other'].includes(editedType) ? 'code' : 'markdown'}
             />
           </Paper>

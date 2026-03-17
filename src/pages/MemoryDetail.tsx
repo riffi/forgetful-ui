@@ -320,7 +320,6 @@ export function MemoryDetail() {
               placeholder="Add memory content..."
               minHeight={150}
               accentColor="memory"
-              inlineEdit
             />
           </Paper>
 
@@ -333,7 +332,6 @@ export function MemoryDetail() {
               placeholder="Add context about this memory..."
               minHeight={80}
               accentColor="memory"
-              inlineEdit
             />
           </Paper>
 
