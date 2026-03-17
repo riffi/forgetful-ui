@@ -75,7 +75,7 @@ export function Graph() {
     entity: true,
     document: true,
     code_artifact: true,
-    project: true,
+    project: false,  // Off by default - projects create large graphs
   })
   const [selectedNode, setSelectedNode] = useState<GraphNodeData | null>(null)
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
