@@ -19,35 +19,120 @@ You should see `Login Succeeded`
 
 ---
 
-## Publishing a Release
+## Quick Release (recommended)
 
-### Step 1: Make sure Docker is running
-
-Start Docker Desktop (or Docker daemon on Linux).
-
-### Step 2: Navigate to project folder
+One command does everything:
 
 ```bash
-cd forgetful-ui
+npm run release:patch   # Bug fixes: 0.1.2 -> 0.1.3
+npm run release:minor   # New features: 0.1.2 -> 0.2.0
+npm run release:major   # Breaking changes: 0.1.2 -> 1.0.0
 ```
 
-### Step 3: Build and push
+This automatically:
+1. Bumps version in package.json
+2. Commits the change
+3. Creates git tag (e.g., `v0.1.3`)
+4. Pushes commit and tag to GitHub
+5. Builds frontend and Docker image
+6. Pushes Docker image with `latest` and version tags
+
+After script completes, create GitHub release (see below).
+
+---
+
+## Create GitHub Release with Notes
+
+After the release script completes:
+
+1. Open the link shown in terminal, or go to:
+   https://github.com/riffi/forgetful-ui/releases/new
+
+2. Select your tag (e.g., `v0.1.3`)
+
+3. Fill in release title: `v0.1.3`
+
+4. Write release notes using template:
+
+```markdown
+## What's Changed
+
+### New Features
+- Added feature X
+- Implemented Y
+
+### Bug Fixes
+- Fixed issue with Z
+
+### Improvements
+- Improved performance of Q
+
+**Full Changelog**: https://github.com/riffi/forgetful-ui/compare/v0.1.2...v0.1.3
+```
+
+5. Click **"Publish release"**
+
+---
+
+## Updating Production Server
 
 ```bash
+ssh your-server
+cd /opt/forgetful
+docker compose pull forgetful-ui
+docker compose up -d forgetful-ui
+```
+
+### Use specific version
+
+```bash
+# In docker-compose.yml or .env:
+IMAGE_TAG=v0.1.3
+
+docker compose pull forgetful-ui
+docker compose up -d forgetful-ui
+```
+
+---
+
+## Available Docker Tags
+
+```
+ghcr.io/riffi/forgetful-ui:latest     # Always latest
+ghcr.io/riffi/forgetful-ui:v0.1.3     # Specific version
+```
+
+---
+
+## Rollback
+
+```bash
+# Edit docker-compose.yml to use previous version
+# image: ghcr.io/riffi/forgetful-ui:v0.1.2
+
+docker compose down forgetful-ui
+docker compose up -d forgetful-ui
+```
+
+---
+
+## Manual Release (alternative)
+
+If you need more control:
+
+```bash
+# 1. Edit version in package.json manually
+# 2. Commit and tag
+git add package.json
+git commit -m "chore: release v0.1.3"
+git tag -a v0.1.3 -m "Release v0.1.3"
+git push && git push origin v0.1.3
+
+# 3. Build and push (Windows)
 npm run release
-```
 
-This will:
-- `npm run build` - build the frontend
-- `npm run docker:build` - build Docker image
-- `npm run docker:tag` - tag for ghcr.io
-- `npm run docker:push` - push to registry
-
-### Step 4: Done!
-
-Image is available at:
-```
-ghcr.io/riffi/forgetful-ui:latest
+# 3. Build and push (Linux/Mac)
+npm run release:unix
 ```
 
 ---
@@ -61,93 +146,12 @@ Re-run the docker login command from Prerequisites.
 Start Docker Desktop / Docker daemon.
 
 ### Build failed
-First check that local build works:
 ```bash
-npm run build
+npm run build  # Check if local build works
 ```
 
----
-
-## Individual Commands
-
-| Action | Command |
-|--------|---------|
-| Build frontend only | `npm run build` |
-| Build Docker image only | `npm run docker:build` |
-| Push only | `npm run docker:push` |
-| Full release | `npm run release` |
-
----
-
-## Updating Production Server
-
-After `npm run release` completes successfully, update the production server.
-
-### Update UI only
-
+### Need to re-tag
 ```bash
-ssh your-server
-cd /path/to/forgetful-ui/docker
-docker compose pull forgetful-ui
-docker compose up -d forgetful-ui
-```
-
-### Update Backend only
-
-```bash
-ssh your-server
-cd /path/to/forgetful-ui/docker
-docker compose pull forgetful-service
-docker compose up -d forgetful-service
-```
-
-### Update Everything
-
-```bash
-ssh your-server
-cd /path/to/forgetful-ui/docker
-docker compose pull
-docker compose up -d
-```
-
-### Verify deployment
-
-```bash
-docker compose ps
-docker compose logs --tail 20 forgetful-ui
-docker compose logs --tail 20 forgetful-service
-```
-
----
-
-## Quick Copy-Paste Commands
-
-**Update UI on server:**
-```bash
-cd /path/to/docker && docker compose pull forgetful-ui && docker compose up -d forgetful-ui
-```
-
-**Update backend on server:**
-```bash
-cd /path/to/docker && docker compose pull forgetful-service && docker compose up -d forgetful-service
-```
-
-**Update all on server:**
-```bash
-cd /path/to/docker && docker compose pull && docker compose up -d
-```
-
----
-
-## Rollback
-
-If something breaks:
-
-```bash
-# List available images
-docker images ghcr.io/riffi/forgetful-ui
-
-# Rollback (stop and restart with previous cached image)
-docker compose down forgetful-ui
-docker compose up -d forgetful-ui
+docker tag forgetful-ui:latest ghcr.io/riffi/forgetful-ui:vX.Y.Z
+docker push ghcr.io/riffi/forgetful-ui:vX.Y.Z
 ```
