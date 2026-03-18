@@ -26,6 +26,7 @@ import {
   IconArchive,
   IconInfoCircle,
   IconChartBar,
+  IconDotsVertical,
 } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useProject, useUpdateProject, useDeleteProject, useMemories, useDocuments, useCodeArtifacts, useEntities } from '@/hooks'
@@ -40,6 +41,7 @@ import {
   ActionLink,
   LanguageCell,
   TypeBadge,
+  MarkdownEditor,
 } from '@/components/ui'
 import type { ProjectType, ProjectStatus, Memory, Document, CodeArtifact, Entity } from '@/types'
 import classes from './ProjectDetail.module.css'
@@ -167,29 +169,56 @@ function EditableTitle({ value, onChange }: { value: string; onChange: (value: s
   )
 }
 
-// Inline editable content area
-function EditableContent({ value, onChange, placeholder }: { value: string; onChange: (value: string) => void; placeholder?: string }) {
-  const ref = useRef<HTMLDivElement>(null)
+// Inline editable text for header description
+function InlineEditableText({
+  value,
+  onChange,
+  placeholder = 'Click to add...',
+}: {
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+}) {
+  const [isEditing, setIsEditing] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus()
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+    }
+  }, [isEditing])
 
   const handleBlur = () => {
-    if (ref.current) {
-      const newValue = ref.current.innerText ?? ''
-      if (newValue !== value) {
-        onChange(newValue)
-      }
-    }
+    setIsEditing(false)
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onChange(e.target.value)
+    e.target.style.height = 'auto'
+    e.target.style.height = `${e.target.scrollHeight}px`
+  }
+
+  if (isEditing) {
+    return (
+      <textarea
+        ref={textareaRef}
+        className={classes.inlineTextarea}
+        value={value}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        placeholder={placeholder}
+      />
+    )
   }
 
   return (
     <div
-      ref={ref}
-      className={classes.editableContent}
-      contentEditable
-      suppressContentEditableWarning
-      onBlur={handleBlur}
-      data-placeholder={placeholder}
+      className={`${classes.inlineText} ${!value ? classes.inlineTextEmpty : ''}`}
+      onClick={() => setIsEditing(true)}
     >
-      {value || ''}
+      {value || placeholder}
     </div>
   )
 }
@@ -358,84 +387,86 @@ export function ProjectDetail() {
       {/* Header */}
       <div className={classes.pageHeader}>
         <div className={classes.headerMain}>
-          {/* Badges row */}
-          <Group gap="xs" mb="xs">
-            <TypeBadgeDropdown type={editedType} onChange={setEditedType} />
-            <StatusBadgeDropdown status={editedStatus} onChange={setEditedStatus} />
-          </Group>
-
-          {/* Title row */}
-          <Group gap="md" align="center">
-            <EditableTitle value={editedName} onChange={setEditedName} />
-            {project.repo_name && (
-              <a
-                href={`https://github.com/${project.repo_name}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={classes.repoLinkBtn}
-              >
-                <IconBrandGithub size={16} />
-                View Repository
-              </a>
-            )}
-          </Group>
+          <div className={classes.titleRow}>
+            <div className={classes.accentBar} />
+            <div className={classes.titleContent}>
+              <div className={classes.titleMeta}>
+                <IconFolder size={14} className={classes.typeIcon} />
+                <span className={classes.typeLabel}>Project</span>
+                <TypeBadgeDropdown type={editedType} onChange={setEditedType} />
+                <StatusBadgeDropdown status={editedStatus} onChange={setEditedStatus} />
+              </div>
+              <EditableTitle value={editedName} onChange={setEditedName} />
+              <InlineEditableText
+                value={editedDescription}
+                onChange={setEditedDescription}
+                placeholder="Add description..."
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Header actions */}
-        <Group gap="xs" className={classes.headerActions}>
-          <Button
-            variant="subtle"
-            color="gray"
-            leftSection={<IconTrash size={16} />}
-            onClick={openDelete}
-            className={classes.btnDanger}
-          >
-            Delete
-          </Button>
-          <Button
-            variant="default"
-            leftSection={<IconArchive size={16} />}
-            onClick={handleArchive}
-            disabled={editedStatus === 'archived'}
-          >
-            Archive
-          </Button>
-          <Button
-            color="green"
-            leftSection={<IconDeviceFloppy size={16} />}
+        <div className={classes.headerActions}>
+          {project.repo_name && (
+            <a
+              href={`https://github.com/${project.repo_name}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={classes.actionBtn}
+              title="View Repository"
+            >
+              <IconBrandGithub size={18} />
+            </a>
+          )}
+          <Menu position="bottom-end" withinPortal>
+            <Menu.Target>
+              <button className={classes.actionBtn} title="More actions">
+                <IconDotsVertical size={18} />
+              </button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                leftSection={<IconArchive size={16} />}
+                onClick={handleArchive}
+                disabled={editedStatus === 'archived'}
+              >
+                Archive
+              </Menu.Item>
+              <Menu.Item
+                color="red"
+                leftSection={<IconTrash size={16} />}
+                onClick={openDelete}
+              >
+                Delete
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+          <button
+            className={`${classes.saveBtn} ${hasChanges ? classes.saveBtnActive : ''}`}
             onClick={handleSave}
-            loading={updateProject.isPending}
-            disabled={!hasChanges}
-            className={classes.btnPrimary}
+            disabled={!hasChanges || updateProject.isPending}
           >
-            Save Changes
-          </Button>
-        </Group>
+            <IconDeviceFloppy size={16} />
+            <span>Save</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Content Grid */}
       <div className={classes.grid}>
         {/* Left Column - Main Content */}
         <div className={classes.mainColumn}>
-          {/* Description */}
-          <Paper className={classes.contentCard} mb="md">
-            <Text className={classes.cardLabel}>Description</Text>
-            <EditableContent
-              value={editedDescription}
-              onChange={setEditedDescription}
-              placeholder="Add a project description..."
-            />
-          </Paper>
-
           {/* Notes */}
-          <Paper className={classes.contentCard} mb="md">
-            <Text className={classes.cardLabel}>Notes</Text>
-            <EditableContent
+          <div style={{ marginBottom: 20 }}>
+            <MarkdownEditor
+              label="Notes"
               value={editedNotes}
               onChange={setEditedNotes}
               placeholder="Add notes..."
+              minHeight={150}
+              accentColor="project"
             />
-          </Paper>
+          </div>
 
           {/* Tabs Section */}
           <div className={classes.tabsContainer}>

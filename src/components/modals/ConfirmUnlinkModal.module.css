@@ -1,0 +1,68 @@
+.headerIcon {
+  color: var(--accent-memory);
+}
+
+.unlinkPreview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  background: var(--surface-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+}
+
+.memoryCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--surface-primary);
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  width: 100%;
+  max-width: 280px;
+  transition: all 0.2s;
+}
+
+.memoryIcon {
+  color: var(--accent-memory);
+  flex-shrink: 0;
+}
+
+.unlinkLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.dashedLine {
+  width: 40px;
+  height: 2px;
+  background: repeating-linear-gradient(
+    to right,
+    var(--text-dimmed) 0,
+    var(--text-dimmed) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  opacity: 0.5;
+}
+
+.unlinkIcon {
+  color: var(--mantine-color-red-6);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+}

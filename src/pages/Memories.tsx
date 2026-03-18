@@ -14,7 +14,6 @@ import { DataTable, type DataTableSortStatus } from 'mantine-datatable'
 import {
   IconSearch,
   IconPlus,
-  IconTrash,
   IconArchive,
   IconPower,
 } from '@tabler/icons-react'
@@ -345,7 +344,7 @@ export function Memories() {
             {
               accessor: 'actions',
               title: 'Actions',
-              width: 100,
+              width: 60,
               render: (memory) => (
                 <div className={classes.actionsCell}>
                   <button
@@ -357,16 +356,6 @@ export function Memories() {
                     }}
                   >
                     <IconPower size={16} />
-                  </button>
-                  <button
-                    className={`${classes.actionBtn} ${classes.actionBtnDelete}`}
-                    title="Delete"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      // TODO: Implement permanent delete
-                    }}
-                  >
-                    <IconTrash size={16} />
                   </button>
                 </div>
               ),

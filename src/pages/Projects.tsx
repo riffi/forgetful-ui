@@ -25,7 +25,8 @@ import {
   IconChevronDown,
 } from '@tabler/icons-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useProjects, useDeleteProject, useCreateProject } from '@/hooks'
+import { useProjects, useDeleteProject, useCreateProject, useUpdateProject } from '@/hooks'
+import { ConfirmDialog } from '@/components/modals'
 import { useQuickEdit } from '@/context/QuickEditContext'
 import type { Project, ProjectFilters, ProjectType, ProjectStatus, ProjectCreate } from '@/types'
 import classes from './Projects.module.css'
@@ -58,9 +59,10 @@ interface ProjectCardProps {
   onDoubleClick: () => void
   onDelete: () => void
   onOpen: () => void
+  onArchive: () => void
 }
 
-function ProjectCard({ project, onClick, onDoubleClick, onDelete, onOpen }: ProjectCardProps) {
+function ProjectCard({ project, onClick, onDoubleClick, onDelete, onOpen, onArchive }: ProjectCardProps) {
   const statusColorMap: Record<ProjectStatus, string> = {
     active: classes.badgeStatusActive,
     archived: classes.badgeStatusArchived,
@@ -103,9 +105,11 @@ function ProjectCard({ project, onClick, onDoubleClick, onDelete, onOpen }: Proj
           Open
         </button>
         <div className={classes.cardQuickActions}>
-          <button className={classes.qaBtn} title="Archive" onClick={(e) => e.stopPropagation()}>
-            <IconArchive size={14} />
-          </button>
+          {project.status !== 'archived' && (
+            <button className={classes.qaBtn} title="Archive" onClick={(e) => { e.stopPropagation(); onArchive(); }}>
+              <IconArchive size={14} />
+            </button>
+          )}
           <button className={`${classes.qaBtn} ${classes.qaBtnDanger}`} title="Delete" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
             <IconTrash size={14} />
           </button>
@@ -123,6 +127,10 @@ export function Projects() {
   // Create modal state
   const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false)
   const createProject = useCreateProject()
+  const updateProject = useUpdateProject()
+
+  // Archive dialog state
+  const [archiveTarget, setArchiveTarget] = useState<Project | null>(null)
 
   // Form state for creating project
   const [formName, setFormName] = useState('')
@@ -233,6 +241,17 @@ export function Projects() {
     }
   }
 
+  // Handle archive
+  const handleArchiveConfirm = async () => {
+    if (archiveTarget) {
+      await updateProject.mutateAsync({
+        id: archiveTarget.id,
+        data: { status: 'archived' },
+      })
+      setArchiveTarget(null)
+    }
+  }
+
   return (
     <div className={classes.container}>
       {/* Page Header */}
@@ -313,6 +332,7 @@ export function Projects() {
               onDoubleClick={() => handleOpen(project)}
               onOpen={() => handleOpen(project)}
               onDelete={() => handleDelete(project)}
+              onArchive={() => setArchiveTarget(project)}
             />
           ))}
         </div>
@@ -400,6 +420,19 @@ export function Projects() {
           </Button>
         </Group>
       </Modal>
+
+      {/* Archive Confirmation Dialog */}
+      <ConfirmDialog
+        opened={archiveTarget !== null}
+        onClose={() => setArchiveTarget(null)}
+        onConfirm={handleArchiveConfirm}
+        title="Archive Project"
+        message={`Are you sure you want to archive "${archiveTarget?.name}"? The project will be moved to archived status and hidden from the default view.`}
+        confirmText="Archive"
+        confirmColor="yellow"
+        icon={<IconArchive size={24} color="var(--mantine-color-yellow-6)" />}
+        isLoading={updateProject.isPending}
+      />
     </div>
   )
 }

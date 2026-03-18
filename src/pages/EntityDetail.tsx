@@ -28,6 +28,7 @@ import {
   IconShare3,
   IconLink,
   IconPlus,
+  IconDotsVertical,
 } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useEntity, useUpdateEntity, useDeleteEntity, useEntityRelationships, useCreateEntityRelationship, useEntities } from '@/hooks'
@@ -306,69 +307,72 @@ export function EntityDetail() {
       {/* Header */}
       <div className={classes.pageHeader}>
         <div className={classes.headerMain}>
-          {/* Badges row */}
-          <Group gap="xs" mb="xs">
-            <Badge variant="light" color="orange" size="lg" leftSection={<IconCube size={12} />}>
-              Entity
-            </Badge>
-            <EntityTypeBadgeDropdown
-              type={editedType}
-              onChange={setEditedType}
-            />
-            {editedType === 'Other' && (
-              <TextInput
-                value={editedCustomType}
-                onChange={(e) => setEditedCustomType(e.target.value)}
-                placeholder="Custom type..."
-                size="xs"
-                className={classes.customTypeInline}
-              />
-            )}
-          </Group>
-
-          {/* Title row - inline editable */}
-          <EditableTitle value={editedName} onChange={setEditedName} />
+          <div className={classes.titleRow}>
+            <div className={classes.accentBar} />
+            <div className={classes.titleContent}>
+              <div className={classes.titleMeta}>
+                <IconCube size={14} className={classes.typeIcon} />
+                <span className={classes.typeLabel}>Entity</span>
+                <EntityTypeBadgeDropdown
+                  type={editedType}
+                  onChange={setEditedType}
+                />
+                {editedType === 'Other' && (
+                  <TextInput
+                    value={editedCustomType}
+                    onChange={(e) => setEditedCustomType(e.target.value)}
+                    placeholder="Custom type..."
+                    size="xs"
+                    className={classes.customTypeInline}
+                  />
+                )}
+              </div>
+              <EditableTitle value={editedName} onChange={setEditedName} />
+            </div>
+          </div>
         </div>
 
-        {/* Header actions */}
-        <Group gap="xs" className={classes.headerActions}>
-          <Button
-            variant="subtle"
-            color="gray"
-            leftSection={<IconTrash size={16} />}
-            onClick={openDelete}
-            className={classes.btnDanger}
-          >
-            Delete
-          </Button>
-          <Button
-            color="orange"
-            leftSection={<IconDeviceFloppy size={16} />}
+        <div className={classes.headerActions}>
+          <Menu position="bottom-end" withinPortal>
+            <Menu.Target>
+              <button className={classes.actionBtn} title="More actions">
+                <IconDotsVertical size={18} />
+              </button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                color="red"
+                leftSection={<IconTrash size={16} />}
+                onClick={openDelete}
+              >
+                Delete
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+          <button
+            className={`${classes.saveBtn} ${hasChanges ? classes.saveBtnActive : ''}`}
             onClick={handleSave}
-            loading={updateEntity.isPending}
-            disabled={!hasChanges}
-            className={classes.btnPrimary}
+            disabled={!hasChanges || updateEntity.isPending}
           >
-            Save Changes
-          </Button>
-        </Group>
+            <IconDeviceFloppy size={16} />
+            <span>Save</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Content Grid */}
       <div className={classes.grid}>
         {/* Left Column - Content */}
         <div className={classes.mainColumn}>
-          {/* Notes - markdown editor (click to edit) */}
-          <Paper className={classes.contentCard}>
-            <Text className={classes.cardLabel}>Notes</Text>
-            <MarkdownEditor
-              value={editedNotes}
-              onChange={setEditedNotes}
-              placeholder="Add notes about this entity..."
-              minHeight={250}
-              accentColor="entity"
-            />
-          </Paper>
+          {/* Notes */}
+          <MarkdownEditor
+            label="Notes"
+            value={editedNotes}
+            onChange={setEditedNotes}
+            placeholder="Add notes about this entity..."
+            minHeight={250}
+            accentColor="entity"
+          />
         </div>
 
         {/* Right Column - Sidebar */}

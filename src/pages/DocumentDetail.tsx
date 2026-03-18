@@ -17,6 +17,7 @@ import {
   IconDeviceFloppy,
   IconArrowLeft,
   IconChevronDown,
+  IconDotsVertical,
 } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useDocument, useUpdateDocument, useDeleteDocument } from '@/hooks'
@@ -103,6 +104,60 @@ function EditableTitle({ value, onChange }: { value: string; onChange: (value: s
     >
       {value}
     </h1>
+  )
+}
+
+// Inline editable text - click to edit
+function InlineEditableText({
+  value,
+  onChange,
+  placeholder = 'Click to add...',
+}: {
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+}) {
+  const [isEditing, setIsEditing] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus()
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+    }
+  }, [isEditing])
+
+  const handleBlur = () => {
+    setIsEditing(false)
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onChange(e.target.value)
+    e.target.style.height = 'auto'
+    e.target.style.height = `${e.target.scrollHeight}px`
+  }
+
+  if (isEditing) {
+    return (
+      <textarea
+        ref={textareaRef}
+        className={classes.inlineTextarea}
+        value={value}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        placeholder={placeholder}
+      />
+    )
+  }
+
+  return (
+    <div
+      className={`${classes.inlineText} ${!value ? classes.inlineTextEmpty : ''}`}
+      onClick={() => setIsEditing(true)}
+    >
+      {value || placeholder}
+    </div>
   )
 }
 
@@ -209,73 +264,68 @@ export function DocumentDetail() {
       {/* Header */}
       <div className={classes.pageHeader}>
         <div className={classes.headerMain}>
-          {/* Badges row */}
-          <Group gap="xs" mb="xs">
-            <Badge variant="light" color="blue" size="lg" leftSection={<IconFileText size={12} />}>
-              Document
-            </Badge>
-            <DocumentTypeBadgeDropdown
-              type={editedType}
-              onChange={setEditedType}
-            />
-          </Group>
-
-          {/* Title row - inline editable */}
-          <EditableTitle value={editedTitle} onChange={setEditedTitle} />
+          <div className={classes.titleRow}>
+            <div className={classes.accentBar} />
+            <div className={classes.titleContent}>
+              <div className={classes.titleMeta}>
+                <IconFileText size={14} className={classes.typeIcon} />
+                <span className={classes.typeLabel}>Document</span>
+                <DocumentTypeBadgeDropdown
+                  type={editedType}
+                  onChange={setEditedType}
+                />
+              </div>
+              <EditableTitle value={editedTitle} onChange={setEditedTitle} />
+              <InlineEditableText
+                value={editedDescription}
+                onChange={setEditedDescription}
+                placeholder="Add description..."
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Header actions */}
-        <Group gap="xs" className={classes.headerActions}>
-          <Button
-            variant="subtle"
-            color="gray"
-            leftSection={<IconTrash size={16} />}
-            onClick={openDelete}
-            className={classes.btnDanger}
-          >
-            Delete
-          </Button>
-          <Button
-            color="blue"
-            leftSection={<IconDeviceFloppy size={16} />}
+        <div className={classes.headerActions}>
+          <Menu position="bottom-end" withinPortal>
+            <Menu.Target>
+              <button className={classes.actionBtn} title="More actions">
+                <IconDotsVertical size={18} />
+              </button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                color="red"
+                leftSection={<IconTrash size={16} />}
+                onClick={openDelete}
+              >
+                Delete
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+          <button
+            className={`${classes.saveBtn} ${hasChanges ? classes.saveBtnActive : ''}`}
             onClick={handleSave}
-            loading={updateDocument.isPending}
-            disabled={!hasChanges}
-            className={classes.btnPrimary}
+            disabled={!hasChanges || updateDocument.isPending}
           >
-            Save Changes
-          </Button>
-        </Group>
+            <IconDeviceFloppy size={16} />
+            <span>Save</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Content Grid */}
       <div className={classes.grid}>
         {/* Left Column - Content */}
         <div className={classes.mainColumn}>
-          {/* Description */}
-          <Paper className={classes.contentCard} mb="md">
-            <Text className={classes.cardLabel}>Description</Text>
-            <MarkdownEditor
-              value={editedDescription}
-              onChange={setEditedDescription}
-              placeholder="Add document description..."
-              minHeight={80}
-              accentColor="document"
-            />
-          </Paper>
-
           {/* Content */}
-          <Paper className={classes.contentCard} mb="md">
-            <Text className={classes.cardLabel}>Content</Text>
-            <MarkdownEditor
-              value={editedContent}
-              onChange={setEditedContent}
-              placeholder="Add document content..."
-              minHeight={250}
-              accentColor="document"
-              contentType={['json', 'yaml', 'html', 'other'].includes(editedType) ? 'code' : 'markdown'}
-            />
-          </Paper>
+          <MarkdownEditor
+            label="Content"
+            value={editedContent}
+            onChange={setEditedContent}
+            placeholder="Add document content..."
+            minHeight={250}
+            accentColor="document"
+          />
         </div>
 
         {/* Right Column - Sidebar */}

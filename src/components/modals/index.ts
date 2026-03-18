@@ -1,2 +1,5 @@
 export { CreateMemoryModal } from './CreateMemoryModal'
 export { UnifiedEditorModal } from './UnifiedEditorModal'
+export { ConfirmDialog } from './ConfirmDialog'
+export type { ConfirmDialogProps } from './ConfirmDialog'
+export { ConfirmUnlinkModal } from './ConfirmUnlinkModal'

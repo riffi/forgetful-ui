@@ -580,6 +580,68 @@ body {
   background: var(--surface-hover) !important;
 }
 
+/* Select/Combobox dropdown styling */
+.mantine-Combobox-dropdown,
+.mantine-Select-dropdown,
+.mantine-MultiSelect-dropdown {
+  background: rgba(15, 23, 42, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset !important;
+}
+
+.mantine-Combobox-option,
+.mantine-Select-option,
+.mantine-MultiSelect-option {
+  color: var(--text-primary) !important;
+  border-radius: 6px !important;
+  margin: 2px 4px !important;
+  padding: 8px 10px !important;
+  transition: all 0.15s ease !important;
+}
+
+.mantine-Combobox-option:hover,
+.mantine-Select-option:hover,
+.mantine-MultiSelect-option:hover,
+.mantine-Combobox-option[data-combobox-selected],
+.mantine-Select-option[data-selected],
+.mantine-MultiSelect-option[data-selected] {
+  background: rgba(168, 85, 247, 0.15) !important;
+  color: var(--text-primary) !important;
+}
+
+.mantine-Combobox-option[data-combobox-active],
+.mantine-Select-option[data-combobox-active],
+.mantine-MultiSelect-option[data-combobox-active] {
+  background: rgba(168, 85, 247, 0.25) !important;
+}
+
+/* Combobox search input */
+.mantine-Combobox-search {
+  background: var(--surface-secondary) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+.mantine-Combobox-search:focus {
+  border-color: var(--accent-memory) !important;
+}
+
+/* Empty state */
+.mantine-Combobox-empty {
+  color: var(--text-dimmed) !important;
+}
+
+/* Group labels */
+.mantine-Combobox-group-label {
+  color: var(--text-dimmed) !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
 /* Slider styling */
 .mantine-Slider-track {
   background: var(--surface-secondary) !important;

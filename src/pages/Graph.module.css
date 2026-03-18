@@ -1,7 +1,8 @@
 .container {
   position: relative;
-  width: 100%;
-  height: calc(100vh - 48px);
+  width: calc(100% + 48px);
+  height: calc(100% + 48px);
+  margin: -24px;
   background: var(--bg-base);
   overflow: hidden;
 }
@@ -79,47 +80,54 @@
   position: absolute;
   bottom: 16px;
   left: 16px;
-  min-width: 180px;
-  padding: 16px;
-  background: rgba(30, 41, 59, 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
+  min-width: 140px;
+  padding: 12px 14px;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
   z-index: 10;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.legend:hover {
+  opacity: 1;
 }
 
 .legendTitle {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-dimmed);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 12px;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
 }
 
 .legendItem {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
 .legendDot {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
+  opacity: 0.8;
 }
 
 .legendLabel {
-  font-size: 13px;
-  color: var(--text-primary);
+  font-size: 11px;
+  color: var(--text-secondary);
 }
 
 .legendDivider {
   height: 1px;
-  background: var(--border-subtle);
-  margin: 12px 0;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 10px 0;
 }
 
 .legendFooter {
@@ -129,8 +137,9 @@
 }
 
 .legendHint {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-dimmed);
+  opacity: 0.7;
 }
 
 /* Minimap */
@@ -248,7 +257,7 @@
   position: absolute;
   top: 100%;
   left: 0;
-  right: 0;
+  width: 360px;
   margin-top: 4px;
   background: rgba(30, 41, 59, 0.95);
   backdrop-filter: blur(12px);
@@ -285,9 +294,7 @@
   flex: 1;
   font-size: 13px;
   color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.4;
 }
 
 /* No Focus State */

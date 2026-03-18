@@ -14,7 +14,6 @@ import {
 import { useDisclosure } from '@mantine/hooks'
 import {
   IconBrain,
-  IconTrash,
   IconDeviceFloppy,
   IconArrowLeft,
   IconBox,
@@ -22,53 +21,15 @@ import {
   IconChevronDown,
   IconAlertCircle,
   IconShare3,
+  IconDotsVertical,
+  IconFolder,
+  IconX,
 } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useMemory, useUpdateMemory, useDeleteMemory, useMemoryLinks, useEntities, useLinkEntityToMemory } from '@/hooks'
+import { useMemory, useUpdateMemory, useMemoryLinks, useEntities, useLinkEntityToMemory, useProjects, useDocuments, useCodeArtifacts } from '@/hooks'
 import { Breadcrumb, Card, Section, TagsEditor, MarkdownEditor } from '@/components/ui'
+import { ConfirmDialog } from '@/components/modals'
 import classes from './MemoryDetail.module.css'
-
-// Importance badge with dropdown
-function ImportanceBadgeDropdown({ importance, onChange }: { importance: number; onChange: (value: number) => void }) {
-  const getBadgeClass = (val: number) => {
-    if (val >= 9) return classes.importanceBadgeHigh
-    if (val >= 7) return classes.importanceBadgeMedium
-    return classes.importanceBadgeLow
-  }
-
-  const getLabel = (val: number) => {
-    if (val >= 9) return 'Critical'
-    if (val >= 7) return 'Important'
-    return 'Low Priority'
-  }
-
-  return (
-    <Menu position="bottom-start" withinPortal>
-      <Menu.Target>
-        <Badge
-          className={getBadgeClass(importance)}
-          size="lg"
-          rightSection={<IconChevronDown size={10} />}
-          style={{ cursor: 'pointer' }}
-        >
-          Importance: {importance} ({getLabel(importance)})
-        </Badge>
-      </Menu.Target>
-      <Menu.Dropdown>
-        <Menu.Label>Select Importance</Menu.Label>
-        {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(val => (
-          <Menu.Item
-            key={val}
-            onClick={() => onChange(val)}
-            className={val === importance ? classes.menuItemActive : undefined}
-          >
-            {val} - {val >= 9 ? 'Critical' : val >= 7 ? 'Important' : 'Low Priority'}
-          </Menu.Item>
-        ))}
-      </Menu.Dropdown>
-    </Menu>
-  )
-}
 
 // Inline editable title component
 function EditableTitle({ value, onChange }: { value: string; onChange: (value: string) => void }) {
@@ -112,7 +73,9 @@ export function MemoryDetail() {
   const { data: memory, isLoading, isError } = useMemory(memoryId)
   const { data: linksData } = useMemoryLinks(memoryId)
   const updateMemory = useUpdateMemory()
-  const deleteMemory = useDeleteMemory()
+
+  // Obsolete confirmation dialog
+  const [obsoleteDialogOpened, setObsoleteDialogOpened] = useState(false)
 
   // Local edit state (inline editing - no separate edit mode)
   const [editedTitle, setEditedTitle] = useState('')
@@ -122,15 +85,33 @@ export function MemoryDetail() {
   const [editedTags, setEditedTags] = useState<string[]>([])
   const [editedImportance, setEditedImportance] = useState(7)
 
-  // Delete modal
-  const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false)
-  const [deleteReason, setDeleteReason] = useState('')
-
   // Link entity modal
   const [linkEntityOpened, { close: closeLinkEntity }] = useDisclosure(false)
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null)
   const { data: entitiesData } = useEntities({ limit: 100 })
+  const { data: projectsData } = useProjects({ limit: 100 })
   const linkEntityToMemory = useLinkEntityToMemory()
+
+  // Link project modal
+  const [linkProjectOpened, setLinkProjectOpened] = useState(false)
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
+
+  // Unlink project dialog
+  const [unlinkProjectTarget, setUnlinkProjectTarget] = useState<{ id: number; name: string } | null>(null)
+
+  const { data: documentsData } = useDocuments({ limit: 100 })
+  const { data: codeArtifactsData } = useCodeArtifacts({ limit: 100 })
+
+  // Create maps for quick lookup by id
+  const projectsMap = new Map(
+    (projectsData?.projects ?? []).map(p => [p.id, p.name])
+  )
+  const documentsMap = new Map(
+    (documentsData?.documents ?? []).map(d => [d.id, d.title])
+  )
+  const codeArtifactsMap = new Map(
+    (codeArtifactsData?.code_artifacts ?? []).map(c => [c.id, { title: c.title, language: c.language }])
+  )
 
   // Initialize edit state from memory data
   useEffect(() => {
@@ -187,22 +168,48 @@ export function MemoryDetail() {
     })
   }
 
-  // Handle delete
-  const handleDelete = async () => {
-    await deleteMemory.mutateAsync({
-      id: memoryId,
-      reason: deleteReason || undefined,
-    })
-    closeDelete()
-    navigate('/memories')
+  // Handle mark obsolete
+  const handleMarkObsolete = () => {
+    setObsoleteDialogOpened(true)
   }
 
-  // Handle mark obsolete
-  const handleMarkObsolete = async () => {
+  const handleObsoleteConfirm = async () => {
     await updateMemory.mutateAsync({
       id: memoryId,
       data: { is_obsolete: true },
     })
+    setObsoleteDialogOpened(false)
+  }
+
+  // Handle link project
+  const handleLinkProject = async () => {
+    if (!selectedProjectId || !memory) return
+    const currentProjectIds = memory.project_ids || []
+    const newProjectId = parseInt(selectedProjectId, 10)
+    if (!currentProjectIds.includes(newProjectId)) {
+      await updateMemory.mutateAsync({
+        id: memoryId,
+        data: { project_ids: [...currentProjectIds, newProjectId] },
+      })
+    }
+    setSelectedProjectId(null)
+    setLinkProjectOpened(false)
+  }
+
+  // Get available projects (not already linked)
+  const availableProjects = (projectsData?.projects ?? [])
+    .filter(p => !memory?.project_ids?.includes(p.id))
+    .map(p => ({ value: String(p.id), label: p.name }))
+
+  // Handle unlink project
+  const handleUnlinkProject = async () => {
+    if (!unlinkProjectTarget || !memory) return
+    const newProjectIds = (memory.project_ids || []).filter(id => id !== unlinkProjectTarget.id)
+    await updateMemory.mutateAsync({
+      id: memoryId,
+      data: { project_ids: newProjectIds },
+    })
+    setUnlinkProjectTarget(null)
   }
 
   if (isLoading) {
@@ -248,98 +255,87 @@ export function MemoryDetail() {
       {/* Header */}
       <div className={classes.pageHeader}>
         <div className={classes.headerMain}>
-          {/* Badges row */}
-          <Group gap="xs" mb="xs">
-            <Badge variant="light" color="purple" size="lg" leftSection={<IconBrain size={12} />}>
-              Memory
-            </Badge>
-            <ImportanceBadgeDropdown
-              importance={editedImportance}
-              onChange={setEditedImportance}
-            />
-            {memory.is_obsolete && (
-              <Badge color="gray" variant="outline" size="lg">
-                Obsolete
-              </Badge>
-            )}
-          </Group>
-
-          {/* Title row - inline editable */}
-          <EditableTitle value={editedTitle} onChange={setEditedTitle} />
+          <div className={classes.titleRow}>
+            <div className={classes.accentBar} />
+            <div className={classes.titleContent}>
+              <div className={classes.titleMeta}>
+                <IconBrain size={14} className={classes.typeIcon} />
+                <span className={classes.typeLabel}>Memory</span>
+                {memory.is_obsolete && (
+                  <Badge color="gray" variant="outline" size="xs" className={classes.obsoleteBadge}>
+                    Obsolete
+                  </Badge>
+                )}
+              </div>
+              <EditableTitle value={editedTitle} onChange={setEditedTitle} />
+            </div>
+          </div>
         </div>
 
-        {/* Header actions */}
-        <Group gap="xs" className={classes.headerActions}>
-          <Button
-            variant="subtle"
-            color="gray"
-            leftSection={<IconTrash size={16} />}
-            onClick={openDelete}
-            className={classes.btnDanger}
-          >
-            Delete
-          </Button>
-          <Button
-            variant="default"
-            leftSection={<IconShare3 size={16} />}
+        <div className={classes.headerActions}>
+          <button
+            className={classes.actionBtn}
             onClick={() => navigate(`/graph?focus=memory_${memory.id}`)}
+            title="View in Graph"
           >
-            View in Graph
-          </Button>
-          <Button
-            variant="default"
-            leftSection={<IconAlertCircle size={16} />}
-            onClick={handleMarkObsolete}
-            disabled={memory.is_obsolete}
-          >
-            Mark Obsolete
-          </Button>
-          <Button
-            color="purple"
-            leftSection={<IconDeviceFloppy size={16} />}
+            <IconShare3 size={18} />
+          </button>
+          <Menu position="bottom-end" withinPortal>
+            <Menu.Target>
+              <button className={classes.actionBtn} title="More actions">
+                <IconDotsVertical size={18} />
+              </button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                leftSection={<IconAlertCircle size={16} />}
+                onClick={handleMarkObsolete}
+                disabled={memory.is_obsolete}
+              >
+                Mark Obsolete
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+          <button
+            className={`${classes.saveBtn} ${hasChanges ? classes.saveBtnActive : ''}`}
             onClick={handleSave}
-            loading={updateMemory.isPending}
-            disabled={!hasChanges}
-            className={classes.btnPrimary}
+            disabled={!hasChanges || updateMemory.isPending}
           >
-            Save Changes
-          </Button>
-        </Group>
+            <IconDeviceFloppy size={16} />
+            <span>Save</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Content Grid */}
       <div className={classes.grid}>
         {/* Left Column - Content */}
         <div className={classes.mainColumn}>
-          {/* Content - markdown editor with smart content detection */}
-          <Paper className={classes.contentCard} mb="md">
-            <Text className={classes.cardLabel}>Content</Text>
-            <MarkdownEditor
-              value={editedContent}
-              onChange={setEditedContent}
-              placeholder="Add memory content..."
-              minHeight={150}
-              accentColor="memory"
-            />
-          </Paper>
+          {/* Content */}
+          <MarkdownEditor
+            label="Content"
+            value={editedContent}
+            onChange={setEditedContent}
+            placeholder="Add memory content..."
+            minHeight={150}
+            accentColor="memory"
+          />
 
-          {/* Context - markdown editor with smart content detection */}
-          <Paper className={classes.contentCard} mb="md">
-            <Text className={classes.cardLabel}>Context</Text>
-            <MarkdownEditor
-              value={editedContext}
-              onChange={setEditedContext}
-              placeholder="Add context about this memory..."
-              minHeight={80}
-              accentColor="memory"
-            />
-          </Paper>
+          {/* Context */}
+          <MarkdownEditor
+            label="Context"
+            value={editedContext}
+            onChange={setEditedContext}
+            placeholder="Add context about this memory..."
+            minHeight={80}
+            accentColor="memory"
+          />
 
           {/* Keywords & Tags */}
           <Section title="Keywords & Tags">
             <Group gap="xl" grow>
               <div>
-                <Text className={classes.fieldLabel}>Keywords</Text>
+                <span className={classes.fieldLabel}>Keywords</span>
                 <TagsEditor
                   value={editedKeywords}
                   onChange={setEditedKeywords}
@@ -349,7 +345,7 @@ export function MemoryDetail() {
                 />
               </div>
               <div>
-                <Text className={classes.fieldLabel}>Tags</Text>
+                <span className={classes.fieldLabel}>Tags</span>
                 <TagsEditor
                   value={editedTags}
                   onChange={setEditedTags}
@@ -369,6 +365,37 @@ export function MemoryDetail() {
             <div className={classes.metadataRow}>
               <span className={classes.metadataLabel}>ID</span>
               <span className={classes.metadataValue}>#{memory.id}</span>
+            </div>
+            <div className={classes.metadataRow}>
+              <span className={classes.metadataLabel}>Importance</span>
+              <Menu position="bottom-end" withinPortal>
+                <Menu.Target>
+                  <Badge
+                    className={
+                      editedImportance >= 9 ? classes.importanceBadgeHigh :
+                      editedImportance >= 7 ? classes.importanceBadgeMedium :
+                      classes.importanceBadgeLow
+                    }
+                    size="sm"
+                    rightSection={<IconChevronDown size={10} />}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {editedImportance}
+                  </Badge>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>Select Importance</Menu.Label>
+                  {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(val => (
+                    <Menu.Item
+                      key={val}
+                      onClick={() => setEditedImportance(val)}
+                      className={val === editedImportance ? classes.menuItemActive : undefined}
+                    >
+                      {val} - {val >= 9 ? 'Critical' : val >= 7 ? 'Important' : 'Low Priority'}
+                    </Menu.Item>
+                  ))}
+                </Menu.Dropdown>
+              </Menu>
             </div>
             <div className={classes.metadataRow}>
               <span className={classes.metadataLabel}>Created</span>
@@ -392,19 +419,42 @@ export function MemoryDetail() {
                   <div
                     key={projectId}
                     className={classes.linkedItem}
-                    onClick={() => navigate(`/projects/${projectId}`)}
                   >
-                    <div className={`${classes.linkedItemDot} ${classes.linkedItemDot}.project`} style={{ background: 'var(--accent-project)' }} />
-                    <div className={classes.linkedItemContent}>
-                      <div className={classes.linkedItemTitle}>Project #{projectId}</div>
+                    <div
+                      className={classes.linkedItemClickable}
+                      onClick={() => navigate(`/projects/${projectId}`)}
+                    >
+                      <div className={`${classes.linkedItemDot} ${classes.linkedItemDot}.project`} style={{ background: 'var(--accent-project)' }} />
+                      <div className={classes.linkedItemContent}>
+                        <div className={classes.linkedItemTitle}>{projectsMap.get(projectId) ?? `Project #${projectId}`}</div>
+                      </div>
                     </div>
+                    <button
+                      className={classes.linkedItemRemove}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setUnlinkProjectTarget({ id: projectId, name: projectsMap.get(projectId) ?? `Project #${projectId}` })
+                      }}
+                      title="Unlink project"
+                    >
+                      <IconX size={14} />
+                    </button>
                   </div>
                 ))}
+                {memory.project_ids.length > 3 && (
+                  <Text size="sm" c="dimmed" ta="center" mt="xs">
+                    +{memory.project_ids.length - 3} more
+                  </Text>
+                )}
               </>
             ) : (
               <Text size="sm" c="dimmed">No linked projects</Text>
             )}
-            <button className={classes.addLinkBtn}>
+            <button
+              className={classes.addLinkBtn}
+              onClick={() => setLinkProjectOpened(true)}
+              disabled={availableProjects.length === 0}
+            >
               <IconPlus size={14} />
               Add project link
             </button>
@@ -436,15 +486,33 @@ export function MemoryDetail() {
             ) : (
               <Text size="sm" c="dimmed">No linked memories</Text>
             )}
-            <button className={classes.addLinkBtn}>
-              <IconPlus size={14} />
-              Link memory
-            </button>
           </Card>
 
           {/* Linked Documents */}
           <Card title="Linked Documents">
-            <Text size="sm" c="dimmed">No linked documents</Text>
+            {memory.document_ids?.length ? (
+              <>
+                {memory.document_ids.slice(0, 3).map((docId) => (
+                  <div
+                    key={docId}
+                    className={classes.linkedItem}
+                    onClick={() => navigate(`/documents/${docId}`)}
+                  >
+                    <div className={classes.linkedItemDot} style={{ background: 'var(--accent-document)' }} />
+                    <div className={classes.linkedItemContent}>
+                      <div className={classes.linkedItemTitle}>{documentsMap.get(docId) ?? `Document #${docId}`}</div>
+                    </div>
+                  </div>
+                ))}
+                {memory.document_ids.length > 3 && (
+                  <Text size="sm" c="dimmed" ta="center" mt="xs">
+                    +{memory.document_ids.length - 3} more
+                  </Text>
+                )}
+              </>
+            ) : (
+              <Text size="sm" c="dimmed">No linked documents</Text>
+            )}
             <button className={classes.addLinkBtn}>
               <IconPlus size={14} />
               Link document
@@ -453,7 +521,35 @@ export function MemoryDetail() {
 
           {/* Linked Code Artifacts */}
           <Card title="Linked Code Artifacts">
-            <Text size="sm" c="dimmed">No linked code artifacts</Text>
+            {memory.code_artifact_ids?.length ? (
+              <>
+                {memory.code_artifact_ids.slice(0, 3).map((artifactId) => {
+                  const artifact = codeArtifactsMap.get(artifactId)
+                  return (
+                    <div
+                      key={artifactId}
+                      className={classes.linkedItem}
+                      onClick={() => navigate(`/code-artifacts/${artifactId}`)}
+                    >
+                      <div className={classes.linkedItemDot} style={{ background: 'var(--accent-code)' }} />
+                      <div className={classes.linkedItemContent}>
+                        <div className={classes.linkedItemTitle}>{artifact?.title ?? `Code Artifact #${artifactId}`}</div>
+                        {artifact?.language && (
+                          <div className={classes.linkedItemMeta}>{artifact.language}</div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+                {memory.code_artifact_ids.length > 3 && (
+                  <Text size="sm" c="dimmed" ta="center" mt="xs">
+                    +{memory.code_artifact_ids.length - 3} more
+                  </Text>
+                )}
+              </>
+            ) : (
+              <Text size="sm" c="dimmed">No linked code artifacts</Text>
+            )}
             <button className={classes.addLinkBtn}>
               <IconPlus size={14} />
               Link code artifact
@@ -461,46 +557,6 @@ export function MemoryDetail() {
           </Card>
         </div>
       </div>
-
-      {/* Delete Modal */}
-      <Modal
-        opened={deleteOpened}
-        onClose={closeDelete}
-        title="Mark as Obsolete"
-        centered
-      >
-        <Stack>
-          <Text size="sm">
-            Are you sure you want to mark "{memory.title}" as obsolete? This
-            won't delete it permanently.
-          </Text>
-          <Select
-            label="Reason (optional)"
-            placeholder="Why is this memory obsolete?"
-            data={[
-              { value: 'outdated', label: 'Information is outdated' },
-              { value: 'incorrect', label: 'Information was incorrect' },
-              { value: 'superseded', label: 'Superseded by another memory' },
-              { value: 'no-longer-relevant', label: 'No longer relevant' },
-            ]}
-            value={deleteReason}
-            onChange={(val) => setDeleteReason(val ?? '')}
-            clearable
-          />
-          <Group justify="flex-end" mt="md">
-            <Button variant="light" color="gray" onClick={closeDelete}>
-              Cancel
-            </Button>
-            <Button
-              color="red"
-              onClick={handleDelete}
-              loading={deleteMemory.isPending}
-            >
-              Mark Obsolete
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
 
       {/* Link Entity Modal */}
       <Modal
@@ -540,6 +596,72 @@ export function MemoryDetail() {
           </Group>
         </Stack>
       </Modal>
+
+      {/* Link Project Modal */}
+      <Modal
+        opened={linkProjectOpened}
+        onClose={() => setLinkProjectOpened(false)}
+        title={
+          <Group gap="xs">
+            <IconFolder size={20} color="var(--accent-project)" />
+            <Text fw={600}>Link Project to Memory</Text>
+          </Group>
+        }
+        centered
+      >
+        <Stack>
+          <Select
+            label="Select Project"
+            placeholder="Search for a project..."
+            data={availableProjects}
+            value={selectedProjectId}
+            onChange={setSelectedProjectId}
+            searchable
+            clearable
+            required
+          />
+          <Group justify="flex-end" mt="md">
+            <Button variant="light" color="gray" onClick={() => setLinkProjectOpened(false)}>
+              Cancel
+            </Button>
+            <Button
+              color="green"
+              leftSection={<IconPlus size={16} />}
+              onClick={handleLinkProject}
+              loading={updateMemory.isPending}
+              disabled={!selectedProjectId}
+            >
+              Link Project
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* Mark Obsolete Confirmation */}
+      <ConfirmDialog
+        opened={obsoleteDialogOpened}
+        onClose={() => setObsoleteDialogOpened(false)}
+        onConfirm={handleObsoleteConfirm}
+        title="Mark as Obsolete"
+        message={`Are you sure you want to mark "${memory.title}" as obsolete? This will hide the memory from search results but won't delete it permanently.`}
+        confirmText="Mark Obsolete"
+        confirmColor="red"
+        icon={<IconAlertCircle size={24} color="var(--mantine-color-red-6)" />}
+        isLoading={updateMemory.isPending}
+      />
+
+      {/* Unlink Project Confirmation */}
+      <ConfirmDialog
+        opened={unlinkProjectTarget !== null}
+        onClose={() => setUnlinkProjectTarget(null)}
+        onConfirm={handleUnlinkProject}
+        title="Unlink Project"
+        message={`Remove "${unlinkProjectTarget?.name}" from this memory?`}
+        confirmText="Unlink"
+        confirmColor="red"
+        icon={<IconFolder size={24} color="var(--mantine-color-red-6)" />}
+        isLoading={updateMemory.isPending}
+      />
     </div>
   )
 }

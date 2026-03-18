@@ -46,9 +46,18 @@
 .toolbar {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
+  justify-content: space-between;
+  padding: 10px 14px;
   background: var(--surface-primary);
   border-bottom: 1px solid var(--border-subtle);
+}
+
+.label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-dimmed);
 }
 
 .modeToggle {
@@ -248,26 +257,3 @@
   color: var(--text-dimmed);
 }
 
-/* =============================================================================
-   CODE EDITOR (for code content type)
-   ============================================================================= */
-
-.codeTextarea {
-  display: block;
-  width: 100%;
-  min-height: 200px;
-  padding: 16px;
-  background: transparent;
-  border: none;
-  outline: none;
-  resize: vertical;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--text-primary);
-  box-sizing: border-box;
-}
-
-.codeTextarea::placeholder {
-  color: var(--text-dimmed);
-}

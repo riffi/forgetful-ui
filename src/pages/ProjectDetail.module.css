@@ -9,20 +9,60 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
-  flex-wrap: wrap;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 .headerMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+}
+
+.accentBar {
+  width: 4px;
+  background: linear-gradient(180deg, var(--accent-project) 0%, rgba(34, 197, 94, 0.3) 100%);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.titleContent {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 6px;
+}
+
+.titleMeta {
+  display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.typeIcon {
+  color: var(--accent-project);
+  opacity: 0.9;
+}
+
+.typeLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--accent-project);
+  opacity: 0.9;
 }
 
 .headerActions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  padding-top: 4px;
 }
 
 /* Clickable Badges */
@@ -42,62 +82,118 @@
 
 /* Editable Title */
 .editableTitle {
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 600;
   color: var(--text-primary);
   margin: 0;
   outline: none;
-  border-bottom: 2px solid transparent;
-  padding-bottom: 2px;
-  transition: border-color 0.2s;
-  min-width: 200px;
+  padding: 2px 0;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+  line-height: 1.3;
 }
 
 .editableTitle:hover {
-  border-bottom-color: var(--border-hover);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .editableTitle:focus {
-  border-bottom-color: var(--accent-project);
-}
-
-/* Repo Link Button */
-.repoLinkBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: var(--surface-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  color: var(--text-secondary);
-  font-size: 13px;
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.repoLinkBtn:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-  border-color: var(--border-hover);
+  background: rgba(34, 197, 94, 0.08);
 }
 
 /* Action Buttons */
-.btnDanger {
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--surface-primary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.actionBtn:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.saveBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--surface-secondary);
   color: var(--text-dimmed);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: not-allowed;
+  transition: all 0.2s ease;
 }
 
-.btnDanger:hover {
-  color: var(--mantine-color-red-6);
-  background: rgba(239, 68, 68, 0.1);
+.saveBtnActive {
+  background: var(--accent-project);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.35);
 }
 
-.btnPrimary {
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+.saveBtnActive:hover {
+  box-shadow: 0 0 28px rgba(34, 197, 94, 0.5);
+  transform: translateY(-1px);
 }
 
-.btnPrimary:hover:not(:disabled) {
-  box-shadow: 0 0 30px rgba(34, 197, 94, 0.4);
+/* Inline Editable Description */
+.inlineText {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  padding: 2px 6px;
+  margin: 0 -6px;
+  border-radius: 4px;
+  cursor: text;
+  transition: background 0.15s ease;
+  white-space: pre-wrap;
+}
+
+.inlineText:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.inlineTextEmpty {
+  color: var(--text-dimmed);
+  font-style: italic;
+}
+
+.inlineTextarea {
+  width: calc(100% + 12px);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  padding: 4px 8px;
+  margin: 0 -6px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--accent-project);
+  border-radius: 4px;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  min-height: 24px;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
+}
+
+.inlineTextarea::placeholder {
+  color: var(--text-dimmed);
+  font-style: italic;
 }
 
 /* Grid Layout */
@@ -126,54 +222,6 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-}
-
-/* Content Cards */
-.contentCard {
-  background: var(--surface-primary);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 20px;
-}
-
-.cardLabel {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-dimmed);
-  margin-bottom: 12px;
-}
-
-/* Editable Content */
-.editableContent {
-  min-height: 100px;
-  padding: 16px;
-  background: var(--surface-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-size: 14px;
-  line-height: 1.7;
-  cursor: text;
-  transition: all 0.2s;
-  outline: none;
-  white-space: pre-wrap;
-}
-
-.editableContent:hover {
-  border-color: var(--border-hover);
-}
-
-.editableContent:focus {
-  border-color: var(--accent-project);
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
-}
-
-.editableContent:empty::before {
-  content: attr(data-placeholder);
-  color: var(--text-dimmed);
 }
 
 /* Tabs Container */
@@ -360,6 +408,10 @@
 
   .editableTitle {
     font-size: 24px;
+  }
+
+  .titleMeta {
+    flex-wrap: wrap;
   }
 
   .tabsList {

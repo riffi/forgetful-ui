@@ -2,12 +2,11 @@ import { useState, useRef, useEffect } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { Markdown } from 'tiptap-markdown'
-import { IconEye, IconCode } from '@tabler/icons-react'
+import { IconMarkdown, IconAlignLeft } from '@tabler/icons-react'
 import classes from './MarkdownEditor.module.css'
 
 export type AccentColor = 'memory' | 'entity' | 'document' | 'code' | 'project'
-export type ContentType = 'markdown' | 'code'
-type ViewMode = 'preview' | 'source'
+type ViewMode = 'plain' | 'markdown'
 
 export interface MarkdownEditorProps {
   value: string
@@ -17,8 +16,7 @@ export interface MarkdownEditorProps {
   minHeight?: number
   maxHeight?: number
   accentColor?: AccentColor
-  /** Content type: 'markdown' (default) or 'code' (plain textarea, no preview) */
-  contentType?: ContentType
+  label?: string
 }
 
 // View mode toggle button
@@ -35,23 +33,23 @@ function ModeToggle({
     <div className={classes.modeToggle}>
       <button
         type="button"
-        className={`${classes.modeButton} ${mode === 'preview' ? classes.modeButtonActive : ''}`}
-        onClick={() => onChange('preview')}
+        className={`${classes.modeButton} ${mode === 'plain' ? classes.modeButtonActive : ''}`}
+        onClick={() => onChange('plain')}
         disabled={disabled}
-        title="Preview"
+        title="Plain text"
       >
-        <IconEye size={14} />
-        <span>Preview</span>
+        <IconAlignLeft size={14} />
+        <span>Plain</span>
       </button>
       <button
         type="button"
-        className={`${classes.modeButton} ${mode === 'source' ? classes.modeButtonActive : ''}`}
-        onClick={() => onChange('source')}
+        className={`${classes.modeButton} ${mode === 'markdown' ? classes.modeButtonActive : ''}`}
+        onClick={() => onChange('markdown')}
         disabled={disabled}
-        title="Source"
+        title="Markdown preview"
       >
-        <IconCode size={14} />
-        <span>Source</span>
+        <IconMarkdown size={14} />
+        <span>Markdown</span>
       </button>
     </div>
   )
@@ -142,13 +140,6 @@ function SourceEditor({
     adjustHeight()
   }, [value, minHeight])
 
-  // Auto-focus on mount
-  useEffect(() => {
-    if (textareaRef.current && !readOnly) {
-      textareaRef.current.focus()
-    }
-  }, [readOnly])
-
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange?.(e.target.value)
     adjustHeight()
@@ -169,37 +160,6 @@ function SourceEditor({
   )
 }
 
-// Code editor (always shows textarea, no preview toggle)
-function CodeEditor({
-  value,
-  onChange,
-  placeholder,
-  minHeight,
-  maxHeight,
-  accentColor,
-  readOnly,
-}: Omit<MarkdownEditorProps, 'contentType'>) {
-  const height = Math.max(minHeight || 200, 200)
-
-  return (
-    <div className={`${classes.container} ${classes[accentColor ?? 'memory']}`}>
-      <div className={classes.editorWrapper}>
-        <textarea
-          className={classes.codeTextarea}
-          value={value}
-          onChange={(e) => onChange?.(e.target.value)}
-          placeholder={placeholder}
-          readOnly={readOnly}
-          style={{
-            height: `${height}px`,
-            maxHeight: maxHeight ? `${maxHeight}px` : undefined,
-          }}
-        />
-      </div>
-    </div>
-  )
-}
-
 // Main MarkdownEditor component
 export function MarkdownEditor({
   value,
@@ -209,42 +169,19 @@ export function MarkdownEditor({
   minHeight = 200,
   maxHeight,
   accentColor = 'memory',
-  contentType = 'markdown',
+  label,
 }: MarkdownEditorProps) {
-  // For code content, use simple textarea without toggle
-  if (contentType === 'code') {
-    return (
-      <CodeEditor
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        minHeight={minHeight}
-        maxHeight={maxHeight}
-        accentColor={accentColor}
-        readOnly={readOnly}
-      />
-    )
-  }
-
-  // For markdown: toggle between preview and source (default to preview)
-  const [mode, setMode] = useState<ViewMode>('preview')
-
-  // Switch to preview when becoming read-only
-  useEffect(() => {
-    if (readOnly) {
-      setMode('preview')
-    }
-  }, [readOnly])
+  // Toggle between plain text and markdown preview (default to plain)
+  const [mode, setMode] = useState<ViewMode>('plain')
 
   return (
     <div className={`${classes.container} ${classes[accentColor]}`}>
-      {!readOnly && (
-        <div className={classes.toolbar}>
-          <ModeToggle mode={mode} onChange={setMode} />
-        </div>
-      )}
+      <div className={classes.toolbar}>
+        {label && <span className={classes.label}>{label}</span>}
+        <ModeToggle mode={mode} onChange={setMode} disabled={readOnly} />
+      </div>
       <div className={classes.editorWrapper}>
-        {mode === 'preview' ? (
+        {mode === 'markdown' ? (
           <MarkdownPreview
             value={value}
             minHeight={minHeight}

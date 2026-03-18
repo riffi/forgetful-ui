@@ -421,9 +421,6 @@ export function Activity() {
             </Text>
           )}
         </Group>
-        <Text size="sm" c="dimmed">
-          {total.toLocaleString()} events
-        </Text>
       </Paper>
 
       {/* Main content */}

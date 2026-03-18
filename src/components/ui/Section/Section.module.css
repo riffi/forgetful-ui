@@ -2,15 +2,20 @@
   background: var(--surface-primary);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border-subtle);
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.section:focus-within {
+  border-color: rgba(168, 85, 247, 0.3);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -18,21 +23,24 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: 10px;
   font-weight: 600;
-  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-dimmed);
   margin: 0;
   font-family: inherit;
 }
 
 .icon {
-  color: var(--text-dimmed);
+  color: var(--accent-memory);
+  opacity: 0.7;
   display: flex;
   align-items: center;
 }
 
 .content {
-  padding: 20px;
+  padding: 16px;
 }
 
 .contentNoPadding {

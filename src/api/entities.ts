@@ -13,6 +13,7 @@ export const entitiesApi = {
   list: async (filters: EntityFilters = {}): Promise<EntitiesResponse> => {
     const params = new URLSearchParams()
 
+    if (filters.search) params.set('search', filters.search)
     if (filters.entity_type) params.set('entity_type', filters.entity_type)
     if (filters.project_id) params.set('project_id', String(filters.project_id))
     if (filters.limit) params.set('limit', String(filters.limit))

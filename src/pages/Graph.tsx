@@ -21,7 +21,7 @@ import {
   IconX,
 } from '@tabler/icons-react'
 import { useSearchParams } from 'react-router-dom'
-import { useSubgraph, useMemories, useEntities } from '@/hooks'
+import { useSubgraph, useSearchMemories, useSearchEntities } from '@/hooks'
 import { useProjectContext } from '@/context/ProjectContext'
 import { useQuickEdit, type QuickEditItemType } from '@/context/QuickEditContext'
 import { useDebouncedValue } from '@mantine/hooks'
@@ -88,7 +88,7 @@ export function Graph() {
   )
   const [depth, setDepth] = useState<number>(2)
   const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch] = useDebouncedValue(searchQuery, 300)
+  const [debouncedSearch] = useDebouncedValue(searchQuery, 500)
 
   // Sync focusedNodeId with URL search params (for navigation from other pages)
   useEffect(() => {
@@ -113,19 +113,75 @@ export function Graph() {
     maxNodes: 300,
   })
 
-  // Search for nodes via memories and entities APIs
-  const { data: memoriesSearch, isLoading: memoriesSearchLoading } = useMemories({
-    search: debouncedSearch || undefined,
-    limit: 5,
-    project_id: selectedProjectId ?? undefined,
-  })
-  const { data: entitiesSearch, isLoading: entitiesSearchLoading } = useEntities({
-    search: debouncedSearch || undefined,
-    limit: 5,
-  })
+  // Search mutations
+  const searchMemories = useSearchMemories()
+  const searchEntities = useSearchEntities()
+
+  const [searchResults, setSearchResults] = useState<{ id: string; label: string; type: string }[]>([])
+  const [isSearching, setIsSearching] = useState(false)
 
   const isLoading = subgraphLoading
-  const isSearching = memoriesSearchLoading || entitiesSearchLoading
+
+  // Perform search when debounced query changes
+  useEffect(() => {
+    if (!debouncedSearch || debouncedSearch.length < 2) {
+      setSearchResults([])
+      return
+    }
+
+    let cancelled = false
+
+    const performSearch = async () => {
+      setIsSearching(true)
+      const results: { id: string; label: string; type: string }[] = []
+
+      try {
+        // Search memories
+        const memoriesResult = await searchMemories.mutateAsync({
+          query: debouncedSearch,
+          options: {
+            context: debouncedSearch,
+            k: 5,
+            projectIds: selectedProjectId ? [selectedProjectId] : undefined,
+          },
+        })
+
+        if (cancelled) return
+
+        memoriesResult.memories?.forEach(m => {
+          results.push({ id: `memory_${m.id}`, label: m.title, type: 'memory' })
+        })
+
+        // Search entities
+        const entitiesResult = await searchEntities.mutateAsync({
+          query: debouncedSearch,
+          options: { limit: 5 },
+        })
+
+        if (cancelled) return
+
+        entitiesResult?.entities?.forEach(e => {
+          results.push({ id: `entity_${e.id}`, label: e.name, type: 'entity' })
+        })
+
+        setSearchResults(results.slice(0, 10))
+      } catch (error) {
+        if (cancelled) return
+        console.error('Search error:', error)
+        setSearchResults([])
+      } finally {
+        if (!cancelled) {
+          setIsSearching(false)
+        }
+      }
+    }
+
+    performSearch()
+
+    return () => {
+      cancelled = true
+    }
+  }, [debouncedSearch, selectedProjectId])
 
   // Update dimensions on resize
   useEffect(() => {
@@ -141,28 +197,6 @@ export function Graph() {
     return () => window.removeEventListener('resize', updateDimensions)
   }, [])
 
-  // Search results - combine memories and entities from search APIs
-  const searchResults = useMemo(() => {
-    if (!debouncedSearch.trim()) return []
-
-    const results: { id: string; label: string; type: string }[] = []
-
-    // Add memories
-    if (memoriesSearch?.memories) {
-      for (const m of memoriesSearch.memories.slice(0, 5)) {
-        results.push({ id: `memory_${m.id}`, label: m.title, type: 'memory' })
-      }
-    }
-
-    // Add entities
-    if (entitiesSearch?.entities) {
-      for (const e of entitiesSearch.entities.slice(0, 5)) {
-        results.push({ id: `entity_${e.id}`, label: e.name, type: 'entity' })
-      }
-    }
-
-    return results.slice(0, 10)
-  }, [debouncedSearch, memoriesSearch, entitiesSearch])
 
   // Get node depths map from subgraph data (backend provides depth field)
   const nodeDepths = useMemo(() => {

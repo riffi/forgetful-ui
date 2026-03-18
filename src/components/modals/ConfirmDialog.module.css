@@ -1,0 +1,53 @@
+.modalContent {
+  background: var(--surface-primary);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+}
+
+.modalHeader {
+  background: transparent;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 16px 20px;
+}
+
+.modalBody {
+  padding: 24px 20px;
+}
+
+.defaultIcon {
+  color: var(--mantine-color-red-6);
+}
+
+.message {
+  line-height: 1.6;
+}
+
+.actions {
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.confirmBtn {
+  transition: all 0.2s;
+}
+
+.confirmBtn:hover {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.confirmBtn[data-color="blue"]:hover {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.confirmBtn[data-color="green"]:hover {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+}
+
+.confirmBtn[data-color="yellow"]:hover {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.confirmBtn[data-color="grape"]:hover,
+.confirmBtn[data-color="purple"]:hover {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+}

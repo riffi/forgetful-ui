@@ -19,34 +19,59 @@ You should see `Login Succeeded`
 
 ---
 
-## Quick Release (recommended)
+## Release Process
 
-One command does everything:
+### Step 1: Bump version
 
 ```bash
-npm run release:patch   # Bug fixes: 0.1.2 -> 0.1.3
-npm run release:minor   # New features: 0.1.2 -> 0.2.0
-npm run release:major   # Breaking changes: 0.1.2 -> 1.0.0
+# Choose one:
+npm version patch --no-git-tag-version   # Bug fixes: 0.1.2 -> 0.1.3
+npm version minor --no-git-tag-version   # New features: 0.1.2 -> 0.2.0
+npm version major --no-git-tag-version   # Breaking changes: 0.1.2 -> 1.0.0
 ```
 
-This automatically:
-1. Bumps version in package.json
-2. Commits the change
-3. Creates git tag (e.g., `v0.1.3`)
-4. Pushes commit and tag to GitHub
-5. Builds frontend and Docker image
-6. Pushes Docker image with `latest` and version tags
+### Step 2: Commit and tag
 
-After script completes, create GitHub release (see below).
+```bash
+# Get the new version
+$VERSION = (Get-Content package.json | ConvertFrom-Json).version   # PowerShell
+# or
+VERSION=$(node -p "require('./package.json').version")              # Bash
 
----
+# Commit
+git add package.json
+git commit -m "chore: release v$VERSION"
 
-## Create GitHub Release with Notes
+# Create tag
+git tag -a "v$VERSION" -m "Release v$VERSION"
+```
 
-After the release script completes:
+### Step 3: Push to GitHub
 
-1. Open the link shown in terminal, or go to:
-   https://github.com/riffi/forgetful-ui/releases/new
+```bash
+git push
+git push origin "v$VERSION"
+```
+
+### Step 4: Build and push Docker image
+
+```bash
+npm run build
+npm run docker:build
+
+# Tag images (Windows PowerShell)
+$VERSION = (Get-Content package.json | ConvertFrom-Json).version
+docker tag forgetful-ui:latest "ghcr.io/riffi/forgetful-ui:latest"
+docker tag forgetful-ui:latest "ghcr.io/riffi/forgetful-ui:v$VERSION"
+
+# Push
+docker push "ghcr.io/riffi/forgetful-ui:latest"
+docker push "ghcr.io/riffi/forgetful-ui:v$VERSION"
+```
+
+### Step 5: Create GitHub Release with Notes
+
+1. Go to: https://github.com/riffi/forgetful-ui/releases/new
 
 2. Select your tag (e.g., `v0.1.3`)
 
@@ -112,27 +137,6 @@ ghcr.io/riffi/forgetful-ui:v0.1.3     # Specific version
 
 docker compose down forgetful-ui
 docker compose up -d forgetful-ui
-```
-
----
-
-## Manual Release (alternative)
-
-If you need more control:
-
-```bash
-# 1. Edit version in package.json manually
-# 2. Commit and tag
-git add package.json
-git commit -m "chore: release v0.1.3"
-git tag -a v0.1.3 -m "Release v0.1.3"
-git push && git push origin v0.1.3
-
-# 3. Build and push (Windows)
-npm run release
-
-# 3. Build and push (Linux/Mac)
-npm run release:unix
 ```
 
 ---

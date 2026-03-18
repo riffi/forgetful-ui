@@ -58,7 +58,7 @@ export function GlobalSearch() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const [query, setQuery] = useState('')
-  const [debouncedQuery] = useDebouncedValue(query, 300)
+  const [debouncedQuery] = useDebouncedValue(query, 500)
   const [results, setResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -97,6 +97,8 @@ export function GlobalSearch() {
       return
     }
 
+    let cancelled = false
+
     const performSearch = async () => {
       setIsSearching(true)
       const allResults: SearchResult[] = []
@@ -111,6 +113,8 @@ export function GlobalSearch() {
             projectIds: selectedProjectId ? [selectedProjectId] : undefined,
           },
         })
+
+        if (cancelled) return
 
         memoriesResult.memories?.forEach((m: Memory) => {
           allResults.push({
@@ -128,6 +132,8 @@ export function GlobalSearch() {
           options: { limit: 5 },
         })
 
+        if (cancelled) return
+
         entitiesResult?.entities?.forEach((e: Entity) => {
           allResults.push({
             type: 'entity',
@@ -140,13 +146,20 @@ export function GlobalSearch() {
         setResults(allResults)
         setSelectedIndex(0)
       } catch (error) {
+        if (cancelled) return
         console.error('Search error:', error)
       } finally {
-        setIsSearching(false)
+        if (!cancelled) {
+          setIsSearching(false)
+        }
       }
     }
 
     performSearch()
+
+    return () => {
+      cancelled = true
+    }
   }, [debouncedQuery, selectedProjectId])
 
   // Handle result selection - navigate to detail page
@@ -249,11 +262,11 @@ export function GlobalSearch() {
                       onMouseEnter={() => setSelectedIndex(result.flatIndex)}
                     >
                       <div className={classes.resultContent}>
-                        <Text size="sm" fw={500} lineClamp={1}>
+                        <Text size="sm" fw={500}>
                           {result.title}
                         </Text>
                         {result.subtitle && (
-                          <Text size="xs" c="dimmed" lineClamp={1}>
+                          <Text size="xs" c="dimmed" lineClamp={2}>
                             {result.subtitle}
                           </Text>
                         )}

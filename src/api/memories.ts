@@ -11,6 +11,7 @@ export const memoriesApi = {
   list: async (filters: MemoryFilters = {}): Promise<MemoriesResponse> => {
     const params = new URLSearchParams()
 
+    if (filters.search) params.set('search', filters.search)
     if (filters.limit) params.set('limit', String(filters.limit))
     if (filters.offset) params.set('offset', String(filters.offset))
     if (filters.project_id) params.set('project_id', String(filters.project_id))

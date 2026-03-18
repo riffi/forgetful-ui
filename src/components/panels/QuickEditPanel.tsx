@@ -27,7 +27,9 @@ import {
   useUpdateMemory,
   useDeleteMemory,
   useMemoryLinks,
+  useUnlinkMemory,
 } from '@/hooks/queries/useMemories'
+import { ConfirmUnlinkModal } from '@/components/modals'
 import { useEntity, useUpdateEntity, useDeleteEntity } from '@/hooks/queries/useEntities'
 import { useDocument, useUpdateDocument, useDeleteDocument } from '@/hooks/queries/useDocuments'
 import { useCodeArtifact, useUpdateCodeArtifact, useDeleteCodeArtifact } from '@/hooks/queries/useCodeArtifacts'
@@ -64,17 +66,21 @@ function MemoryContent({ id }: { id: number }) {
   const { data: links } = useMemoryLinks(id, 5)
   const updateMemory = useUpdateMemory()
   const deleteMemory = useDeleteMemory()
+  const unlinkMemory = useUnlinkMemory()
   const { data: projectsData } = useProjects({ limit: 100 })
 
   const [localImportance, setLocalImportance] = useState<number>(5)
   const [localTags, setLocalTags] = useState<string[]>([])
   const [newTagValue, setNewTagValue] = useState('')
   const [showProjectSelector, setShowProjectSelector] = useState(false)
+  const [unlinkTarget, setUnlinkTarget] = useState<{ id: number; title: string } | null>(null)
+  const [showAllLinks, setShowAllLinks] = useState(false)
 
   useEffect(() => {
     if (memory) {
       setLocalImportance(memory.importance)
       setLocalTags(memory.tags || [])
+      setShowAllLinks(false)
     }
   }, [memory])
 
@@ -138,6 +144,19 @@ function MemoryContent({ id }: { id: number }) {
   const handleRemoveProject = (projectId: number) => {
     const newProjectIds = currentProjectIds.filter(id => id !== projectId)
     updateMemory.mutate({ id, data: { project_ids: newProjectIds } })
+  }
+
+  const handleUnlinkConfirm = () => {
+    if (unlinkTarget) {
+      unlinkMemory.mutate(
+        { id, targetId: unlinkTarget.id },
+        {
+          onSuccess: () => {
+            setUnlinkTarget(null)
+          },
+        }
+      )
+    }
   }
 
   return (
@@ -267,7 +286,7 @@ function MemoryContent({ id }: { id: number }) {
         <div className={classes.section}>
           <h3 className={classes.sectionTitle}>Related Items</h3>
           <div className={classes.relatedList}>
-            {links.linked_memories.slice(0, 5).map((link: Memory) => (
+            {(showAllLinks ? links.linked_memories : links.linked_memories.slice(0, 5)).map((link: Memory) => (
               <div key={link.id} className={classes.relatedItem}>
                 <span
                   className={classes.relatedDot}
@@ -283,6 +302,10 @@ function MemoryContent({ id }: { id: number }) {
                   <button
                     type="button"
                     className={classes.unlinkBtn}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setUnlinkTarget({ id: link.id, title: link.title })
+                    }}
                   >
                     <IconUnlink size={12} />
                   </button>
@@ -290,8 +313,11 @@ function MemoryContent({ id }: { id: number }) {
               </div>
             ))}
             {links.linked_memories.length > 5 && (
-              <button className={classes.showAllLink}>
-                Show all {links.linked_memories.length}
+              <button
+                className={classes.showAllLink}
+                onClick={() => setShowAllLinks(!showAllLinks)}
+              >
+                {showAllLinks ? 'Show less' : `Show all ${links.linked_memories.length}`}
               </button>
             )}
           </div>
@@ -330,6 +356,15 @@ function MemoryContent({ id }: { id: number }) {
           </button>
         </div>
       </div>
+
+      <ConfirmUnlinkModal
+        opened={unlinkTarget !== null}
+        onClose={() => setUnlinkTarget(null)}
+        onConfirm={handleUnlinkConfirm}
+        sourceTitle={memory.title}
+        targetTitle={unlinkTarget?.title || ''}
+        isLoading={unlinkMemory.isPending}
+      />
     </>
   )
 }
