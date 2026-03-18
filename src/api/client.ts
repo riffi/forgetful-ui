@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
+const OAUTH_CLIENT_KEY = 'forgetful_oauth_client'
 
 export class ApiError extends Error {
   constructor(
@@ -15,6 +16,49 @@ export class AuthError extends ApiError {
   constructor() {
     super(401, 'Unauthorized')
     this.name = 'AuthError'
+  }
+}
+
+// Token refresh state to prevent concurrent refresh attempts
+let isRefreshing = false
+let refreshPromise: Promise<boolean> | null = null
+
+async function refreshAccessToken(): Promise<boolean> {
+  const refreshToken = localStorage.getItem('forgetful_refresh_token')
+  if (!refreshToken) return false
+
+  const clientInfoStr = localStorage.getItem(OAUTH_CLIENT_KEY)
+  if (!clientInfoStr) return false
+
+  try {
+    const clientInfo = JSON.parse(clientInfoStr)
+
+    const response = await fetch('/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: clientInfo.client_id,
+        client_secret: clientInfo.client_secret || '',
+      }),
+    })
+
+    if (!response.ok) {
+      console.warn('Token refresh failed:', response.status)
+      return false
+    }
+
+    const tokens = await response.json()
+    localStorage.setItem('forgetful_token', tokens.access_token)
+    if (tokens.refresh_token) {
+      localStorage.setItem('forgetful_refresh_token', tokens.refresh_token)
+    }
+    console.debug('Token refreshed successfully')
+    return true
+  } catch (err) {
+    console.error('Token refresh error:', err)
+    return false
   }
 }
 
@@ -48,7 +92,7 @@ class ApiClient {
     return url.toString()
   }
 
-  async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  async request<T>(endpoint: string, options: RequestOptions = {}, isRetry = false): Promise<T> {
     const { params, body, ...fetchOptions } = options
 
     const token = this.getToken()
@@ -68,7 +112,27 @@ class ApiClient {
     })
 
     if (response.status === 401) {
+      // Try to refresh token once before giving up
+      if (!isRetry) {
+        // Prevent concurrent refresh attempts
+        if (!isRefreshing) {
+          isRefreshing = true
+          refreshPromise = refreshAccessToken().finally(() => {
+            isRefreshing = false
+            refreshPromise = null
+          })
+        }
+
+        const refreshed = await (refreshPromise || refreshAccessToken())
+        if (refreshed) {
+          // Retry the original request with new token
+          return this.request<T>(endpoint, options, true)
+        }
+      }
+
+      // Refresh failed or already retried - logout
       localStorage.removeItem('forgetful_token')
+      localStorage.removeItem('forgetful_refresh_token')
       window.dispatchEvent(new CustomEvent('auth:unauthorized'))
       throw new AuthError()
     }

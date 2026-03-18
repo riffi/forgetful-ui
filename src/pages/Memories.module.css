@@ -104,10 +104,9 @@
 /* Title Cell */
 .titleCell {
   font-weight: 500;
-  max-width: 280px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 /* Importance Indicator (Progress Bar) */

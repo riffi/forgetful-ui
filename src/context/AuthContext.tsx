@@ -63,6 +63,51 @@ interface OAuthClientInfo {
 const OAUTH_CLIENT_KEY = 'forgetful_oauth_client'
 const OAUTH_PKCE_KEY = 'forgetful_oauth_pkce'
 const OAUTH_STATE_KEY = 'forgetful_oauth_state'
+const REFRESH_TOKEN_KEY = 'forgetful_refresh_token'
+
+// Refresh access token using stored refresh token
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY)
+  if (!refreshToken) return null
+
+  const clientInfoStr = localStorage.getItem(OAUTH_CLIENT_KEY)
+  if (!clientInfoStr) return null
+
+  try {
+    const clientInfo = JSON.parse(clientInfoStr)
+
+    const response = await fetch('/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: clientInfo.client_id,
+        client_secret: clientInfo.client_secret || '',
+      }),
+    })
+
+    if (!response.ok) {
+      console.warn('Token refresh failed:', response.status)
+      localStorage.removeItem(REFRESH_TOKEN_KEY)
+      // Also clear OAuth client - it may be stale after backend restart
+      localStorage.removeItem(OAUTH_CLIENT_KEY)
+      return null
+    }
+
+    const tokens = await response.json()
+    localStorage.setItem('forgetful_token', tokens.access_token)
+    if (tokens.refresh_token) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token)
+    }
+    console.debug('Token refreshed successfully in AuthContext')
+    return tokens.access_token
+  } catch (err) {
+    console.error('Token refresh error:', err)
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
+    return null
+  }
+}
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
@@ -132,6 +177,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('OAuth error:', error, urlParams.get('error_description'))
       localStorage.removeItem(OAUTH_PKCE_KEY)
       localStorage.removeItem(OAUTH_STATE_KEY)
+      // Clear OAuth client on error - it may be stale after backend restart
+      localStorage.removeItem(OAUTH_CLIENT_KEY)
+      localStorage.removeItem(REFRESH_TOKEN_KEY)
       window.history.replaceState({}, '', window.location.pathname)
       detectAuthMode()
       return
@@ -186,7 +234,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const tokens = await tokenResponse.json()
         localStorage.setItem('forgetful_token', tokens.access_token)
         if (tokens.refresh_token) {
-          localStorage.setItem('forgetful_refresh_token', tokens.refresh_token)
+          localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token)
         }
 
         // Clean up
@@ -205,6 +253,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.error('OAuth callback error:', err)
         localStorage.removeItem(OAUTH_PKCE_KEY)
         localStorage.removeItem(OAUTH_STATE_KEY)
+        // Clear OAuth client on error - it may be stale after backend restart
+        localStorage.removeItem(OAUTH_CLIENT_KEY)
+        localStorage.removeItem(REFRESH_TOKEN_KEY)
         window.history.replaceState({}, '', window.location.pathname)
         detectAuthMode()
       }
@@ -293,8 +344,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       if (response.status === 401) {
-        // Clear invalid token
+        // Try to refresh token before giving up
         if (storedToken) {
+          const newToken = await refreshAccessToken()
+          if (newToken) {
+            // Token refreshed - update state and we're authenticated
+            setState(s => ({
+              ...s,
+              isLoading: false,
+              isAuthenticated: true,
+              token: newToken,
+              authMode: 'oauth',
+            }))
+            return
+          }
+          // Refresh failed - clear invalid token
           localStorage.removeItem('forgetful_token')
         }
 
@@ -343,9 +407,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   const login = useCallback(async () => {
-    try {
+    const attemptLogin = async (forceNewClient = false) => {
       // Register OAuth client if needed
-      const clientInfo = await registerClient()
+      const clientInfo = await registerClient(forceNewClient)
 
       // Generate PKCE
       const { verifier, challenge } = await generatePKCE()
@@ -367,13 +431,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Redirect to authorization endpoint
       window.location.href = authUrl.toString()
+    }
+
+    try {
+      await attemptLogin(false)
     } catch (err) {
-      console.error('Login failed:', err)
+      console.error('Login failed, retrying with new client:', err)
+      // If login fails (possibly stale client), try with a fresh client registration
+      try {
+        await attemptLogin(true)
+      } catch (retryErr) {
+        console.error('Login retry failed:', retryErr)
+      }
     }
   }, [])
 
   const logout = useCallback(() => {
     localStorage.removeItem('forgetful_token')
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
     setState(s => ({
       ...s,
       isAuthenticated: false,
